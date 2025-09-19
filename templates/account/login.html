@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page %}
+<div class="page page-center">
+  <div class="container container-tight py-4">
+    <div class="text-center mb-4">
+      <a href="/" class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal">
+        <div class="d-flex align-items-center justify-content-center flex-column">
+
+          <!-- Brand Name -->
+          <h1 class="navbar-brand-text mb-0" style="font-size: 1.75rem; font-weight: 700; letter-spacing: -0.5px;">
+            <span style="color: #206bc4;">JIC</span>
+          </h1>
+          <!-- Tagline -->
+          <p class="text-muted mb-0" style="font-size: 0.875rem; font-weight: 400; letter-spacing: 0.5px;">
+            Event Management Platform
+          </p>
+        </div>
+      </a>
+    </div>
+    <div class="card card-md">
+      <div class="card-body">
+        <h2 class="h2 text-center mb-4">Login to your account</h2>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+          <div class="d-flex">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <circle cx="12" cy="12" r="9" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <div>
+              {% for error in form.non_field_errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+          </div>
+          <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+        </div>
+        {% endif %}
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible" role="alert">
+          <div class="d-flex">
+            <div>
+              {% if message.tags == 'success' %}
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M5 12l5 5l10 -10" />
+              </svg>
+              {% else %}
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <circle cx="12" cy="12" r="9" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+                <polyline points="11 12 12 12 12 16 13 16" />
+              </svg>
+              {% endif %}
+            </div>
+            <div>
+              {{ message }}
+            </div>
+          </div>
+          <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <form method="post" action="{% url 'account_login' %}" autocomplete="off" novalidate>
+          {% csrf_token %}
+
+          {% if redirect_field_value %}
+          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.login.id_for_label }}">Email or Username</label>
+            <input type="text" name="{{ form.login.name }}" id="{{ form.login.id_for_label }}"
+              class="form-control {% if form.login.errors %}is-invalid{% endif %}"
+              placeholder="Enter your email or username" value="{{ form.login.value|default:'' }}" autofocus required>
+            {% if form.login.errors %}
+            <div class="invalid-feedback">
+              {% for error in form.login.errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label" for="{{ form.password.id_for_label }}">
+              Password
+              <span class="form-label-description">
+                <a href="{% url 'account_reset_password' %}">Forgot password?</a>
+              </span>
+            </label>
+            <div class="input-group input-group-flat">
+              <input type="password" name="{{ form.password.name }}" id="{{ form.password.id_for_label }}"
+                class="form-control {% if form.password.errors %}is-invalid{% endif %}" placeholder="Your password"
+                autocomplete="current-password" required>
+              <span class="input-group-text">
+                <a href="#" class="link-secondary" title="Show password" data-bs-toggle="tooltip"
+                  onclick="togglePassword(event)">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                    stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <circle cx="12" cy="12" r="2" />
+                    <path
+                      d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7" />
+                  </svg>
+                </a>
+              </span>
+            </div>
+            {% if form.password.errors %}
+            <div class="invalid-feedback d-block">
+              {% for error in form.password.errors %}
+              {{ error }}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          {% if form.remember %}
+          <div class="mb-2">
+            <label class="form-check">
+              <input type="checkbox" name="{{ form.remember.name }}" id="{{ form.remember.id_for_label }}"
+                class="form-check-input" {% if form.remember.value %}checked{% endif %}>
+              <span class="form-check-label">Remember me on this device</span>
+            </label>
+          </div>
+          {% endif %}
+
+          <div class="form-footer">
+            <button type="submit" class="btn btn-primary w-100">
+              Sign in
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {% if socialaccount_providers %}
+      <div class="hr-text">or</div>
+      <div class="card-body">
+        <div class="row">
+          {% load socialaccount %}
+          {% for provider in socialaccount_providers %}
+          <div class="col">
+            <a href="{% provider_login_url provider.id %}" class="btn w-100">
+              {% if provider.id == 'google' %}
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon text-google" width="24" height="24"
+                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M17.788 5.108a9 9 0 1 0 3.212 6.892h-8" />
+              </svg>
+              Login with Google
+              {% elif provider.id == 'github' %}
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon text-github" width="24" height="24"
+                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path
+                  d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+              </svg>
+              Login with GitHub
+              {% elif provider.id == 'facebook' %}
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon text-facebook" width="24" height="24"
+                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M7 10v4h3v7h4v-7h3l1 -4h-4v-2a1 1 0 0 1 1 -1h3v-4h-3a5 5 0 0 0 -5 5v2h-3" />
+              </svg>
+              Login with Facebook
+              {% else %}
+              Login with {{ provider.name }}
+              {% endif %}
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="text-center text-muted mt-3">
+      Don't have an account yet? <a href="{% url 'account_signup' %}" tabindex="-1">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePassword(event) {
+    event.preventDefault();
+    const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
+    const icon = event.currentTarget.querySelector('svg');
+
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      icon.innerHTML = `
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <line x1="3" y1="3" x2="21" y2="21"/>
+      <path d="M10.584 10.587a2 2 0 0 0 2.828 2.83"/>
+      <path d="M9.363 5.365a9.466 9.466 0 0 1 2.637 -.365c4 0 7.333 2.333 10 7c-.778 1.361 -1.612 2.524 -2.503 3.488m-2.14 1.861c-1.631 1.1 -3.415 1.651 -5.357 1.651c-4 0 -7.333 -2.333 -10 -7c1.369 -2.395 2.913 -4.175 4.632 -5.341"/>
+    `;
+    } else {
+      passwordInput.type = 'password';
+      icon.innerHTML = `
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="2"/>
+      <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/>
+    `;
+    }
+  }
+</script>
+{% endblock %}

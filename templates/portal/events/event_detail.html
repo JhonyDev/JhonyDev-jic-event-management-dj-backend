@@ -1,0 +1,234 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <div class="page-pretitle">
+          Event Details
+        </div>
+        <h2 class="page-title">
+          {{ event.title }}
+        </h2>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          {% if event.organizer == request.user %}
+          <a href="{% url 'portal:event_update' event.pk %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/>
+              <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"/>
+              <path d="M16 5l3 3"/>
+            </svg>
+            Edit Event
+          </a>
+          <a href="{% url 'portal:event_delete' event.pk %}" class="btn btn-danger">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <line x1="4" y1="7" x2="20" y2="7"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+              <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
+              <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
+            </svg>
+            Delete
+          </a>
+          {% else %}
+            {% if user in event.attendees.all %}
+            <span class="btn btn-success disabled">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M5 12l5 5l10 -10"/>
+              </svg>
+              Registered
+            </span>
+            {% else %}
+            <a href="{% url 'portal:event_register' event.pk %}" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Register for Event
+            </a>
+            {% endif %}
+          {% endif %}
+          <a href="{% url 'portal:event_list' %}" class="btn btn-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <line x1="5" y1="12" x2="11" y2="18"/>
+              <line x1="5" y1="12" x2="11" y2="6"/>
+            </svg>
+            Back to Events
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row row-cards">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Event Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="datagrid">
+              <div class="datagrid-item">
+                <div class="datagrid-title">Date & Time</div>
+                <div class="datagrid-content">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <rect x="4" y="5" width="16" height="16" rx="2"/>
+                    <line x1="16" y1="3" x2="16" y2="7"/>
+                    <line x1="8" y1="3" x2="8" y2="7"/>
+                    <line x1="4" y1="11" x2="20" y2="11"/>
+                    <rect x="8" y="15" width="2" height="2"/>
+                  </svg>
+                  {{ event.date|date:"F j, Y at g:i A" }}
+                </div>
+              </div>
+              <div class="datagrid-item">
+                <div class="datagrid-title">Location</div>
+                <div class="datagrid-content">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <circle cx="12" cy="11" r="3"/>
+                    <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/>
+                  </svg>
+                  {{ event.location }}
+                </div>
+              </div>
+              <div class="datagrid-item">
+                <div class="datagrid-title">Organizer</div>
+                <div class="datagrid-content">
+                  <span class="avatar avatar-xs me-2" style="background-image: url('https://ui-avatars.com/api/?name={{ event.organizer.username|urlencode }}')"></span>
+                  {{ event.organizer.username }}
+                </div>
+              </div>
+              <div class="datagrid-item">
+                <div class="datagrid-title">Attendees</div>
+                <div class="datagrid-content">
+                  <strong>{{ event.registrations.count }}</strong> / {{ event.max_attendees }}
+                  <div class="progress progress-sm mt-2">
+                    {% widthratio event.registrations.count event.max_attendees 100 as progress %}
+                    <div class="progress-bar bg-primary" style="width: {{ progress }}%" role="progressbar"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="datagrid-item">
+                <div class="datagrid-title">Status</div>
+                <div class="datagrid-content">
+                  {% now "Y-m-d H:i" as current_time %}
+                  {% if event.date|date:"Y-m-d H:i" > current_time %}
+                    <span class="badge bg-green-lt">Upcoming</span>
+                  {% else %}
+                    <span class="badge bg-muted-lt">Past</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="datagrid-item">
+                <div class="datagrid-title">Created</div>
+                <div class="datagrid-content">{{ event.created_at|date:"M d, Y" }}</div>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <h4>Description</h4>
+              <div class="text-muted">
+                {{ event.description|linebreaks }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <!-- Attendees List -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Registered Attendees ({{ event.registrations.count }})</h3>
+          </div>
+          <div class="list-group list-group-flush">
+            {% for registration in event.registrations.all|slice:":10" %}
+            <div class="list-group-item">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <span class="avatar" style="background-image: url('https://ui-avatars.com/api/?name={{ registration.user.username|urlencode }}')"></span>
+                </div>
+                <div class="col text-truncate">
+                  <div class="text-reset d-block">{{ registration.user.username }}</div>
+                  <div class="d-block text-muted text-truncate mt-n1">
+                    Registered {{ registration.created_at|timesince }} ago
+                  </div>
+                </div>
+                {% if registration.status == 'confirmed' %}
+                <div class="col-auto">
+                  <span class="badge bg-green-lt">Confirmed</span>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% empty %}
+            <div class="list-group-item">
+              <div class="text-center text-muted py-3">
+                No attendees registered yet
+              </div>
+            </div>
+            {% endfor %}
+            {% if event.registrations.count > 10 %}
+            <div class="list-group-item">
+              <div class="text-center text-muted">
+                And {{ event.registrations.count|add:"-10" }} more...
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Event Actions -->
+        <div class="card mt-3">
+          <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+          </div>
+          <div class="card-body">
+            <div class="d-grid gap-2">
+              {% if event.organizer == request.user %}
+              <a href="{% url 'portal:event_update' event.pk %}" class="btn btn-primary">
+                Edit Event Details
+              </a>
+              <a href="#" class="btn">
+                View Analytics
+              </a>
+              <a href="#" class="btn">
+                Export Attendee List
+              </a>
+              {% else %}
+                {% if user not in event.attendees.all %}
+                <a href="{% url 'portal:event_register' event.pk %}" class="btn btn-primary">
+                  Register for This Event
+                </a>
+                {% else %}
+                <a href="{% url 'portal:event_unregister' event.pk %}" class="btn btn-danger">
+                  Cancel Registration
+                </a>
+                {% endif %}
+                <a href="#" class="btn">
+                  Share Event
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

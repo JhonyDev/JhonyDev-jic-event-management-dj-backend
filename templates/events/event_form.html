@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page %}
+<div class="page">
+  <!-- Page header -->
+  <div class="page-header d-print-none">
+    <div class="container-xl">
+      <div class="row g-2 align-items-center">
+        <div class="col">
+          <!-- Page pre-title -->
+          <div class="page-pretitle">
+            Events
+          </div>
+          <h2 class="page-title">
+            {% if form.instance.pk %}Edit Event{% else %}Create New Event{% endif %}
+          </h2>
+        </div>
+        <!-- Page title actions -->
+        <div class="col-auto ms-auto d-print-none">
+          <div class="btn-list">
+            <a href="{% url 'event_list' %}" class="btn btn-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <line x1="5" y1="12" x2="11" y2="18"/>
+                <line x1="5" y1="12" x2="11" y2="6"/>
+              </svg>
+              Back to Events
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page body -->
+  <div class="page-body">
+    <div class="container-xl">
+      <div class="row row-cards">
+        <div class="col-12">
+          <form method="post" class="card" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="card-header">
+              <h3 class="card-title">Event Details</h3>
+            </div>
+
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-8">
+                  <!-- Title Field -->
+                  <div class="mb-3">
+                    <label class="form-label required" for="id_title">Event Title</label>
+                    <div class="input-icon">
+                      <span class="input-icon-addon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <line x1="3" y1="21" x2="21" y2="21"/>
+                          <line x1="3" y1="10" x2="21" y2="10"/>
+                          <polyline points="5 6 12 3 19 6"/>
+                          <line x1="4" y1="10" x2="4" y2="21"/>
+                          <line x1="20" y1="10" x2="20" y2="21"/>
+                          <line x1="8" y1="14" x2="8" y2="17"/>
+                          <line x1="12" y1="14" x2="12" y2="17"/>
+                          <line x1="16" y1="14" x2="16" y2="17"/>
+                        </svg>
+                      </span>
+                      <input type="text"
+                             class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                             id="id_title"
+                             name="title"
+                             placeholder="Enter event title"
+                             value="{{ form.title.value|default:'' }}"
+                             maxlength="200"
+                             required>
+                    </div>
+                    {% if form.title.errors %}
+                    <div class="invalid-feedback">
+                      {% for error in form.title.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Description Field -->
+                  <div class="mb-3">
+                    <label class="form-label required" for="id_description">Description</label>
+                    <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                              id="id_description"
+                              name="description"
+                              rows="6"
+                              placeholder="Describe your event in detail..."
+                              required>{{ form.description.value|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                    <div class="invalid-feedback">
+                      {% for error in form.description.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                    <small class="form-hint">
+                      Provide a detailed description of your event, including what attendees can expect.
+                    </small>
+                  </div>
+
+                  <!-- Date and Time Field -->
+                  <div class="mb-3">
+                    <label class="form-label required" for="id_date">Date and Time</label>
+                    <div class="input-icon">
+                      <span class="input-icon-addon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <rect x="4" y="5" width="16" height="16" rx="2"/>
+                          <line x1="16" y1="3" x2="16" y2="7"/>
+                          <line x1="8" y1="3" x2="8" y2="7"/>
+                          <line x1="4" y1="11" x2="20" y2="11"/>
+                          <line x1="4" y1="15" x2="10" y2="15"/>
+                          <line x1="12" y1="15" x2="12" y2="15.01"/>
+                          <line x1="14" y1="15" x2="20" y2="15"/>
+                        </svg>
+                      </span>
+                      <input type="datetime-local"
+                             class="form-control {% if form.date.errors %}is-invalid{% endif %}"
+                             id="id_date"
+                             name="date"
+                             value="{{ form.date.value|date:'Y-m-d\TH:i'|default:'' }}"
+                             required>
+                    </div>
+                    {% if form.date.errors %}
+                    <div class="invalid-feedback">
+                      {% for error in form.date.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Location Field -->
+                  <div class="mb-3">
+                    <label class="form-label required" for="id_location">Location</label>
+                    <div class="input-icon">
+                      <span class="input-icon-addon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <circle cx="12" cy="11" r="3"/>
+                          <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/>
+                        </svg>
+                      </span>
+                      <input type="text"
+                             class="form-control {% if form.location.errors %}is-invalid{% endif %}"
+                             id="id_location"
+                             name="location"
+                             placeholder="Enter venue or online meeting link"
+                             value="{{ form.location.value|default:'' }}"
+                             maxlength="200"
+                             required>
+                    </div>
+                    {% if form.location.errors %}
+                    <div class="invalid-feedback">
+                      {% for error in form.location.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                    <small class="form-hint">
+                      Physical address or virtual meeting URL
+                    </small>
+                  </div>
+                </div>
+
+                <div class="col-lg-4">
+                  <!-- Event Info Card -->
+                  <div class="card">
+                    <div class="card-body">
+                      <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-blue" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <circle cx="12" cy="12" r="9"/>
+                            <polyline points="12 7 12 12 15 15"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 class="card-title mb-0">Quick Tips</h4>
+                        </div>
+                      </div>
+                      <div class="mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <line x1="9" y1="6" x2="20" y2="6"/>
+                          <line x1="9" y1="12" x2="20" y2="12"/>
+                          <line x1="9" y1="18" x2="20" y2="18"/>
+                          <line x1="5" y1="6" x2="5" y2="6.01"/>
+                          <line x1="5" y1="12" x2="5" y2="12.01"/>
+                          <line x1="5" y1="18" x2="5" y2="18.01"/>
+                        </svg>
+                        <small class="text-muted">Use a clear, descriptive title</small>
+                      </div>
+                      <div class="mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <line x1="9" y1="6" x2="20" y2="6"/>
+                          <line x1="9" y1="12" x2="20" y2="12"/>
+                          <line x1="9" y1="18" x2="20" y2="18"/>
+                          <line x1="5" y1="6" x2="5" y2="6.01"/>
+                          <line x1="5" y1="12" x2="5" y2="12.01"/>
+                          <line x1="5" y1="18" x2="5" y2="18.01"/>
+                        </svg>
+                        <small class="text-muted">Include all important details</small>
+                      </div>
+                      <div class="mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <line x1="9" y1="6" x2="20" y2="6"/>
+                          <line x1="9" y1="12" x2="20" y2="12"/>
+                          <line x1="9" y1="18" x2="20" y2="18"/>
+                          <line x1="5" y1="6" x2="5" y2="6.01"/>
+                          <line x1="5" y1="12" x2="5" y2="12.01"/>
+                          <line x1="5" y1="18" x2="5" y2="18.01"/>
+                        </svg>
+                        <small class="text-muted">Double-check date and time</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  {% if form.instance.pk %}
+                  <!-- Event Stats for Edit Mode -->
+                  <div class="card mt-3">
+                    <div class="card-body">
+                      <h4 class="card-title mb-3">Event Status</h4>
+                      <div class="mb-2">
+                        <small class="text-muted">Created:</small><br>
+                        <strong>{{ form.instance.created_at|date:"M d, Y" }}</strong>
+                      </div>
+                      <div class="mb-2">
+                        <small class="text-muted">Last Updated:</small><br>
+                        <strong>{{ form.instance.updated_at|date:"M d, Y" }}</strong>
+                      </div>
+                      <div class="mb-2">
+                        <small class="text-muted">Organizer:</small><br>
+                        <strong>{{ form.instance.organizer.username }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <a href="{% url 'event_list' %}" class="btn btn-white">
+                    Cancel
+                  </a>
+                </div>
+                <div class="col-auto ms-auto">
+                  <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"/>
+                      <circle cx="12" cy="14" r="2"/>
+                      <polyline points="14 4 14 8 8 8 8 4"/>
+                    </svg>
+                    {% if form.instance.pk %}Save Changes{% else %}Create Event{% endif %}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

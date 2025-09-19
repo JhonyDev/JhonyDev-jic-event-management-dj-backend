@@ -1,0 +1,147 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <div class="page-pretitle">
+          Events
+        </div>
+        <h2 class="page-title">
+          My Events
+        </h2>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <a href="{% url 'portal:event_create' %}" class="btn btn-primary d-none d-sm-inline-block">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Create New Event
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row row-cards">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Events You've Created</h3>
+            <div class="card-actions">
+              <a href="{% url 'website:event_browse' %}" class="btn btn-sm">
+                Browse All Events
+              </a>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-vcenter table-mobile-md card-table">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Date & Time</th>
+                  <th>Location</th>
+                  <th>Attendees</th>
+                  <th>Status</th>
+                  <th class="w-1"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for event in events %}
+                <tr>
+                  <td data-label="Event">
+                    <div class="d-flex py-1 align-items-center">
+                      <span class="avatar me-2" style="background-image: url(https://ui-avatars.com/api/?name={{ event.title|urlencode }}&background=random)"></span>
+                      <div class="flex-fill">
+                        <div class="font-weight-medium">{{ event.title|truncatechars:40 }}</div>
+                        <div class="text-muted">{{ event.description|truncatechars:50 }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td data-label="Date & Time">
+                    <div>{{ event.date|date:"M d, Y" }}</div>
+                    <div class="text-muted">{{ event.date|date:"g:i A" }}</div>
+                  </td>
+                  <td data-label="Location" class="text-muted">
+                    {{ event.location|truncatechars:30 }}
+                  </td>
+                  <td data-label="Attendees">
+                    <div>{{ event.registrations.count }} / {{ event.max_attendees }}</div>
+                    <div class="progress progress-sm">
+                      {% widthratio event.registrations.count event.max_attendees 100 as progress %}
+                      <div class="progress-bar bg-primary" style="width: {{ progress }}%" role="progressbar"></div>
+                    </div>
+                  </td>
+                  <td data-label="Status">
+                    {% now "Y-m-d H:i" as current_time %}
+                    {% if event.date|date:"Y-m-d H:i" > current_time %}
+                      <span class="badge bg-green-lt">Upcoming</span>
+                    {% else %}
+                      <span class="badge bg-muted-lt">Past</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-list flex-nowrap">
+                      <a href="{% url 'portal:event_detail' event.pk %}" class="btn btn-sm">
+                        View
+                      </a>
+                      <a href="{% url 'portal:event_update' event.pk %}" class="btn btn-sm">
+                        Edit
+                      </a>
+                      <a href="{% url 'portal:event_delete' event.pk %}" class="btn btn-sm btn-danger">
+                        Delete
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <div class="empty">
+                      <div class="empty-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                          <rect x="4" y="5" width="16" height="16" rx="2"/>
+                          <line x1="16" y1="3" x2="16" y2="7"/>
+                          <line x1="8" y1="3" x2="8" y2="7"/>
+                          <line x1="4" y1="11" x2="20" y2="11"/>
+                          <line x1="4" y1="15" x2="10" y2="15"/>
+                          <line x1="12" y1="15" x2="12" y2="15.01"/>
+                          <line x1="14" y1="15" x2="20" y2="15"/>
+                        </svg>
+                      </div>
+                      <p class="empty-title">No events yet</p>
+                      <p class="empty-subtitle text-muted">
+                        Start by creating your first event
+                      </p>
+                      <div class="empty-action">
+                        <a href="{% url 'portal:event_create' %}" class="btn btn-primary">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Create First Event
+                        </a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

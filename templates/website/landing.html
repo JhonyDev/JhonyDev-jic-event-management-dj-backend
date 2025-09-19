@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page %}
+<div class="page">
+  <!-- Hero Section -->
+  <div class="page-header d-print-none text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container-xl">
+      <div class="row align-items-center py-5">
+        <div class="col-lg-7">
+          <h1 class="display-3 fw-bold text-white mb-3">
+            Welcome to JIC Event Management Platform
+          </h1>
+          <p class="lead text-white-50 mb-4">
+            Discover, create, and manage amazing events. Connect with your community and make every moment memorable.
+          </p>
+          <div class="btn-list">
+            {% if user.is_authenticated %}
+              <a href="{% url 'portal:dashboard' %}" class="btn btn-white btn-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <rect x="4" y="4" width="6" height="6" rx="1"/>
+                  <rect x="14" y="4" width="6" height="6" rx="1"/>
+                  <rect x="4" y="14" width="6" height="6" rx="1"/>
+                  <rect x="14" y="14" width="6" height="6" rx="1"/>
+                </svg>
+                Go to Dashboard
+              </a>
+            {% else %}
+              <a href="{% url 'account_signup' %}" class="btn btn-white btn-lg">
+                Get Started
+              </a>
+              <a href="{% url 'account_login' %}" class="btn btn-outline-white btn-lg">
+                Sign In
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-lg-5 d-none d-lg-block">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-100" viewBox="0 0 500 400" style="opacity: 0.9;">
+            <rect x="50" y="50" width="400" height="300" rx="10" fill="white" opacity="0.1"/>
+            <rect x="75" y="100" width="350" height="40" rx="5" fill="white" opacity="0.2"/>
+            <rect x="75" y="160" width="150" height="30" rx="5" fill="white" opacity="0.15"/>
+            <rect x="250" y="160" width="175" height="30" rx="5" fill="white" opacity="0.15"/>
+            <rect x="75" y="210" width="350" height="60" rx="5" fill="white" opacity="0.1"/>
+            <circle cx="400" cy="300" r="30" fill="white" opacity="0.3"/>
+            <path d="M385 300 L395 310 L415 290" stroke="white" stroke-width="3" fill="none" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="page-body">
+    <div class="container-xl">
+      <!-- Stats Section -->
+      <div class="row row-cards mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <span class="avatar avatar-xl" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-white" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <rect x="4" y="5" width="16" height="16" rx="2"/>
+                      <line x1="16" y1="3" x2="16" y2="7"/>
+                      <line x1="8" y1="3" x2="8" y2="7"/>
+                      <line x1="4" y1="11" x2="20" y2="11"/>
+                      <rect x="8" y="15" width="2" height="2"/>
+                    </svg>
+                  </span>
+                </div>
+                <div class="col">
+                  <h3 class="mb-0">{{ total_events }} Events Created</h3>
+                  <div class="text-muted">Join our growing community of event organizers</div>
+                </div>
+                <div class="col-auto">
+                  <a href="{% url 'website:event_browse' %}" class="btn btn-primary">
+                    Browse Events
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features Grid -->
+      <div class="row row-cards mb-4">
+        <div class="col-12">
+          <h2 class="mb-4">Why Choose JIC?</h2>
+        </div>
+
+        <div class="col-sm-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <span class="avatar bg-primary-lt">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <circle cx="12" cy="12" r="9"/>
+                    <polyline points="12 7 12 12 15 15"/>
+                  </svg>
+                </span>
+                <div class="ms-3">
+                  <h3 class="mb-0">Easy Scheduling</h3>
+                </div>
+              </div>
+              <p class="text-muted">Create and schedule events in minutes with our intuitive interface.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <span class="avatar bg-success-lt">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    <path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/>
+                  </svg>
+                </span>
+                <div class="ms-3">
+                  <h3 class="mb-0">Registration Management</h3>
+                </div>
+              </div>
+              <p class="text-muted">Track attendees and manage registrations effortlessly.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <span class="avatar bg-info-lt">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                </span>
+                <div class="ms-3">
+                  <h3 class="mb-0">Real-time Updates</h3>
+                </div>
+              </div>
+              <p class="text-muted">Keep everyone informed with instant event updates and notifications.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <span class="avatar bg-warning-lt">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M3 21l18 0"/>
+                    <path d="M3 10l18 0"/>
+                    <path d="M3 6l18 0"/>
+                    <line x1="10" y1="3" x2="10" y2="21"/>
+                    <line x1="14" y1="3" x2="14" y2="21"/>
+                  </svg>
+                </span>
+                <div class="ms-3">
+                  <h3 class="mb-0">Beautiful Design</h3>
+                </div>
+              </div>
+              <p class="text-muted">Professional and modern interface that looks great on any device.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <span class="avatar bg-danger-lt">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <rect x="3" y="4" width="18" height="8" rx="3"/>
+                    <rect x="3" y="12" width="18" height="8" rx="3"/>
+                    <line x1="7" y1="8" x2="7" y2="8.01"/>
+                    <line x1="7" y1="16" x2="7" y2="16.01"/>
+                  </svg>
+                </span>
+                <div class="ms-3">
+                  <h3 class="mb-0">Secure & Reliable</h3>
+                </div>
+              </div>
+              <p class="text-muted">Your data is safe with enterprise-grade security and backups.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <span class="avatar bg-purple-lt">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M10 16.5l2 -3l2 3m-2 -3v-2l3 -1m-6 0l3 1"/>
+                    <circle cx="12" cy="7.5" r="1.5"/>
+                  </svg>
+                </span>
+                <div class="ms-3">
+                  <h3 class="mb-0">24/7 Support</h3>
+                </div>
+              </div>
+              <p class="text-muted">Get help whenever you need it from our dedicated support team.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming Events Section -->
+      {% if upcoming_events %}
+      <div class="row row-cards">
+        <div class="col-12">
+          <h2 class="mb-4">Upcoming Events</h2>
+        </div>
+        {% for event in upcoming_events %}
+        <div class="col-sm-6 col-lg-4">
+          <div class="card card-sm">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <span class="avatar me-3" style="background-image: url(https://ui-avatars.com/api/?name={{ event.title|urlencode }}&background=random)"></span>
+                <div>
+                  <div class="font-weight-medium">{{ event.title|truncatechars:30 }}</div>
+                  <div class="text-muted">{{ event.date|date:"M d, Y" }}</div>
+                </div>
+              </div>
+              <div class="mt-3">
+                <span class="badge bg-blue-lt">{{ event.location|truncatechars:25 }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="col-12 text-center mt-3">
+          <a href="{% url 'website:event_browse' %}" class="btn btn-outline-primary">
+            View All Events
+          </a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- CTA Section -->
+  <div class="mt-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container-xl py-5">
+      <div class="text-center text-white">
+        <h2 class="mb-3 text-white">Ready to Get Started?</h2>
+        <p class="lead text-white-50 mb-4">Join thousands of event organizers who trust JIC for their events.</p>
+        {% if not user.is_authenticated %}
+        <div class="btn-list justify-content-center">
+          <a href="{% url 'account_signup' %}" class="btn btn-white btn-lg">
+            Create Free Account
+          </a>
+          <a href="{% url 'website:about' %}" class="btn btn-outline-white btn-lg">
+            Learn More
+          </a>
+        </div>
+        {% else %}
+        <a href="{% url 'portal:event_create' %}" class="btn btn-white btn-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Create Your First Event
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

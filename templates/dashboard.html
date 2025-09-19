@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block page %}
+<div class="page-body">
+  <div class="container-xl">
+    <h2 class="page-title">Dashboard</h2>
+
+    <p>Welcome to the Event Management Dashboard 🎉</p>
+    <p>Here you can manage your events (Create, Update, Delete).</p>
+
+    <a href="{% url 'event_create' %}" class="btn btn-primary">+ Create Event</a>
+
+    <table class="table mt-3">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Date</th>
+          <th>Location</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td>{{ event.title }}</td>
+          <td>{{ event.date }}</td>
+          <td>{{ event.location }}</td>
+          <td>{{ event.description }}</td>
+          <td>
+            <a href="{% url 'event_update' event.pk %}" class="btn btn-sm btn-warning">Edit</a>
+            <a href="{% url 'event_delete' event.pk %}" class="btn btn-sm btn-danger">Delete</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">No events yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block dashboard %}
+<h1>Dashboard</h1>
+
+<!-- Show events -->
+<h2>Your Events</h2>
+<ul>
+  {% for event in events %}
+  <li>
+    <strong>{{ event.title }}</strong> - {{ event.date }} <br>
+    {{ event.description }} at {{ event.location }}
+    <a href="{% url 'edit_event' event.id %}">Edit</a> |
+    <a href="{% url 'delete_event' event.id %}">Delete</a>
+  </li>
+  {% empty %}
+  <li>No events yet.</li>
+  {% endfor %}
+</ul>
+
+<!-- Add event -->
+<h2>Add New Event</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Add Event</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page %}
+{% include "include/portal_navigation.html" %}
+
+<div class="page-wrapper">
+  {% block content %}
+  {% endblock content %}
+</div>
+{% endblock page %}
