@@ -1,0 +1,509 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ event.title }} - Event Details{% endblock %}
+
+{% block page %}
+<div class="page">
+  {% block content %}
+  <div class="page-wrapper">
+    <!-- Hero Banner -->
+    <div class="page-header d-print-none"
+      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+      <div class="container-xl">
+        <div class="row g-2 align-items-center py-5">
+          <div class="col">
+            <div class="d-flex align-items-center mb-3">
+              <!-- Event Image -->
+              {% if event.image %}
+              <div class="me-4">
+                <img src="{{ event.image.url }}" alt="{{ event.title }}"
+                  class="avatar avatar-xl rounded-circle border border-white border-3"
+                  style="width: 100px; height: 100px; object-fit: cover;">
+              </div>
+              {% else %}
+              <div class="me-4">
+                <div class="avatar avatar-xl rounded-circle border border-white border-3"
+                  style="width: 100px; height: 100px; background-image: url('https://ui-avatars.com/api/?name={{ event.title|urlencode }}&background=ffffff&color=667eea&size=100&font-size=0.4')">
+                </div>
+              </div>
+              {% endif %}
+              <div class="flex-fill">
+                <nav aria-label="breadcrumb" class="mb-2">
+                  <ol class="breadcrumb breadcrumb-arrows">
+                    <li class="breadcrumb-item"><a href="{% url 'website:event_detail' event.pk %}"
+                        class="text-white-50">Event Overview</a></li>
+                    <li class="breadcrumb-item active text-white" aria-current="page">Event Details</li>
+                  </ol>
+                </nav>
+                <h1 class="display-5 mb-3 text-white">{{ event.title }}</h1>
+                <div class="row g-3 text-white-50">
+                  <div class="col-auto">
+                    <div class="d-flex align-items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-white" width="20" height="20"
+                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <rect x="4" y="5" width="16" height="16" rx="2" />
+                        <line x1="16" y1="3" x2="16" y2="7" />
+                        <line x1="8" y1="3" x2="8" y2="7" />
+                        <line x1="4" y1="11" x2="20" y2="11" />
+                      </svg>
+                      <div>
+                        <div class="small">When</div>
+                        <div class="h5 text-white mb-0">{{ event.date|date:"F j, Y" }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-auto">
+                    <div class="d-flex align-items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-white" width="20" height="20"
+                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12,7 12,12 15,15" />
+                      </svg>
+                      <div>
+                        <div class="small">Time</div>
+                        <div class="h5 text-white mb-0">{{ event.date|date:"g:i A" }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-auto">
+                    <div class="d-flex align-items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-white" width="20" height="20"
+                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="m9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+                        <path d="m17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
+                      </svg>
+                      <div>
+                        <div class="small">Where</div>
+                        <div class="h5 text-white mb-0">{{ event.location }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="btn-list">
+              {% if event.status == 'published' %}
+              <a href="{% url 'self_register' event.pk %}" class="btn btn-white btn-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Join This Event
+              </a>
+              {% elif event.status == 'cancelled' %}
+              <span class="btn btn-danger btn-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="m15 9l-6 6" />
+                  <path d="m9 9l6 6" />
+                </svg>
+                Event Cancelled
+              </span>
+              {% else %}
+              <span class="btn btn-secondary btn-lg">
+                Registration Closed
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="page-body">
+      <div class="container-xl">
+        <!-- Status Banner -->
+        {% if event.status == 'cancelled' %}
+        <div class="alert alert-danger alert-important mb-4">
+          <div class="d-flex">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <circle cx="12" cy="12" r="9" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <div>
+              <h4 class="alert-title">⚠️ This Event Has Been Cancelled</h4>
+              <div class="text-white">Unfortunately, this event will not be taking place as planned. Please contact the
+                organizer if you have any questions.</div>
+            </div>
+          </div>
+        </div>
+        {% elif event.status == 'draft' %}
+        <div class="alert alert-info alert-important mb-4">
+          <div class="d-flex">
+            <div>
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M12 9v2m0 4v.01" />
+                <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
+              </svg>
+            </div>
+            <div>
+              <h4 class="alert-title">📝 Event Still Being Planned</h4>
+              <div class="text-muted">This event is still being organized. Details may change before the final
+                announcement.</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="row row-cards">
+          <!-- Main Content Column -->
+          <div class="col-lg-8">
+            <!-- Quick Overview -->
+            <div class="row row-cards mb-4">
+              <div class="col-sm-6">
+                <div class="card bg-primary-lt border-primary">
+                  <div class="card-body text-center">
+                    <div class="h1 text-primary mb-1">{{ event.registrations.count }}</div>
+                    <div class="h4 text-primary mb-1">People Registered</div>
+                    <div class="text-muted">out of {{ event.max_attendees }} spots available</div>
+                    <div class="progress mt-2">
+                      {% widthratio event.registrations.count event.max_attendees 100 as progress %}
+                      <div class="progress-bar bg-primary" style="width: {{ progress }}%" role="progressbar"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="card bg-success-lt border-success">
+                  <div class="card-body text-center">
+                    {% if event.end_date %}
+                    {% if event.date.date == event.end_date.date %}
+                    <div class="h1 text-success mb-1">1</div>
+                    <div class="h4 text-success mb-1">Day Event</div>
+                    <div class="text-muted">Single day event</div>
+                    {% else %}
+                    <div class="h1 text-success mb-1">{{ event_days }}</div>
+                    <div class="h4 text-success mb-1">{% if event_days == 1 %}Day Event{% else %}Days Event{% endif %}</div>
+                    <div class="text-muted">{% if event_days == 1 %}Single day event{% else %}Multi-day event{% endif %}</div>
+                    {% endif %}
+                    {% else %}
+                    <div class="h1 text-success mb-1">1</div>
+                    <div class="h4 text-success mb-1">Day Event</div>
+                    <div class="text-muted">Single day event</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- What This Event Is About -->
+            <div class="card mb-4">
+              <div class="card-header bg-white">
+                <div class="d-flex align-items-center">
+                  <span class="avatar bg-blue text-white me-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                      stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                      <circle cx="12" cy="12" r="9" />
+                      <line x1="12" y1="7" x2="12.01" y2="7" />
+                      <line x1="12" y1="11" x2="12" y2="17" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h3 class="card-title mb-0">📖 What This Event Is About</h3>
+                    <div class="text-muted small">Learn more about what to expect</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="fs-5 lh-base text-dark">
+                  {{ event.description|linebreaks }}
+                </div>
+              </div>
+            </div>
+
+            <!-- When & Where -->
+            <div class="card mb-4">
+              <div class="card-header bg-white">
+                <div class="d-flex align-items-center">
+                  <span class="avatar bg-green text-white me-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                      stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                      <rect x="4" y="5" width="16" height="16" rx="2" />
+                      <line x1="16" y1="3" x2="16" y2="7" />
+                      <line x1="8" y1="3" x2="8" y2="7" />
+                      <line x1="4" y1="11" x2="20" y2="11" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h3 class="card-title mb-0">📅 When & Where</h3>
+                    <div class="text-muted small">Important dates and location details</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="row g-4">
+                  <div class="col-md-6">
+                    <div class="d-flex align-items-start">
+                      <span class="avatar bg-azure text-white me-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24"
+                          stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                          stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                          <circle cx="12" cy="12" r="9" />
+                          <polyline points="12,7 12,12 15,15" />
+                        </svg>
+                      </span>
+                      <div>
+                        <h5 class="mb-1">Event Starts</h5>
+                        <div class="h4 text-azure mb-0">{{ event.date|date:"F j, Y" }}</div>
+                        <div class="text-muted">{{ event.date|date:"l" }} at {{ event.date|date:"g:i A" }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  {% if event.end_date %}
+                  <div class="col-md-6">
+                    <div class="d-flex align-items-start">
+                      <span class="avatar bg-orange text-white me-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24"
+                          stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                          stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                          <circle cx="12" cy="12" r="9" />
+                          <polyline points="12,7 12,12 15,15" />
+                        </svg>
+                      </span>
+                      <div>
+                        <h5 class="mb-1">Event Ends</h5>
+                        <div class="h4 text-orange mb-0">{{ event.end_date|date:"F j, Y" }}</div>
+                        <div class="text-muted">{{ event.end_date|date:"l" }} at {{ event.end_date|date:"g:i A" }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                  <div class="col-12">
+                    <div class="d-flex align-items-start">
+                      <span class="avatar bg-red text-white me-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24"
+                          stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                          stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                          <path d="m9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+                          <path d="m17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
+                        </svg>
+                      </span>
+                      <div>
+                        <h5 class="mb-1">Location</h5>
+                        <div class="h4 text-red mb-1">{{ event.location }}</div>
+                        {% if event.venue_details %}
+                        <div class="text-muted">{{ event.venue_details }}</div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Sidebar -->
+          <div class="col-lg-4">
+            <!-- Registration Status -->
+            <div
+              class="card mb-3 {% if event.status == 'published' %}border-success{% elif event.status == 'cancelled' %}border-danger{% else %}border-warning{% endif %}">
+              <div
+                class="card-status-top {% if event.status == 'published' %}bg-success{% elif event.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %}">
+              </div>
+              <div class="card-header">
+                <h4 class="card-title">
+                  {% if event.status == 'published' %}
+                  ✅ Registration Open
+                  {% elif event.status == 'cancelled' %}
+                  ❌ Event Cancelled
+                  {% else %}
+                  ⏳ Registration Not Open
+                  {% endif %}
+                </h4>
+              </div>
+              <div class="card-body">
+                {% if event.status == 'published' %}
+                <div class="text-center mb-3">
+                  <div class="h1 text-success">{{ event.registrations.count }}</div>
+                  <div class="text-muted">people have joined</div>
+                  <div class="small text-muted">{{ event.max_attendees|add:"-"|add:event.registrations.count }} spots
+                    remaining</div>
+                  <div class="progress mt-2">
+                    {% widthratio event.registrations.count event.max_attendees 100 as progress %}
+                    <div class="progress-bar bg-success" style="width: {{ progress }}%" role="progressbar"></div>
+                  </div>
+                </div>
+                <div class="d-grid">
+                  <a href="{% url 'self_register' event.pk %}" class="btn btn-success btn-lg">
+                    🎉 Join This Event
+                  </a>
+                </div>
+                {% elif event.status == 'cancelled' %}
+                <div class="text-center text-muted">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg mb-3 text-danger" width="48" height="48"
+                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="m15 9l-6 6" />
+                    <path d="m9 9l6 6" />
+                  </svg>
+                  <div>This event has been cancelled and will not take place.</div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg mb-3 text-warning" width="48" height="48"
+                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <circle cx="12" cy="12" r="9" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <div>Registration is not open yet. Check back later!</div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Event Organizer -->
+            <div class="card mb-3">
+              <div class="card-header">
+                <h4 class="card-title">Event Organizer</h4>
+                <div class="text-muted small ms-2">Who's organizing this event</div>
+              </div>
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <span class="avatar avatar-lg me-3 border border-primary border-2"
+                    style="background-image: url('https://ui-avatars.com/api/?name={{ event.organizer.get_full_name|default:event.organizer.username|urlencode }}&background=206bc4&color=ffffff&size=60')"></span>
+                  <div>
+                    <div class="h5 mb-1">{{ event.organizer.get_full_name|default:event.organizer.username }}</div>
+                    <div class="text-muted">Event Organizer</div>
+                    {% if event.organizer.email %}
+                    <div class="text-muted small">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16"
+                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                        <polyline points="3,7 12,13 21,7" />
+                      </svg>
+                      {{ event.organizer.email }}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Event Capacity -->
+            <div class="card mb-3 bg-azure-lt">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <span class="avatar bg-azure text-white me-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                      stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="m3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                      <path d="m16 3.13a4 4 0 0 1 0 7.75" />
+                      <path d="m21 21v-2a4 4 0 0 0 -3 -3.85" />
+                    </svg>
+                  </span>
+                  <div>
+                    <div class="h4 mb-0 text-azure">{{ event.max_attendees }} People Max</div>
+                    <div class="text-muted">Maximum event capacity</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Event Sponsors -->
+            {% if sponsors %}
+            <div class="card">
+              <div class="card-header">
+                <h4 class="card-title">🏆 Event Partners</h4>
+                &nbsp;
+                <div class="text-muted small">Organizations supporting this event</div>
+              </div>
+              <div class="card-body">
+                <div class="divide-y">
+                  {% for sponsor in sponsors %}
+                  <div class="row align-items-center">
+                    <div class="col-auto">
+                      {% if sponsor.logo %}
+                      <span class="avatar avatar-md border"
+                        style="background-image: url('{{ sponsor.logo.url }}')"></span>
+                      {% else %}
+                      <span class="avatar avatar-md bg-yellow-lt">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon text-yellow" width="24" height="24"
+                          viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                          stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                          <polygon
+                            points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+                        </svg>
+                      </span>
+                      {% endif %}
+                    </div>
+                    <div class="col">
+                      <div class="font-weight-medium">{{ sponsor.title }}</div>
+                      {% if sponsor.website %}
+                      <div class="text-muted small">
+                        <a href="{{ sponsor.website }}" target="_blank" class="text-decoration-none">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16"
+                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="m10 13a5 5 0 0 0 7.54 .54l3 -3a5 5 0 0 0 -7.07 -7.07l-1.72 1.71" />
+                            <path d="m14 11a5 5 0 0 0 -7.54 -.54l-3 3a5 5 0 0 0 7.07 7.07l1.71 -1.71" />
+                          </svg>
+                          Visit Website
+                        </a>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Back to Overview -->
+            <div class="mt-3">
+              <a href="{% url 'website:event_detail' event.pk %}" class="btn btn-outline-primary w-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12,19 5,12 12,5" />
+                </svg>
+                Back to Event Overview
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endblock content %}
+</div>
+{% endblock page %}

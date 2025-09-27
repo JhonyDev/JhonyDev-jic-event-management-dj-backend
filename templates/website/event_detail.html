@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ event.title }} - JIC Events{% endblock %}
+
+{% block page %}
+<div class="page">
+  {% block content %}
+<div class="page-wrapper">
+  <!-- Hero Section -->
+  <div class="container-xl">
+    <div class="page-header d-print-none">
+      <div class="container-xl">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <h1 class="display-4 fw-bold mb-3">
+              {{ event.title }}
+            </h1>
+            <p class="lead text-muted">
+              {{ event.description|truncatewords:40 }}
+            </p>
+          </div>
+          <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+              {% if event.status == 'published' %}
+              <a href="{% url 'self_register' event.pk %}" class="btn btn-primary btn-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Register Now
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="page-body">
+    <div class="container-xl">
+      <!-- Quick Event Info -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body text-center">
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-primary mb-2" width="32" height="32" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <rect x="4" y="5" width="16" height="16" rx="2"/>
+                      <line x1="16" y1="3" x2="16" y2="7"/>
+                      <line x1="8" y1="3" x2="8" y2="7"/>
+                      <line x1="4" y1="11" x2="20" y2="11"/>
+                    </svg>
+                    <div class="h4">{{ event.date|date:"M j, Y" }}</div>
+                    <div class="text-muted">Date</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-primary mb-2" width="32" height="32" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <circle cx="12" cy="12" r="9"/>
+                      <polyline points="12,7 12,12 15,15"/>
+                    </svg>
+                    <div class="h4">{{ event.date|time:"g:i A" }}</div>
+                    <div class="text-muted">Start Time</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-primary mb-2" width="32" height="32" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <circle cx="12" cy="11" r="3"/>
+                      <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/>
+                    </svg>
+                    <div class="h4">{{ event.location|truncatechars:20 }}</div>
+                    <div class="text-muted">Location</div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-primary mb-2" width="32" height="32" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                      <line x1="19" y1="7" x2="19" y2="10"/>
+                      <line x1="19" y1="14" x2="19" y2="14.01"/>
+                    </svg>
+                    <div class="h4">{{ event.max_attendees }}</div>
+                    <div class="text-muted">Capacity</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Cards -->
+      <div class="row row-deck row-cards">
+        <!-- Event Info Card -->
+        <div class="col-md-6 col-lg-3">
+          <div class="card card-link">
+            <a href="{% url 'website:event_info' event.pk %}" class="card-body text-center text-decoration-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-primary mb-3" width="48" height="48" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <circle cx="12" cy="12" r="9"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                <polyline points="11,12 12,12 12,16 13,16"/>
+              </svg>
+              <h3 class="card-title">Event Info</h3>
+              <div class="text-muted">Learn more about this event, organizer details, and complete description</div>
+            </a>
+          </div>
+        </div>
+
+        <!-- Agenda Card -->
+        {% if agendas %}
+        <div class="col-md-6 col-lg-3">
+          <div class="card card-link">
+            <a href="{% url 'website:event_agenda' event.pk %}" class="card-body text-center text-decoration-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-success mb-3" width="48" height="48" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="2"/>
+                <line x1="9" y1="12" x2="9.01" y2="12"/>
+                <line x1="13" y1="12" x2="15" y2="12"/>
+                <line x1="9" y1="16" x2="9.01" y2="16"/>
+                <line x1="13" y1="16" x2="15" y2="16"/>
+              </svg>
+              <h3 class="card-title">Agenda</h3>
+              <div class="text-muted">View complete event schedule with {{ sessions.count }} sessions</div>
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Speakers Card -->
+        {% if speakers %}
+        <div class="col-md-6 col-lg-3">
+          <div class="card card-link">
+            <a href="{% url 'website:event_speakers' event.pk %}" class="card-body text-center text-decoration-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-warning mb-3" width="48" height="48" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <circle cx="12" cy="7" r="4"/>
+                <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+              </svg>
+              <h3 class="card-title">Speakers</h3>
+              <div class="text-muted">Meet our {{ speakers.count }} featured speakers and their expertise</div>
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Maps Card -->
+        <div class="col-md-6 col-lg-3">
+          <div class="card card-link">
+            <a href="{% url 'website:event_maps' event.pk %}" class="card-body text-center text-decoration-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-danger mb-3" width="48" height="48" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <polyline points="6,9 6,2 18,2 18,9"/>
+                <path d="M6 18h12a3 3 0 0 0 3 -3v-5a3 3 0 0 0 -3 -3h-12a3 3 0 0 0 -3 3v5a3 3 0 0 0 3 3z"/>
+                <line x1="9" y1="9" x2="15" y2="9"/>
+                <line x1="12" y1="6" x2="12" y2="12"/>
+              </svg>
+              <h3 class="card-title">Maps</h3>
+              <div class="text-muted">Venue maps, floor plans, and location guides</div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+</div>
+{% endblock page %}

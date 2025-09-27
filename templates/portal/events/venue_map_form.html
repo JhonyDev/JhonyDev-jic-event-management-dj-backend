@@ -1,0 +1,249 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page">
+  <!-- Page header -->
+  <div class="page-header d-print-none">
+    <div class="container-xl">
+      <div class="row g-2 align-items-center">
+        <div class="col">
+          <!-- Page pre-title -->
+          <div class="page-pretitle">
+            Venue Maps
+          </div>
+          <h2 class="page-title">
+            {% if form.instance.pk %}Edit Venue Map{% else %}Add New Venue Map{% endif %}
+          </h2>
+        </div>
+        <!-- Page title actions -->
+        <div class="col-auto ms-auto d-print-none">
+          <div class="btn-list">
+            <a href="{% url 'portal:event_detail' pk=event.pk %}" class="btn btn-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <line x1="5" y1="12" x2="11" y2="18" />
+                <line x1="5" y1="12" x2="11" y2="6" />
+              </svg>
+              Back to Event
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page body -->
+  <div class="page-body">
+    <div class="container-xl">
+      <div class="row row-cards">
+        <div class="col-12">
+          <form method="post" class="card" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="card-header">
+              <h3 class="card-title">Venue Map Details</h3>
+              <div class="card-subtitle">Event: {{ event.title }}</div>
+            </div>
+
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-8">
+                  <!-- Map Information -->
+                  <h4 class="mb-3">Map Information</h4>
+
+                  <!-- Title Field -->
+                  <div class="mb-3">
+                    <label class="form-label required">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.title.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <small class="form-hint">
+                      Give your map a descriptive title (e.g., "Main Entrance Map", "Conference Hall Direction")
+                    </small>
+                  </div>
+
+                  <!-- Description Field -->
+                  <div class="mb-3">
+                    <label class="form-label">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.description.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <small class="form-hint">
+                      Optional description of what this map shows
+                    </small>
+                  </div>
+
+                  <!-- Map Image Field -->
+                  <div class="mb-3">
+                    <label class="form-label required">{{ form.image.label }}</label>
+                    {{ form.image }}
+                    {% if form.image.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.image.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <small class="form-hint">
+                      Upload the venue map image (PNG, JPG, or PDF formats recommended)
+                    </small>
+                  </div>
+
+                  <div class="row">
+                    <!-- Order Field -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">{{ form.order.label }}</label>
+                        {{ form.order }}
+                        {% if form.order.errors %}
+                          <div class="invalid-feedback d-block">
+                            {% for error in form.order.errors %}{{ error }}{% endfor %}
+                          </div>
+                        {% endif %}
+                        <small class="form-hint">Order of display (lower numbers appear first)</small>
+                      </div>
+                    </div>
+
+                    <!-- Active Status Field -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">{{ form.is_active.label }}</label>
+                        <div class="form-check form-switch mt-2">
+                          {{ form.is_active }}
+                          <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            Show this map to attendees
+                          </label>
+                        </div>
+                        {% if form.is_active.errors %}
+                          <div class="invalid-feedback d-block">
+                            {% for error in form.is_active.errors %}{{ error }}{% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-lg-4">
+                  <!-- Map Info Card -->
+                  <div class="card">
+                    <div class="card-body">
+                      <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-blue" width="24" height="24"
+                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+                            <path d="m17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 class="card-title mb-0">Map Tips</h4>
+                        </div>
+                      </div>
+                      <div class="mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24"
+                          height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                          <line x1="9" y1="6" x2="20" y2="6" />
+                          <line x1="9" y1="12" x2="20" y2="12" />
+                          <line x1="9" y1="18" x2="20" y2="18" />
+                          <line x1="5" y1="6" x2="5" y2="6.01" />
+                          <line x1="5" y1="12" x2="5" y2="12.01" />
+                          <line x1="5" y1="18" x2="5" y2="18.01" />
+                        </svg>
+                        <small class="text-muted">Use high-resolution images for clarity</small>
+                      </div>
+                      <div class="mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24"
+                          height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                          <line x1="9" y1="6" x2="20" y2="6" />
+                          <line x1="9" y1="12" x2="20" y2="12" />
+                          <line x1="9" y1="18" x2="20" y2="18" />
+                          <line x1="5" y1="6" x2="5" y2="6.01" />
+                          <line x1="5" y1="12" x2="5" y2="12.01" />
+                          <line x1="5" y1="18" x2="5" y2="18.01" />
+                        </svg>
+                        <small class="text-muted">Include key landmarks and entrances</small>
+                      </div>
+                      <div class="mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24"
+                          height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                          stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                          <line x1="9" y1="6" x2="20" y2="6" />
+                          <line x1="9" y1="12" x2="20" y2="12" />
+                          <line x1="9" y1="18" x2="20" y2="18" />
+                          <line x1="5" y1="6" x2="5" y2="6.01" />
+                          <line x1="5" y1="12" x2="5" y2="12.01" />
+                          <line x1="5" y1="18" x2="5" y2="18.01" />
+                        </svg>
+                        <small class="text-muted">Use the order field to organize multiple maps</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  {% if form.instance.pk %}
+                  <!-- Map Stats for Edit Mode -->
+                  <div class="card mt-3">
+                    <div class="card-body">
+                      <h4 class="card-title mb-3">Map Details</h4>
+                      <div class="mb-2">
+                        <small class="text-muted">Created:</small><br>
+                        <strong>{{ form.instance.created_at|date:"M d, Y" }}</strong>
+                      </div>
+                      <div class="mb-2">
+                        <small class="text-muted">Last Updated:</small><br>
+                        <strong>{{ form.instance.updated_at|date:"M d, Y" }}</strong>
+                      </div>
+                      <div class="mb-2">
+                        <small class="text-muted">Status:</small><br>
+                        <strong>{% if form.instance.is_active %}Active{% else %}Inactive{% endif %}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <a href="{% url 'portal:event_detail' pk=event.pk %}" class="btn btn-white">
+                    Cancel
+                  </a>
+                </div>
+                <div class="col-auto ms-auto">
+                  <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy"
+                      width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                      <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                      <circle cx="12" cy="14" r="2" />
+                      <polyline points="14 4 14 8 8 8 8 4" />
+                    </svg>
+                    {% if form.instance.pk %}Update Map{% else %}Add Map{% endif %}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,89 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'portal:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:event_list' %}">Events</a></li>
+            <li class="breadcrumb-item active">{{ event.title|truncatechars:30 }}</li>
+          </ol>
+        </nav>
+        <h2 class="page-title">Speakers</h2>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <a href="{% url 'portal:speaker_manage' event.pk %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Speaker
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row row-cards">
+      {% for speaker in speakers %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <span class="avatar avatar-lg me-3" style="background-image: url({% if speaker.photo %}{{ speaker.photo.url }}{% else %}https://ui-avatars.com/api/?name={{ speaker.name|urlencode }}&background=random{% endif %})"></span>
+              <div>
+                <div class="font-weight-medium">{{ speaker.name }}</div>
+                <div class="text-muted">{{ speaker.title }}</div>
+                <div class="text-muted small">{{ speaker.company }}</div>
+              </div>
+            </div>
+            <p class="text-muted">{{ speaker.bio|truncatechars:150 }}</p>
+            <div class="d-flex align-items-center mt-3">
+              {% if speaker.linkedin_url %}
+              <a href="{{ speaker.linkedin_url }}" target="_blank" class="me-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                  <line x1="8" y1="11" x2="8" y2="16" />
+                  <line x1="8" y1="8" x2="8" y2="8.01" />
+                  <line x1="12" y1="16" x2="12" y2="11" />
+                  <path d="M16 16v-3a2 2 0 0 0 -4 0" />
+                </svg>
+              </a>
+              {% endif %}
+              {% if speaker.twitter_url %}
+              <a href="{{ speaker.twitter_url }}" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-muted" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M22 4.01c-1 .49 -1.98 .689 -3 .99c-1.121 -1.265 -2.783 -1.335 -4.38 -.737s-2.643 2.06 -2.62 3.737v1c-3.245 .083 -6.135 -1.395 -8 -4c0 0 -4.182 7.433 4 11c-1.872 1.247 -3.739 2.088 -6 2c3.308 1.803 6.913 2.423 10.034 1.517c3.58 -1.04 6.522 -3.723 7.651 -7.742a13.84 13.84 0 0 0 .497 -3.753c0 -.249 1.51 -2.772 1.818 -4.013z" />
+                </svg>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="empty">
+          <p class="empty-title">No speakers yet</p>
+          <p class="empty-subtitle text-muted">Add speakers to your event</p>
+          <div class="empty-action">
+            <a href="{% url 'portal:speaker_manage' event.pk %}" class="btn btn-primary">Add Speaker</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

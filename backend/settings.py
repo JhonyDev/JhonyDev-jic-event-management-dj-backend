@@ -69,7 +69,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'allauth.account.middleware.AccountMiddleware',  # Required for allauth (Django 5.2+)
+    'allauth.account.middleware.AccountMiddleware',  # Required for allauth (Django 5.2+)
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -86,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.static',
+'src.api.context_processors.notifications_context',
                 # allauth specific - removed deprecated context processors
             ],
         },
@@ -167,7 +168,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10
 }
 
-# CORS settings
+# CORS settings - Allow all origins for development
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8081",
     "http://127.0.0.1:8081",

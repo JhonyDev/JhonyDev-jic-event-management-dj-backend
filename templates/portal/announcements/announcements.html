@@ -1,0 +1,211 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block title %}Announcements{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <div class="page-pretitle">
+          Communication Management
+        </div>
+        <h2 class="page-title">
+          Announcements
+        </h2>
+        <div class="text-muted mt-1">
+          Manage announcements for your events and attendees
+        </div>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <a href="{% url 'portal:announcement_create' %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Create Announcement
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page body -->
+<div class="page-body">
+  <div class="container-xl">
+    <!-- Filters and Stats Row -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div class="row align-items-center">
+              <!-- Filters -->
+              <div class="col-12">
+                <form method="GET" class="row g-2 align-items-center">
+                  <div class="col-md-2">
+                    <select name="type" class="form-select" onchange="this.form.submit()">
+                      <option value="">All Types</option>
+                      <option value="general" {% if request.GET.type == "general" %}selected{% endif %}>General</option>
+                      <option value="event_specific" {% if request.GET.type == "event_specific" %}selected{% endif %}>Event Specific</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <select name="priority" class="form-select" onchange="this.form.submit()">
+                      <option value="">All Priorities</option>
+                      <option value="urgent" {% if request.GET.priority == "urgent" %}selected{% endif %}>Urgent</option>
+                      <option value="high" {% if request.GET.priority == "high" %}selected{% endif %}>High</option>
+                      <option value="medium" {% if request.GET.priority == "medium" %}selected{% endif %}>Medium</option>
+                      <option value="low" {% if request.GET.priority == "low" %}selected{% endif %}>Low</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <select name="event" class="form-select" onchange="this.form.submit()">
+                      <option value="">All Events</option>
+                      {% for event in user_events %}
+                      <option value="{{ event.id }}" {% if request.GET.event == event.id|stringformat:"s" %}selected{% endif %}>
+                        {{ event.title|truncatechars:25 }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="input-group">
+                      <input type="text" name="search" class="form-control" placeholder="Search announcements..." value="{{ request.GET.search }}">
+                      <button class="btn btn-primary" type="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="11" cy="11" r="8"/>
+                          <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <a href="{% url 'portal:announcements' %}" class="btn btn-outline-secondary">
+                      Clear
+                    </a>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if announcements %}
+    <div class="row row-deck row-cards">
+      {% for announcement in announcements %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card">
+          <div class="card-header">
+            <div class="row align-items-center">
+              <div class="col">
+                <div class="card-title">{{ announcement.title|truncatechars:40 }}</div>
+              </div>
+              <div class="col-auto">
+                <span class="badge text-white {{ announcement.get_priority_badge_class }}">{{ announcement.get_priority_display }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="text-muted mb-3">{{ announcement.content|truncatewords:20 }}</div>
+
+            <div class="row mb-3">
+              <div class="col-6">
+                <div class="text-muted small">Type</div>
+                <div>
+                  {% if announcement.type == 'general' %}
+                  <span class="badge bg-blue-lt">General</span>
+                  {% else %}
+                  <span class="badge bg-green-lt">Event Specific</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="text-muted small">Recipients</div>
+                <div>{{ announcement.get_recipients_count }} users</div>
+              </div>
+            </div>
+
+            {% if announcement.event %}
+            <div class="mb-3">
+              <div class="text-muted small">Event</div>
+              <div class="small">{{ announcement.event.title|truncatechars:30 }}</div>
+            </div>
+            {% endif %}
+
+            <div class="row">
+              <div class="col-6">
+                <div class="text-muted small">Created</div>
+                <div class="small">{{ announcement.created_at|date:"M j, Y" }}</div>
+              </div>
+              <div class="col-6">
+                <div class="text-muted small">Status</div>
+                <div>
+                  {% if announcement.is_active %}
+                  <span class="badge bg-green text-white">Active</span>
+                  {% else %}
+                  <span class="badge bg-red text-white">Inactive</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="btn-list">
+              <a href="{% url 'portal:announcement_update' announcement.pk %}" class="btn btn-sm btn-outline-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m12 20h9"/>
+                  <path d="m16.5 3.5a2.121 2.121 0 0 1 3 3l-4.5 4.5-7 1 1-7z"/>
+                </svg>
+                Edit
+              </a>
+              <a href="{% url 'portal:announcement_delete' announcement.pk %}" class="btn btn-sm btn-outline-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="4" y1="7" x2="20" y2="7"/>
+                  <line x1="10" y1="11" x2="10" y2="17"/>
+                  <line x1="14" y1="11" x2="14" y2="17"/>
+                  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12"/>
+                  <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>
+                </svg>
+                Delete
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <div class="empty-img">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="128" height="128" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8a3 3 0 0 0 -3 -3h-3a3 3 0 0 0 -3 3v1h9v-1z" />
+          <path d="M6 18h12l-1 2h-10l-1 -2z" />
+          <path d="M12 8v10" />
+          <path d="M8 12h8" />
+        </svg>
+      </div>
+      <p class="empty-title">No announcements yet</p>
+      <p class="empty-subtitle text-muted">
+        Create your first announcement to communicate with your event attendees.
+      </p>
+      <div class="empty-action">
+        <a href="{% url 'portal:announcement_create' %}" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Create your first announcement
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "include/navigation.html" %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <div class="page-pretitle">
+          Sponsor Management
+        </div>
+        <h2 class="page-title">
+          {{ action }} Sponsor
+        </h2>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <a href="{% url 'portal:sponsor_list_global' %}" class="btn btn-outline-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+              stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <line x1="5" y1="12" x2="11" y2="18" />
+              <line x1="5" y1="12" x2="11" y2="6" />
+            </svg>
+            Back to Sponsors
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+        <form method="post" enctype="multipart/form-data" class="card">
+          {% csrf_token %}
+          <div class="card-header">
+            <h3 class="card-title">{{ action }} Sponsor</h3>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-lg-8">
+                <div class="mb-3">
+                  <label class="form-label required">{{ form.title.label }}</label>
+                  {{ form.title }}
+                  {% if form.title.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.title.errors|join:", " }}
+                  </div>
+                  {% endif %}
+                  {% if form.title.help_text %}
+                  <small class="form-hint">{{ form.title.help_text }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label required">{{ form.description.label }}</label>
+                  {{ form.description }}
+                  {% if form.description.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.description.errors|join:", " }}
+                  </div>
+                  {% endif %}
+                  {% if form.description.help_text %}
+                  <small class="form-hint">{{ form.description.help_text }}</small>
+                  {% endif %}
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">{{ form.website.label }}</label>
+                      {{ form.website }}
+                      {% if form.website.errors %}
+                      <div class="invalid-feedback d-block">
+                        {{ form.website.errors|join:", " }}
+                      </div>
+                      {% endif %}
+                      {% if form.website.help_text %}
+                      <small class="form-hint">{{ form.website.help_text }}</small>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">{{ form.email.label }}</label>
+                      {{ form.email }}
+                      {% if form.email.errors %}
+                      <div class="invalid-feedback d-block">
+                        {{ form.email.errors|join:", " }}
+                      </div>
+                      {% endif %}
+                      {% if form.email.help_text %}
+                      <small class="form-hint">{{ form.email.help_text }}</small>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">{{ form.phone.label }}</label>
+                  {{ form.phone }}
+                  {% if form.phone.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.phone.errors|join:", " }}
+                  </div>
+                  {% endif %}
+                  {% if form.phone.help_text %}
+                  <small class="form-hint">{{ form.phone.help_text }}</small>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="col-lg-4">
+                <div class="mb-3">
+                  <label class="form-label">{{ form.logo.label }}</label>
+                  {{ form.logo }}
+                  {% if form.logo.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.logo.errors|join:", " }}
+                  </div>
+                  {% endif %}
+                  {% if form.logo.help_text %}
+                  <small class="form-hint">{{ form.logo.help_text }}</small>
+                  {% endif %}
+                </div>
+
+                {% if sponsor and sponsor.logo %}
+                <div class="mb-3">
+                  <label class="form-label">Current Logo</label>
+                  <div class="text-center">
+                    <img src="{{ sponsor.logo.url }}" alt="{{ sponsor.title }}" class="img-fluid rounded" style="max-height: 200px;">
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="card-footer text-end">
+            <div class="d-flex">
+              <a href="{% url 'portal:sponsor_list_global' %}" class="btn btn-link">Cancel</a>
+              <button type="submit" class="btn btn-primary ms-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M5 12l5 5l10 -10" />
+                </svg>
+                {{ action }} Sponsor
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

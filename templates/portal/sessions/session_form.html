@@ -1,0 +1,218 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<link href="{% static 'tabler/libs/tom-select/dist/css/tom-select.bootstrap5.min.css' %}" rel="stylesheet">
+<style>
+  /* Fix Tom Select dropdown background */
+  .ts-dropdown {
+    background: white !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+  }
+
+  /* Fix Tom Select option styling */
+  .ts-dropdown .option {
+    background: white !important;
+    color: #212529 !important;
+  }
+
+  .ts-dropdown .option:hover,
+  .ts-dropdown .option.active {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+  }
+
+  /* Fix Tom Select remove button styling */
+  .ts-control .item .remove {
+    background: rgba(0, 0, 0, 0.1) !important;
+    color: #6c757d !important;
+    border-radius: 2px !important;
+  }
+
+  .ts-control .item .remove:hover {
+    background: rgba(220, 53, 69, 0.1) !important;
+    color: #dc3545 !important;
+  }
+
+  /* Fix Tom Select control background */
+  .ts-control {
+    background: white !important;
+    border: 1px solid #dee2e6 !important;
+  }
+
+  /* Fix Tom Select item styling */
+  .ts-control .item {
+    background: #e9ecef !important;
+    color: #495057 !important;
+    border: 1px solid #ced4da !important;
+  }
+
+  /* Add divider below each option */
+  .ts-dropdown .option {
+    border-bottom: 1px solid #e9ecef !important;
+    padding: 8px 12px !important;
+  }
+
+  .ts-dropdown .option:last-child {
+    border-bottom: none !important;
+  }
+</style>
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'portal:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:event_list' %}">Events</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:session_list' event.pk %}">Sessions</a></li>
+            <li class="breadcrumb-item active">{% if session %}Edit{% else %}Add{% endif %} Session</li>
+          </ol>
+        </nav>
+        <h2 class="page-title">{% if session %}Edit{% else %}Add{% endif %} Session</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row">
+      <div class="col-lg-8">
+        <form method="post">
+          {% csrf_token %}
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Session Details</h3>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label required">Title</label>
+                <input type="text" class="form-control" name="title" value="{{ session.title|default:'' }}" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label required">Description</label>
+                <textarea class="form-control" name="description" rows="3" required>{{ session.description|default:'' }}</textarea>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label required">Session Type</label>
+                    <select class="form-select" name="session_type" required>
+                      {% for value, label in session_types %}
+                      <option value="{{ value }}" {% if session.session_type == value %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                    <small class="form-hint">
+                      <ul class="mb-0 ps-3">
+                        <li><strong>Keynote:</strong> Main featured presentation</li>
+                        <li><strong>Workshop:</strong> Interactive hands-on session</li>
+                        <li><strong>Panel:</strong> Group discussion with multiple speakers</li>
+                        <li><strong>Networking:</strong> Social interaction time</li>
+                        <li><strong>Break:</strong> Coffee/lunch break</li>
+                        <li><strong>Presentation:</strong> Standard talk or lecture</li>
+                      </ul>
+                    </small>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-control" name="location" value="{{ session.location|default:'' }}" placeholder="e.g., Main Hall, Room A">
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label required">Start Time</label>
+                    <input type="time" class="form-control" name="start_time" value="{{ session.start_time|time:'H:i'|default:'' }}" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label required">End Time</label>
+                    <input type="time" class="form-control" name="end_time" value="{{ session.end_time|time:'H:i'|default:'' }}" required>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Speakers Section -->
+              <div class="mb-3">
+                <label class="form-label">Speakers</label>
+                <select id="speakersSelect" name="speakers" multiple class="form-control">
+                  {% for speaker in speakers %}
+                  <option value="{{ speaker.pk }}"
+                          data-name="{{ speaker.name }}"
+                          data-title="{{ speaker.title|default:'' }}"
+                          data-company="{{ speaker.company|default:'' }}"
+                          data-photo="{% if speaker.photo %}{{ speaker.photo.url }}{% endif %}"
+                          {% if session and speaker in session.speakers.all %}selected{% endif %}>
+                    {{ speaker.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <small class="form-hint">Select speakers who will present in this session</small>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="d-flex">
+                <a href="{% url 'portal:session_list' event.pk %}" class="btn btn-link">Cancel</a>
+                <button type="submit" class="btn btn-primary ms-auto">
+                  {% if session %}Update{% else %}Add{% endif %} Session
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'tabler/libs/tom-select/dist/js/tom-select.popular.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Tom Select for speakers
+  const speakersSelect = document.getElementById('speakersSelect');
+
+  if (speakersSelect) {
+    new TomSelect('#speakersSelect', {
+      maxItems: null,
+      plugins: ['remove_button'],
+      placeholder: 'Select speakers...',
+      render: {
+        option: function(data, escape) {
+          const el = speakersSelect.querySelector(`option[value="${data.value}"]`);
+          if (!el) return '<div>' + escape(data.text) + '</div>';
+
+          const name = el.dataset.name || data.text;
+          const title = el.dataset.title || '';
+          const company = el.dataset.company || '';
+          const photo = el.dataset.photo || '';
+
+          // Create avatar URL - use speaker photo or generate avatar
+          const avatarUrl = photo ? photo : `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+
+          let html = '<div class="d-flex align-items-center mb-3">';
+          html += `<span class="avatar avatar-lg me-3" style="background-image: url(${avatarUrl})"></span>`;
+          html += '<div>';
+          html += '<div class="font-weight-medium">' + escape(name) + '</div>';
+          if (title) html += '<div class="text-muted">' + escape(title) + '</div>';
+          if (company) html += '<div class="text-muted small">' + escape(company) + '</div>';
+          html += '</div>';
+          html += '</div>';
+          return html;
+        },
+        item: function(data, escape) {
+          const el = speakersSelect.querySelector(`option[value="${data.value}"]`);
+          const name = el ? el.dataset.name : data.text;
+          return '<div>' + escape(name) + '</div>';
+        }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

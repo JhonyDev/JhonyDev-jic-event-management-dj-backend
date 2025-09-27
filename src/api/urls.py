@@ -17,4 +17,12 @@ urlpatterns = [
     path('auth/login/', auth_views.login, name='api_login'),
     path('auth/register/', auth_views.register, name='api_register'),
     path('auth/logout/', auth_views.logout, name='api_logout'),
+    path('auth/profile/', auth_views.profile, name='api_profile'),
+    path('auth/change-password/', auth_views.change_password, name='api_change_password'),
+    path('auth/announcements/', auth_views.announcements, name='api_announcements'),
+
+    # App content endpoints
+    path('app-content/<str:content_type>/', auth_views.app_content, name='api_app_content'),
+    path('faqs/', auth_views.faqs, name='api_faqs'),
+    path('contact-info/', auth_views.contact_info, name='api_contact_info'),
 ]

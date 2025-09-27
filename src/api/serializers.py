@@ -1,6 +1,11 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
-from .models import Event, Registration
+from django.contrib.auth import get_user_model
+from .models import (
+    Event, Registration, Announcement, AppContent, FAQ, ContactInfo,
+    Agenda, Session, Speaker
+)
+
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -8,6 +13,23 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name']
         read_only_fields = ['id']
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    profile_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile_image', 'profile_image_url', 'date_joined']
+        read_only_fields = ['id', 'username', 'date_joined']
+
+    def get_profile_image_url(self, obj):
+        if obj.profile_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.profile_image.url)
+            return obj.profile_image.url
+        return None
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -47,3 +69,131 @@ class EventCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = ['title', 'description', 'date', 'location', 'max_attendees', 'image']
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    event_title = serializers.CharField(source='event.title', read_only=True)
+    author_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Announcement
+        fields = [
+            'id', 'title', 'content', 'type', 'event', 'event_title',
+            'priority', 'author', 'author_name', 'is_active',
+            'created_at', 'updated_at', 'publish_date', 'expire_date'
+        ]
+        read_only_fields = ['id', 'author', 'created_at', 'updated_at']
+
+    def get_author_name(self, obj):
+        if obj.author:
+            return f"{obj.author.first_name} {obj.author.last_name}".strip() or obj.author.username
+        return None
+
+
+class AppContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AppContent
+        fields = [
+            'id', 'content_type', 'title', 'content',
+            'version', 'last_updated', 'created_at'
+        ]
+
+
+class FAQSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FAQ
+        fields = [
+            'id', 'question', 'answer', 'category', 'order'
+        ]
+
+
+class ContactInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactInfo
+        fields = [
+            'id', 'contact_type', 'label', 'value', 'order'
+        ]
+
+
+class SpeakerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Speaker
+        fields = [
+            'id', 'name', 'email', 'bio', 'title', 'company',
+            'photo', 'linkedin_url', 'twitter_url'
+        ]
+
+
+class SessionSerializer(serializers.ModelSerializer):
+    speakers = SpeakerSerializer(many=True, read_only=True)
+    start_time_formatted = serializers.SerializerMethodField()
+    end_time_formatted = serializers.SerializerMethodField()
+    duration = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Session
+        fields = [
+            'id', 'title', 'description', 'session_type', 'speakers',
+            'start_time', 'end_time', 'start_time_formatted', 'end_time_formatted',
+            'duration', 'location', 'max_attendees', 'materials_url', 'order'
+        ]
+
+    def get_start_time_formatted(self, obj):
+        """Format start time for mobile app (e.g., '09:00 AM')"""
+        if obj.start_time:
+            return obj.start_time.strftime('%I:%M %p')
+        return None
+
+    def get_end_time_formatted(self, obj):
+        """Format end time for mobile app (e.g., '10:00 AM')"""
+        if obj.end_time:
+            return obj.end_time.strftime('%I:%M %p')
+        return None
+
+    def get_duration(self, obj):
+        """Calculate duration between start and end time"""
+        if obj.start_time and obj.end_time:
+            from datetime import datetime, date
+            start = datetime.combine(date.today(), obj.start_time)
+            end = datetime.combine(date.today(), obj.end_time)
+            duration = end - start
+            total_minutes = int(duration.total_seconds() / 60)
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+
+            if hours > 0:
+                return f"{hours}h {minutes}min" if minutes > 0 else f"{hours}h"
+            else:
+                return f"{minutes}min"
+        return None
+
+
+class AgendaSerializer(serializers.ModelSerializer):
+    sessions = SessionSerializer(many=True, read_only=True)
+    event_title = serializers.CharField(source='event.title', read_only=True)
+    sessions_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Agenda
+        fields = [
+            'id', 'title', 'description', 'date', 'order',
+            'event_title', 'sessions', 'sessions_count', 'day_number'
+        ]
+
+    def get_sessions_count(self, obj):
+        return obj.sessions.count()
+
+
+class AgendaSessionSerializer(serializers.Serializer):
+    """
+    Serializer to format agenda data for mobile app timeline view.
+    Combines agenda sessions into a flat list with proper formatting.
+    """
+    id = serializers.IntegerField()
+    time = serializers.CharField()  # Formatted time like "09:00 AM"
+    duration = serializers.CharField()  # Formatted duration like "30 min"
+    title = serializers.CharField()
+    description = serializers.CharField()
+    location = serializers.CharField()
+    type = serializers.CharField()  # session_type
+    speaker = serializers.CharField(required=False)  # Main speaker name

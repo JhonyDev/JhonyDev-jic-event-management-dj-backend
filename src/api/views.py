@@ -3,10 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from .models import Event, Registration
+from .models import Event, Registration, Agenda, Session, Speaker, VenueMap
 from .serializers import (
     EventSerializer, EventCreateSerializer,
-    RegistrationSerializer, UserSerializer
+    RegistrationSerializer, UserSerializer,
+    AgendaSerializer, SessionSerializer, SpeakerSerializer,
+    AgendaSessionSerializer
 )
 
 
@@ -93,6 +95,199 @@ class EventViewSet(viewsets.ModelViewSet):
         events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:10]
         serializer = self.get_serializer(events, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def registration_status(self, request, pk=None):
+        """Check if the current user is registered for this event"""
+        event = self.get_object()
+        user = request.user
+
+        is_registered = Registration.objects.filter(
+            event=event,
+            user=user,
+            status='confirmed'
+        ).exists()
+
+        return Response({
+            'is_registered': is_registered,
+            'event_id': event.id,
+            'event_title': event.title
+        })
+
+    @action(detail=True, methods=['get'])
+    def agenda(self, request, pk=None):
+        """Get agenda data for an event grouped by agendas/days"""
+        event = self.get_object()
+
+        # Get all agendas for this event with their sessions
+        agendas = Agenda.objects.filter(event=event).prefetch_related(
+            'sessions__speakers'
+        ).order_by('order', 'date')
+
+        # Format agendas with their sessions
+        agenda_data = []
+        for agenda in agendas:
+            # Get sessions for this agenda
+            sessions = agenda.sessions.all().order_by('order', 'start_time')
+
+            session_list = []
+            for session in sessions:
+                # Get all speakers for this session
+                speakers_list = []
+                for speaker in session.speakers.all():
+                    speakers_list.append({
+                        'id': speaker.id,
+                        'name': speaker.name,
+                        'title': speaker.title,
+                        'company': speaker.company
+                    })
+
+                # For backward compatibility, keep the single speaker field
+                speaker_name = None
+                if session.speakers.exists():
+                    speaker_name = session.speakers.first().name
+
+                session_data = {
+                    'id': session.id,
+                    'time': session.start_time.strftime('%I:%M %p') if session.start_time else 'TBD',
+                    'duration': self._calculate_duration(session.start_time, session.end_time),
+                    'title': session.title,
+                    'description': session.description,
+                    'location': session.location or 'TBD',
+                    'type': session.session_type,
+                    'speaker': speaker_name,  # Keep for backward compatibility
+                    'speakers': speakers_list  # New field with all speakers
+                }
+                session_list.append(session_data)
+
+            agenda_info = {
+                'id': agenda.id,
+                'title': agenda.title,
+                'description': agenda.description,
+                'date': agenda.date.strftime('%Y-%m-%d') if agenda.date else None,
+                'day_number': agenda.day_number,
+                'order': agenda.order,
+                'sessions': session_list
+            }
+            agenda_data.append(agenda_info)
+
+        return Response(agenda_data)
+
+    @action(detail=True, methods=['get'])
+    def sessions(self, request, pk=None):
+        """Get all sessions for an event"""
+        event = self.get_object()
+        sessions = Session.objects.filter(agenda__event=event).prefetch_related('speakers').order_by('agenda__order', 'order', 'start_time')
+        serializer = SessionSerializer(sessions, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def speakers(self, request, pk=None):
+        """Get all speakers for an event"""
+        event = self.get_object()
+        speakers = Speaker.objects.filter(sessions__agenda__event=event).distinct().order_by('name')
+
+        # Format speakers with their sessions and expertise
+        speakers_data = []
+        for speaker in speakers:
+            speaker_sessions = Session.objects.filter(
+                agenda__event=event,
+                speakers=speaker
+            ).values_list('title', flat=True)
+
+            speaker_data = {
+                'id': speaker.id,
+                'name': speaker.name,
+                'title': speaker.title,
+                'company': speaker.company,
+                'bio': speaker.bio,
+                'email': speaker.email,
+                'sessions': list(speaker_sessions),
+                'expertise': self._get_speaker_expertise(speaker),
+                'avatar': self._get_speaker_initials(speaker.name)
+            }
+            speakers_data.append(speaker_data)
+
+        return Response(speakers_data)
+
+    @action(detail=True, methods=['get'])
+    def location(self, request, pk=None):
+        """Get location details for an event"""
+        event = self.get_object()
+
+        # Get venue maps for this event
+        venue_maps = VenueMap.objects.filter(event=event, is_active=True).order_by('order', 'title')
+
+        venue_maps_data = []
+        for venue_map in venue_maps:
+            map_data = {
+                'id': venue_map.id,
+                'title': venue_map.title,
+                'description': venue_map.description,
+                'image': request.build_absolute_uri(venue_map.image.url) if venue_map.image else None,
+                'order': venue_map.order
+            }
+            venue_maps_data.append(map_data)
+
+        # Return location data structure that matches mobile app expectations
+        location_data = {
+            'venue': event.location,
+            'address': event.venue_details or event.location,
+            'coordinates': {
+                'latitude': None,  # Will be resolved by Google Maps search
+                'longitude': None  # Will be resolved by Google Maps search
+            },
+            'venue_maps': venue_maps_data  # Add venue maps
+        }
+
+        return Response(location_data)
+
+    def _calculate_duration(self, start_time, end_time):
+        """Helper method to calculate session duration"""
+        if start_time and end_time:
+            from datetime import datetime, date
+            start = datetime.combine(date.today(), start_time)
+            end = datetime.combine(date.today(), end_time)
+            duration = end - start
+            total_minutes = int(duration.total_seconds() / 60)
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+
+            if hours > 0:
+                return f"{hours}h {minutes}min" if minutes > 0 else f"{hours}h"
+            else:
+                return f"{minutes}min"
+        return '30 min'  # Default duration
+
+    def _get_speaker_expertise(self, speaker):
+        """Helper method to get speaker expertise from their sessions"""
+        # You can enhance this by adding an expertise field to Speaker model
+        session_types = Session.objects.filter(speakers=speaker).values_list('session_type', flat=True).distinct()
+
+        expertise_map = {
+            'keynote': 'Leadership',
+            'workshop': 'Hands-on Training',
+            'panel': 'Industry Expert',
+            'presentation': 'Technical Specialist'
+        }
+
+        expertise = [expertise_map.get(session_type, 'Expert') for session_type in session_types]
+        if not expertise:
+            expertise = ['Industry Expert']
+
+        return expertise
+
+    def _get_speaker_initials(self, name):
+        """Helper method to get speaker initials for avatar"""
+        if not name:
+            return 'SP'
+
+        parts = name.split()
+        if len(parts) >= 2:
+            return f"{parts[0][0]}{parts[1][0]}".upper()
+        elif len(parts) == 1:
+            return f"{parts[0][:2]}".upper()
+        return 'SP'
 
 
 class RegistrationViewSet(viewsets.ReadOnlyModelViewSet):

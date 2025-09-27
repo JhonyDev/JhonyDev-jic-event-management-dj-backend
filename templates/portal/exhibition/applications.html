@@ -1,0 +1,151 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'portal:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:event_list' %}">Events</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:exhibition_areas' event.pk %}">Exhibition Areas</a></li>
+            <li class="breadcrumb-item active">Applications</li>
+          </ol>
+        </nav>
+        <h2 class="page-title">Exhibitor Applications</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <!-- Stats -->
+    <div class="row row-cards mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="subheader">Pending Applications</div>
+            </div>
+            <div class="h1 mb-3">{{ pending.count }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="subheader">Approved Exhibitors</div>
+            </div>
+            <div class="h1 mb-3">{{ approved.count }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending Applications -->
+    {% if pending %}
+    <div class="card mb-4">
+      <div class="card-header">
+        <h3 class="card-title">Pending Applications</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Contact</th>
+              <th>Booth Request</th>
+              <th>Applied</th>
+              <th class="w-1">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exhibitor in pending %}
+            <tr>
+              <td>
+                <div>{{ exhibitor.company_name }}</div>
+                {% if exhibitor.website %}
+                <div class="text-muted">{{ exhibitor.website }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <div>{{ exhibitor.contact_person }}</div>
+                <div class="text-muted">{{ exhibitor.email }}</div>
+                <div class="text-muted">{{ exhibitor.phone }}</div>
+              </td>
+              <td>
+                <div>Booth #{{ exhibitor.booth_number }}</div>
+                <div class="text-muted">Size: {{ exhibitor.booth_size }}</div>
+              </td>
+              <td>{{ exhibitor.created_at|date:"M d, Y" }}</td>
+              <td>
+                <form method="post" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="exhibitor_id" value="{{ exhibitor.id }}">
+                  <button type="submit" name="action" value="approve" class="btn btn-sm btn-success">Approve</button>
+                  <button type="submit" name="action" value="reject" class="btn btn-sm btn-danger">Reject</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Approved Exhibitors -->
+    {% if approved %}
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Approved Exhibitors</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Contact</th>
+              <th>Booth</th>
+              <th>Special Requirements</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exhibitor in approved %}
+            <tr>
+              <td>
+                <div>{{ exhibitor.company_name }}</div>
+                {% if exhibitor.website %}
+                <div class="text-muted">{{ exhibitor.website }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <div>{{ exhibitor.contact_person }}</div>
+                <div class="text-muted">{{ exhibitor.email }}</div>
+              </td>
+              <td>
+                <div>Booth #{{ exhibitor.booth_number }}</div>
+                <div class="text-muted">{{ exhibitor.booth_size }}</div>
+              </td>
+              <td>{{ exhibitor.special_requirements|default:"-" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not pending and not approved %}
+    <div class="empty">
+      <p class="empty-title">No applications yet</p>
+      <p class="empty-subtitle text-muted">Exhibitor applications will appear here</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'portal:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:event_list' %}">Events</a></li>
+            <li class="breadcrumb-item active">{{ event.title|truncatechars:30 }}</li>
+          </ol>
+        </nav>
+        <h2 class="page-title">Exhibition Areas</h2>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <a href="{% url 'portal:exhibitor_applications' event.pk %}" class="btn">
+            View Applications
+          </a>
+          <a href="{% url 'portal:exhibition_area_create' event.pk %}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Create Exhibition Area
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <!-- Exhibition Areas -->
+    <div class="row row-cards mb-4">
+      {% for area in areas %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">{{ area.name }}</h3>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <div class="text-2xl font-weight-bold">₨{{ area.booth_price }}</div>
+              <div class="text-muted">per booth</div>
+            </div>
+            <p class="text-muted">{{ area.description|default:"No description"|truncatechars:100 }}</p>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">Total Booths:</span>
+              <strong>{{ area.total_booths }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="empty">
+          <p class="empty-title">No exhibition areas yet</p>
+          <p class="empty-subtitle text-muted">Create exhibition areas for your event</p>
+          <div class="empty-action">
+            <a href="{% url 'portal:exhibition_area_create' event.pk %}" class="btn btn-primary">Create Exhibition Area</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Exhibitors -->
+    {% if exhibitors %}
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Exhibitors</h3>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Contact</th>
+              <th>Booth</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exhibitor in exhibitors %}
+            <tr>
+              <td>
+                <div>{{ exhibitor.company_name }}</div>
+                {% if exhibitor.website %}
+                <div class="text-muted">{{ exhibitor.website }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <div>{{ exhibitor.contact_person }}</div>
+                <div class="text-muted">{{ exhibitor.email }}</div>
+              </td>
+              <td>
+                <div>Booth #{{ exhibitor.booth_number }}</div>
+                <div class="text-muted">{{ exhibitor.booth_size }}</div>
+              </td>
+              <td>
+                {% if exhibitor.approved %}
+                  <span class="badge bg-success-lt">Approved</span>
+                {% else %}
+                  <span class="badge bg-warning-lt">Pending</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,218 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page">
+  <!-- Page header -->
+  <div class="page-header d-print-none">
+    <div class="container-xl">
+      <div class="row g-2 align-items-center">
+        <div class="col">
+          <!-- Breadcrumb -->
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="{% url 'portal:dashboard' %}">Dashboard</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'portal:event_list' %}">Events</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'portal:event_detail' event.pk %}">{{ event.title }}</a></li>
+              <li class="breadcrumb-item"><a href="{% url 'portal:agenda_list' event.pk %}">Agendas</a></li>
+              <li class="breadcrumb-item active">
+                {% if agenda %}Edit Agenda{% else %}Create Agenda{% endif %}
+              </li>
+            </ol>
+          </nav>
+          <h2 class="page-title">
+            {% if agenda %}Edit Agenda{% else %}Create New Agenda{% endif %}
+          </h2>
+          <div class="page-subtitle">
+            For <strong>{{ event.title }}</strong>
+          </div>
+        </div>
+        <!-- Page title actions -->
+        <div class="col-auto ms-auto d-print-none">
+          <div class="btn-list">
+            <a href="{% url 'portal:agenda_list' event.pk %}" class="btn btn-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <line x1="5" y1="12" x2="11" y2="18" />
+                <line x1="5" y1="12" x2="11" y2="6" />
+              </svg>
+              Back to Agendas
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page body -->
+  <div class="page-body">
+    <div class="container-xl">
+      <div class="row row-cards">
+        <div class="col-lg-8">
+          <form method="post" class="card">
+            {% csrf_token %}
+
+            <div class="card-header">
+              <h3 class="card-title">Agenda Details</h3>
+            </div>
+
+            <div class="card-body">
+
+              <!-- Basic Information -->
+              <h5 class="mb-3">Basic Information</h5>
+
+              <!-- Title Field -->
+              <div class="mb-3">
+                <label class="form-label required">{{ form.title.label }}</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.title.errors %}{{ error }}{% endfor %}
+                  </div>
+                {% endif %}
+                <small class="form-hint">
+                  Examples: "Day 1 - Workshops", "Day 2 - Keynotes", "Opening Ceremony"
+                </small>
+              </div>
+
+              <!-- Description Field -->
+              <div class="mb-3">
+                <label class="form-label">{{ form.description.label }}</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.description.errors %}{{ error }}{% endfor %}
+                  </div>
+                {% endif %}
+                <small class="form-hint">
+                  Optional description of what this agenda covers
+                </small>
+              </div>
+
+              <h5 class="mb-3 mt-4">Schedule & Organization</h5>
+
+              <!-- Day Choice Field -->
+              <div class="mb-3">
+                <label class="form-label required">{{ form.day_choice.label }}</label>
+                {{ form.day_choice }}
+                {% if form.day_choice.errors %}
+                  <div class="invalid-feedback d-block">
+                    {% for error in form.day_choice.errors %}{{ error }}{% endfor %}
+                  </div>
+                {% endif %}
+                <small class="form-hint">
+                  {{ form.day_choice.help_text }}
+                </small>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <div class="row align-items-center">
+                <div class="col-auto">
+                  <a href="{% url 'portal:agenda_list' event.pk %}" class="btn btn-white">
+                    Cancel
+                  </a>
+                </div>
+                <div class="col-auto ms-auto">
+                  <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                      <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                      <circle cx="12" cy="14" r="2" />
+                      <polyline points="14 4 14 8 8 8 8 4" />
+                    </svg>
+                    {% if agenda %}Save Changes{% else %}Create Agenda{% endif %}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="col-lg-4">
+          <!-- Tips Card -->
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <div class="me-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-blue" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15 15" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="card-title mb-0">Agenda Tips</h4>
+                </div>
+              </div>
+              <div class="mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="9" y1="6" x2="20" y2="6" />
+                  <line x1="9" y1="12" x2="20" y2="12" />
+                  <line x1="9" y1="18" x2="20" y2="18" />
+                  <line x1="5" y1="6" x2="5" y2="6.01" />
+                  <line x1="5" y1="12" x2="5" y2="12.01" />
+                  <line x1="5" y1="18" x2="5" y2="18.01" />
+                </svg>
+                <small class="text-muted">Organize by day, theme, or activity type</small>
+              </div>
+              <div class="mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="9" y1="6" x2="20" y2="6" />
+                  <line x1="9" y1="12" x2="20" y2="12" />
+                  <line x1="9" y1="18" x2="20" y2="18" />
+                  <line x1="5" y1="6" x2="5" y2="6.01" />
+                  <line x1="5" y1="12" x2="5" y2="12.01" />
+                  <line x1="5" y1="18" x2="5" y2="18.01" />
+                </svg>
+                <small class="text-muted">Use clear, descriptive titles</small>
+              </div>
+              <div class="mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="9" y1="6" x2="20" y2="6" />
+                  <line x1="9" y1="12" x2="20" y2="12" />
+                  <line x1="9" y1="18" x2="20" y2="18" />
+                  <line x1="5" y1="6" x2="5" y2="6.01" />
+                  <line x1="5" y1="12" x2="5" y2="12.01" />
+                  <line x1="5" y1="18" x2="5" y2="18.01" />
+                </svg>
+                <small class="text-muted">Order determines display sequence</small>
+              </div>
+            </div>
+          </div>
+
+          {% if agenda %}
+          <!-- Agenda Stats for Edit Mode -->
+          <div class="card mt-3">
+            <div class="card-body">
+              <h4 class="card-title mb-3">Agenda Overview</h4>
+              <div class="mb-2">
+                <small class="text-muted">Sessions:</small><br>
+                <strong>{{ agenda.sessions.count }}</strong>
+              </div>
+              <div class="mb-2">
+                <small class="text-muted">Total Speakers:</small><br>
+                <strong>
+                  {% with agenda.sessions.all as sessions %}
+                    {% for session in sessions %}
+                      {{ session.speakers.count|add:0 }}{% if not forloop.last %}+{% endif %}
+                    {% empty %}0{% endfor %}
+                  {% endwith %}
+                </strong>
+              </div>
+              <div class="mb-2">
+                <small class="text-muted">Created:</small><br>
+                <strong>{{ agenda.created_at|date:"M d, Y" }}</strong>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

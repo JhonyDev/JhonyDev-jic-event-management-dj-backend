@@ -50,104 +50,139 @@
             <div class="card-body">
               <div class="row">
                 <div class="col-lg-8">
+                  <!-- Basic Information -->
+                  <h4 class="mb-3">Basic Information</h4>
+
                   <!-- Title Field -->
                   <div class="mb-3">
-                    <label class="form-label required" for="id_title">Event Title</label>
-                    <div class="input-icon">
-                      <span class="input-icon-addon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
-                          stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
-                          stroke-linejoin="round">
-                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                          <line x1="3" y1="21" x2="21" y2="21" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                          <polyline points="5 6 12 3 19 6" />
-                          <line x1="4" y1="10" x2="4" y2="21" />
-                          <line x1="20" y1="10" x2="20" y2="21" />
-                          <line x1="8" y1="14" x2="8" y2="17" />
-                          <line x1="12" y1="14" x2="12" y2="17" />
-                          <line x1="16" y1="14" x2="16" y2="17" />
-                        </svg>
-                      </span>
-                      <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}"
-                        id="id_title" name="title" placeholder="Enter event title"
-                        value="{{ form.title.value|default:'' }}" maxlength="200" required>
-                    </div>
+                    <label class="form-label required">{{ form.title.label }}</label>
+                    {{ form.title }}
                     {% if form.title.errors %}
-                    <div class="invalid-feedback">
-                      {% for error in form.title.errors %}{{ error }}{% endfor %}
-                    </div>
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.title.errors %}{{ error }}{% endfor %}
+                      </div>
                     {% endif %}
                   </div>
 
                   <!-- Description Field -->
                   <div class="mb-3">
-                    <label class="form-label required" for="id_description">Description</label>
-                    <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}"
-                      id="id_description" name="description" rows="6" placeholder="Describe your event in detail..."
-                      required>{{ form.description.value|default:'' }}</textarea>
+                    <label class="form-label required">{{ form.description.label }}</label>
+                    {{ form.description }}
                     {% if form.description.errors %}
-                    <div class="invalid-feedback">
-                      {% for error in form.description.errors %}{{ error }}{% endfor %}
-                    </div>
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.description.errors %}{{ error }}{% endfor %}
+                      </div>
                     {% endif %}
                     <small class="form-hint">
                       Provide a detailed description of your event, including what attendees can expect.
                     </small>
                   </div>
 
-                  <!-- Date and Time Field -->
-                  <div class="mb-3">
-                    <label class="form-label required" for="id_date">Date and Time</label>
-                    <div class="input-icon">
-                      <span class="input-icon-addon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
-                          stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
-                          stroke-linejoin="round">
-                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                          <rect x="4" y="5" width="16" height="16" rx="2" />
-                          <line x1="16" y1="3" x2="16" y2="7" />
-                          <line x1="8" y1="3" x2="8" y2="7" />
-                          <line x1="4" y1="11" x2="20" y2="11" />
-                          <line x1="4" y1="15" x2="10" y2="15" />
-                          <line x1="12" y1="15" x2="12" y2="15.01" />
-                          <line x1="14" y1="15" x2="20" y2="15" />
-                        </svg>
-                      </span>
-                      <input type="datetime-local" class="form-control {% if form.date.errors %}is-invalid{% endif %}"
-                        id="id_date" name="date" value="{{ form.date.value|date:'Y-m-d\TH:i'|default:'' }}" required>
+                  <h4 class="mb-3 mt-4">Date & Time</h4>
+
+                  <div class="row">
+                    <!-- Start Date and Time Field -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label required">{{ form.date.label }}</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                          <div class="invalid-feedback d-block">
+                            {% for error in form.date.errors %}{{ error }}{% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
                     </div>
-                    {% if form.date.errors %}
-                    <div class="invalid-feedback">
-                      {% for error in form.date.errors %}{{ error }}{% endfor %}
+
+                    <!-- End Date and Time Field -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">{{ form.end_date.label }}</label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}
+                          <div class="invalid-feedback d-block">
+                            {% for error in form.end_date.errors %}{{ error }}{% endfor %}
+                          </div>
+                        {% endif %}
+                        <small class="form-hint">Optional - leave blank for single-day events</small>
+                      </div>
                     </div>
-                    {% endif %}
                   </div>
+
+                  <h4 class="mb-3 mt-4">Location & Venue</h4>
 
                   <!-- Location Field -->
                   <div class="mb-3">
-                    <label class="form-label required" for="id_location">Location</label>
-                    <div class="input-icon">
-                      <span class="input-icon-addon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
-                          stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
-                          stroke-linejoin="round">
-                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                          <circle cx="12" cy="11" r="3" />
-                          <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
-                        </svg>
-                      </span>
-                      <input type="text" class="form-control {% if form.location.errors %}is-invalid{% endif %}"
-                        id="id_location" name="location" placeholder="Enter venue or online meeting link"
-                        value="{{ form.location.value|default:'' }}" maxlength="200" required>
-                    </div>
+                    <label class="form-label required">{{ form.location.label }}</label>
+                    {{ form.location }}
                     {% if form.location.errors %}
-                    <div class="invalid-feedback">
-                      {% for error in form.location.errors %}{{ error }}{% endfor %}
-                    </div>
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.location.errors %}{{ error }}{% endfor %}
+                      </div>
                     {% endif %}
                     <small class="form-hint">
                       Physical address or virtual meeting URL
+                    </small>
+                  </div>
+
+                  <!-- Venue Details Field -->
+                  <div class="mb-3">
+                    <label class="form-label">{{ form.venue_details.label }}</label>
+                    {{ form.venue_details }}
+                    {% if form.venue_details.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.venue_details.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <small class="form-hint">
+                      Additional venue information (parking, accessibility, directions, etc.)
+                    </small>
+                  </div>
+
+                  <h4 class="mb-3 mt-4">Event Settings</h4>
+
+                  <div class="row">
+                    <!-- Max Attendees Field -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label required">{{ form.max_attendees.label }}</label>
+                        {{ form.max_attendees }}
+                        {% if form.max_attendees.errors %}
+                          <div class="invalid-feedback d-block">
+                            {% for error in form.max_attendees.errors %}{{ error }}{% endfor %}
+                          </div>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <!-- Status Field -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">{{ form.status.label }}</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                          <div class="invalid-feedback d-block">
+                            {% for error in form.status.errors %}{{ error }}{% endfor %}
+                          </div>
+                        {% endif %}
+                        <small class="form-hint">
+                          Draft events are not visible to attendees
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Event Image Field -->
+                  <div class="mb-3">
+                    <label class="form-label">{{ form.image.label }}</label>
+                    {{ form.image }}
+                    {% if form.image.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.image.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <small class="form-hint">
+                      Upload an image that represents your event (recommended: 1200x630px)
                     </small>
                   </div>
                 </div>

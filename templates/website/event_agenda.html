@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ event.title }} - Agenda{% endblock %}
+
+{% block page %}
+<div class="page">
+  {% block content %}
+<div class="page-wrapper">
+  <!-- Hero Section -->
+  <div class="container-xl">
+    <div class="page-header d-print-none">
+      <div class="container-xl">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'website:event_detail' event.pk %}">{{ event.title }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Agenda</li>
+              </ol>
+            </nav>
+            <h2 class="page-title">Event Agenda</h2>
+          </div>
+          <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+              {% if event.status == 'published' %}
+              <a href="{% url 'self_register' event.pk %}" class="btn btn-primary">
+                Register Now
+              </a>
+              {% endif %}
+              <a href="{% url 'website:event_detail' event.pk %}" class="btn btn-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <line x1="5" y1="12" x2="11" y2="18" />
+                  <line x1="5" y1="12" x2="11" y2="6" />
+                </svg>
+                Back to Event
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="page-body">
+    <div class="container-xl">
+      {% if agendas %}
+      <div class="row row-deck row-cards">
+        {% for agenda in agendas %}
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">{{ agenda.name }}</h3>
+              <div class="card-actions">
+                <span class="badge bg-blue">{{ agenda.sessions.count }} Sessions</span>
+              </div>
+            </div>
+            <div class="card-body">
+              {% if agenda.description %}
+              <p class="text-muted mb-3">{{ agenda.description }}</p>
+              {% endif %}
+
+              {% if agenda.sessions.all %}
+              <div class="list-group list-group-flush">
+                {% for session in agenda.sessions.all %}
+                <div class="list-group-item">
+                  <div class="row align-items-center">
+                    <div class="col-auto">
+                      <span class="badge bg-primary-lt">{{ session.start_time|time:"g:i A" }}</span>
+                    </div>
+                    <div class="col">
+                      <div class="mb-1">
+                        <strong>{{ session.title }}</strong>
+                      </div>
+                      {% if session.description %}
+                      <div class="text-muted small mb-1">{{ session.description|truncatewords:20 }}</div>
+                      {% endif %}
+                      <div class="row">
+                        {% if session.location %}
+                        <div class="col-auto">
+                          <div class="text-muted small">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="12" height="12"
+                              viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                              stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="11" r="3" />
+                              <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
+                            </svg>
+                            {{ session.location }}
+                          </div>
+                        </div>
+                        {% endif %}
+                        {% if session.speakers.exists %}
+                        <div class="col-auto">
+                          <div class="text-muted small">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="12" height="12"
+                              viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                              stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="7" r="4" />
+                              <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                            </svg>
+                            {% for speaker in session.speakers.all %}
+                              {{ speaker.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                          </div>
+                        </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="col-auto">
+                      <span class="text-muted">{{ session.duration }} min</span>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <div class="text-center text-muted py-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg mb-2" width="48" height="48" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+                  <rect x="9" y="3" width="6" height="4" rx="2"/>
+                </svg>
+                <div>No sessions scheduled for this agenda yet</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="row">
+        <div class="col-12">
+          <div class="empty">
+            <div class="empty-img">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="128" height="128" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="2"/>
+                <line x1="9" y1="12" x2="9.01" y2="12"/>
+                <line x1="13" y1="12" x2="15" y2="12"/>
+                <line x1="9" y1="16" x2="9.01" y2="16"/>
+                <line x1="13" y1="16" x2="15" y2="16"/>
+              </svg>
+            </div>
+            <p class="empty-title">No agenda available</p>
+            <p class="empty-subtitle text-muted">
+              The event agenda is not available yet. Please check back later for updates.
+            </p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+</div>
+{% endblock page %}

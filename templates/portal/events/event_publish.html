@@ -1,0 +1,117 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'portal:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:event_list' %}">Events</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:event_detail' event.pk %}">{{ event.title|truncatechars:30 }}</a></li>
+            <li class="breadcrumb-item active">Publish</li>
+          </ol>
+        </nav>
+        <h2 class="page-title">Publish Event</h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Event Publishing Checklist</h3>
+          </div>
+          <div class="card-body">
+            <h4>{{ event.title }}</h4>
+            <p class="text-muted">{{ event.description|truncatechars:200 }}</p>
+
+            {% if ready_to_publish %}
+            <div class="alert alert-success">
+              <div class="d-flex">
+                <div>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M5 12l5 5l10 -10" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="alert-title">Ready to Publish!</h4>
+                  <div class="text-muted">Your event is ready to be published and made visible to attendees.</div>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+              <div class="d-flex">
+                <div>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 9v2m0 4v.01" />
+                    <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="alert-title">Not Ready to Publish</h4>
+                  <div class="text-muted">Please complete the following items before publishing:</div>
+                  <ul class="mt-2">
+                    {% for item in missing_items %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="divide-y mt-4">
+              <div class="row">
+                <div class="col">
+                  <div class="text-truncate">
+                    <strong>Event Sessions</strong>
+                    <div class="text-muted">Make sure you have created at least one session or agenda item</div>
+                  </div>
+                </div>
+                <div class="col-auto align-self-center">
+                  {% if has_sessions %}
+                    <span class="badge bg-success text-white">Complete</span>
+                  {% else %}
+                    <span class="badge bg-warning text-white">Incomplete</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="d-flex">
+              <a href="{% url 'portal:event_detail' event.pk %}" class="btn btn-link">Cancel</a>
+              {% if ready_to_publish %}
+              <form method="post" class="ms-auto">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 2l3.09 6.26l6.91 1l-5 4.87l1.18 6.88l-6.18 -3.25l-6.18 3.25l1.18 -6.88l-5 -4.87l6.91 -1l3.09 -6.26z" />
+                  </svg>
+                  Publish Event
+                </button>
+              </form>
+              {% else %}
+              <button type="button" class="btn btn-secondary ms-auto" disabled>
+                Complete Requirements to Publish
+              </button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

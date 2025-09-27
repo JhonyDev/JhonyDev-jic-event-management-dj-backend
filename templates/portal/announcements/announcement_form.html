@@ -1,0 +1,208 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block title %}{% if announcement %}Edit Announcement{% else %}Create Announcement{% endif %}{% endblock %}
+
+{% block content %}
+<!-- Page header -->
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'portal:announcements' %}">Announcements</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% if announcement %}Edit{% else %}Create{% endif %}
+            </li>
+          </ol>
+        </nav>
+        <h2 class="page-title">
+          {% if announcement %}Edit Announcement{% else %}Create New Announcement{% endif %}
+        </h2>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <a href="{% url 'portal:announcements' %}" class="btn btn-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+              stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <line x1="5" y1="12" x2="11" y2="18" />
+              <line x1="5" y1="12" x2="11" y2="6" />
+            </svg>
+            Back to List
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page body -->
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row row-deck row-cards">
+      <div class="col-lg-8 col-12">
+        <form method="post" style="width: 100%">
+          {% csrf_token %}
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Announcement Details</h3>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label required">Title</label>
+                <input type="text" name="title" class="form-control"
+                  value="{% if announcement %}{{ announcement.title }}{% endif %}" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label required">Content</label>
+                <textarea name="content" class="form-control" rows="6"
+                  required>{% if announcement %}{{ announcement.content }}{% endif %}</textarea>
+                <div class="form-hint">The main content of your announcement that attendees will see.</div>
+              </div>
+
+              <div class="row">
+                <div class="col-sm-6">
+                  <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <select name="type" class="form-select" id="typeSelect">
+                      <option value="general" {%if not announcement or announcement.type == 'general'%} selected
+                        {%endif%}>General</option>
+                      <option value="event_specific" {%if announcement and announcement.type == 'event_specific'%}
+                        selected {%endif%}>Event Specific</option>
+                    </select>
+                    <div class="form-hint">General announcements are visible to all your event attendees.</div>
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="mb-3">
+                    <label class="form-label">Priority</label>
+                    <select name="priority" class="form-select">
+                      <option value="low" {%if announcement and announcement.priority == 'low'%} selected {%endif%}>Low
+                      </option>
+                      <option value="medium" {%if not announcement or announcement.priority == 'medium'%} selected
+                        {%endif%}>Medium</option>
+                      <option value="high" {%if announcement and announcement.priority == 'high'%} selected {%endif%}>
+                        High</option>
+                      <option value="urgent" {%if announcement and announcement.priority == 'urgent'%} selected
+                        {%endif%}>Urgent</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3" id="eventSelect"
+                style="{% if not announcement or announcement.type == 'general' %}display: none;{% endif %}">
+                <label class="form-label">Select Event</label>
+                <select name="event" class="form-select">
+                  <option value="">Choose an event...</option>
+                  {% for event in user_events %}
+                  <option value="{{ event.id }}" {%if announcement and announcement.event and announcement.event.id == event.id%} selected {%endif%}>
+                    {{ event.title }}
+                  </option>
+                  {% endfor %}
+                </select>
+                <div class="form-hint">Required when announcement type is "Event Specific".</div>
+              </div>
+
+              <div class="row">
+                <div class="col-sm-6">
+                  <div class="mb-3">
+                    <label class="form-label">Publish Date</label>
+                    <input type="datetime-local" name="publish_date" class="form-control"
+                      value="{% if announcement and announcement.publish_date %}{{ announcement.publish_date|date:'Y-m-d\TH:i' }}{% endif %}">
+                    <div class="form-hint">Leave empty to publish immediately.</div>
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="mb-3">
+                    <label class="form-label">Expire Date</label>
+                    <input type="datetime-local" name="expire_date" class="form-control"
+                      value="{% if announcement and announcement.expire_date %}{{ announcement.expire_date|date:'Y-m-d\TH:i' }}{% endif %}">
+                    <div class="form-hint">Leave empty for no expiration.</div>
+                  </div>
+                </div>
+              </div>
+
+              {% if announcement %}
+              <div class="mb-3">
+                <label class="form-check">
+                  <input type="checkbox" name="is_active" class="form-check-input" {%if announcement.is_active%} checked
+                    {%endif%}>
+                  <span class="form-check-label">Active</span>
+                </label>
+                <div class="form-hint">Inactive announcements are not visible to attendees.</div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="card-footer text-end">
+              <div class="d-flex">
+                <a href="{% url 'portal:announcements' %}" class="btn btn-link">Cancel</a>
+                <button type="submit" class="btn btn-primary ms-auto">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                    stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 19l7-7 3 3-11 11-3-3z" />
+                    <path d="m18 13 3 3-11 11-3-3 11-11" />
+                    <path d="m8 21 3-3-3-3" />
+                  </svg>
+                  {% if announcement %}Update{% else %}Create{% endif %} Announcement
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-lg-4 col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Preview</h3>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info d-flex flex-column">
+              <h4 class="alert-title">How announcements work</h4>
+              <div class="text-muted">
+                <ul class="mb-0">
+                  <li><strong>General announcements</strong> are visible to all attendees who have registered for any of
+                    your events.</li>
+                  <li><strong>Event-specific announcements</strong> are only visible to attendees registered for the
+                    selected event.</li>
+                  <li>You can schedule announcements to be published at a future date.</li>
+                  <li>Set expiration dates to automatically hide old announcements.</li>
+                </ul>
+              </div>
+            </div>
+
+            {% if announcement %}
+            <div class="mb-3">
+              <label class="form-label">Recipients</label>
+              <div class="h3 text-primary">{{ announcement.get_recipients_count }}</div>
+              <div class="text-muted">Users will see this announcement</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const typeSelect = document.getElementById('typeSelect');
+    const eventSelect = document.getElementById('eventSelect');
+
+    function toggleEventSelect() {
+      if (typeSelect.value === 'event_specific') {
+        eventSelect.style.display = 'block';
+      } else {
+        eventSelect.style.display = 'none';
+      }
+    }
+
+    typeSelect.addEventListener('change', toggleEventSelect);
+  });
+</script>
+
+{% endblock %}

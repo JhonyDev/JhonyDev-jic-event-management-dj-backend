@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ event.title }} - Speakers{% endblock %}
+
+{% block page %}
+<div class="page">
+  {% block content %}
+<div class="page-wrapper">
+  <!-- Hero Section -->
+  <div class="container-xl">
+    <div class="page-header d-print-none">
+      <div class="container-xl">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'website:event_detail' event.pk %}">{{ event.title }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Speakers</li>
+              </ol>
+            </nav>
+            <h2 class="page-title">Featured Speakers</h2>
+          </div>
+          <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+              {% if event.status == 'published' %}
+              <a href="{% url 'self_register' event.pk %}" class="btn btn-primary">
+                Register Now
+              </a>
+              {% endif %}
+              <a href="{% url 'website:event_detail' event.pk %}" class="btn btn-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                  stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <line x1="5" y1="12" x2="11" y2="18" />
+                  <line x1="5" y1="12" x2="11" y2="6" />
+                </svg>
+                Back to Event
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="page-body">
+    <div class="container-xl">
+      {% if speakers %}
+      <div class="row row-cards">
+        {% for speaker in speakers %}
+        <div class="col-md-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="text-center mb-3">
+                <span class="avatar avatar-xl mb-3"
+                  style="background-image: url('https://ui-avatars.com/api/?name={{ speaker.name|urlencode }}&size=128')"></span>
+                <h3 class="card-title mb-1">{{ speaker.name }}</h3>
+                {% if speaker.title %}
+                <div class="text-primary mb-1">{{ speaker.title }}</div>
+                {% endif %}
+                {% if speaker.company %}
+                <div class="text-muted">{{ speaker.company }}</div>
+                {% endif %}
+              </div>
+
+              {% if speaker.bio %}
+              <div class="mb-3">
+                <h4 class="card-title">Bio</h4>
+                <div class="text-muted small">{{ speaker.bio|linebreaks|truncatewords:30 }}</div>
+              </div>
+              {% endif %}
+
+              {% if speaker.expertise %}
+              <div class="mb-3">
+                <h4 class="card-title">Expertise</h4>
+                <div class="text-muted small">{{ speaker.expertise }}</div>
+              </div>
+              {% endif %}
+
+              <!-- Sessions this speaker is presenting -->
+              <div class="mb-3">
+                <h4 class="card-title">Sessions</h4>
+                {% if speaker.sessions.all %}
+                <div class="list-group list-group-flush">
+                  {% for session in speaker.sessions.all %}
+                  {% if session.agenda.event == event %}
+                  <div class="list-group-item px-0">
+                    <div class="row align-items-center">
+                      <div class="col-auto">
+                        <span class="badge bg-primary-lt">{{ session.start_time|time:"g:i A" }}</span>
+                      </div>
+                      <div class="col">
+                        <div class="font-weight-medium">{{ session.title }}</div>
+                        {% if session.location %}
+                        <div class="text-muted small">{{ session.location }}</div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                  {% endif %}
+                  {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-muted small">No sessions assigned yet</div>
+                {% endif %}
+              </div>
+
+              <!-- Contact Information -->
+              <div class="row">
+                {% if speaker.email %}
+                <div class="col-auto">
+                  <a href="mailto:{{ speaker.email }}" class="btn btn-sm btn-outline-primary" title="Email">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2"/>
+                      <path d="m2,8 l8,5 a2,2 0 0,0 2,0 l8,-5"/>
+                    </svg>
+                  </a>
+                </div>
+                {% endif %}
+                {% if speaker.linkedin %}
+                <div class="col-auto">
+                  <a href="{{ speaker.linkedin }}" target="_blank" class="btn btn-sm btn-outline-primary" title="LinkedIn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <rect x="4" y="4" width="16" height="16" rx="2"/>
+                      <line x1="8" y1="11" x2="8" y2="16"/>
+                      <line x1="8" y1="8" x2="8" y2="8.01"/>
+                      <line x1="12" y1="16" x2="12" y2="11"/>
+                      <path d="M16 16v-3a2 2 0 0 0 -4 0"/>
+                    </svg>
+                  </a>
+                </div>
+                {% endif %}
+                {% if speaker.twitter %}
+                <div class="col-auto">
+                  <a href="{{ speaker.twitter }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Twitter">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                      <path d="M22 4.01c-1 .49-1.98.689-3 .99-1.121-1.265-2.783-1.335-4.38-.737S11.977 6.323 12 8v1c-3.245.083-6.135-1.395-8-4 0 0-4.182 7.433 4 11-1.872 1.247-3.739 2.088-6 2 3.308 1.803 6.913 2.423 10.034 1.517 3.58-1.04 6.522-3.723 7.651-7.742a13.84 13.84 0 0 0 .497 -3.753C20.18 7.773 21.692 5.25 22 4.009z"/>
+                    </svg>
+                  </a>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="row">
+        <div class="col-12">
+          <div class="empty">
+            <div class="empty-img">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="128" height="128" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <circle cx="12" cy="7" r="4"/>
+                <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+              </svg>
+            </div>
+            <p class="empty-title">No speakers announced yet</p>
+            <p class="empty-subtitle text-muted">
+              The speaker lineup is not available yet. Please check back later for updates on our featured speakers.
+            </p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+</div>
+{% endblock page %}

@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.shortcuts import redirect
+from src.portal.views import self_register
 
 urlpatterns = [
     # Admin
@@ -29,8 +31,14 @@ urlpatterns = [
     # Public website
     path('', include('src.website.urls')),
 
+    # Redirect /dashboard/ to /portal/dashboard/
+    path('dashboard/', lambda request: redirect('/portal/dashboard/')),
+
     # Portal (authenticated area)
     path('portal/', include('src.portal.urls')),
+
+    # Self-registration (no auth required)
+    path('register/<int:pk>/', self_register, name='self_register'),
 
     # API endpoints
     path('api/', include('src.api.urls')),

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Successful - {{ event.title }}</title>
+    {% load static %}
+    <link href="{% static 'tabler/dist/css/tabler.css' %}" rel="stylesheet"/>
+    <link href="{% static 'tabler/dist/css/tabler-flags.css' %}" rel="stylesheet"/>
+    <link href="{% static 'tabler/dist/css/tabler-payments.css' %}" rel="stylesheet"/>
+    <link href="{% static 'tabler/dist/css/tabler-vendors.css' %}" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+        }
+
+        .success-header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 4rem 0 6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .success-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgba(255,255,255,0.1)'%3e%3cpath d='m0 2 30 0 0 30'/%3e%3c/svg%3e") center/32px;
+        }
+
+        .success-header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .success-container {
+            max-width: 600px;
+            margin: -3rem auto 3rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 0;
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-bottom: 1px solid #e5e7eb;
+            padding: 2rem 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+        }
+
+        .attendee-info {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .info-subtitle {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .event-details {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border: 1px solid #fcd34d;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .detail-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            color: #d97706;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .detail-content h6 {
+            margin: 0 0 4px 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #92400e;
+        }
+
+        .detail-content p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #78716c;
+        }
+
+        .next-steps {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border: 1px solid #93c5fd;
+        }
+
+        .next-steps-content {
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .next-steps-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            color: #1d4ed8;
+            flex-shrink: 0;
+        }
+
+        .next-steps-text h6 {
+            margin: 0 0 8px 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1e40af;
+        }
+
+        .next-steps-text p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .btn-print {
+            background: white;
+            border: 2px solid #e5e7eb;
+            color: #374151;
+            border-radius: 12px;
+            padding: 0.875rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-print:hover {
+            border-color: #10b981;
+            color: #10b981;
+            transform: translateY(-1px);
+        }
+
+        .btn-done {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            color: white;
+            border-radius: 12px;
+            padding: 0.875rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-done:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-icon {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .success-header {
+                padding: 2rem 0 4rem;
+            }
+
+            .success-container {
+                margin: -2rem 1rem 2rem;
+            }
+
+            .card-body, .card-header {
+                padding: 1.5rem;
+            }
+
+            .attendee-info {
+                padding: 1.5rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        @media print {
+            body {
+                background: white !important;
+            }
+
+            .success-header, .action-buttons {
+                display: none !important;
+            }
+
+            .success-container {
+                margin: 0 !important;
+                max-width: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-header">
+        <div class="container text-center success-header-content">
+            <div class="success-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" stroke-width="2.5" stroke="white" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M9 12l2 2l4 -4"/>
+                    <path d="M21 12c0 4.97 -4.03 9 -9 9s-9 -4.03 -9 -9s4.03 -9 9 -9s9 4.03 9 9z"/>
+                </svg>
+            </div>
+            <h1 class="display-4 fw-bold mb-3">Registration Successful!</h1>
+            <p class="lead mb-0 opacity-90">You're all set for the event</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="success-container">
+            <div class="card success-card">
+                <div class="card-header">
+                    <h2 class="h3 mb-2 text-success">{{ event.title }}</h2>
+                    <p class="text-muted mb-0">Registration confirmed successfully</p>
+                </div>
+                <div class="card-body">
+                    <!-- Attendee Information -->
+                    <div class="attendee-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-section">
+                                    <div class="info-label">Attendee</div>
+                                    <div class="info-value">{{ user.get_full_name|default:user.username }}</div>
+                                    <div class="info-subtitle">{{ user.email }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-section">
+                                    <div class="info-label">Event Date</div>
+                                    <div class="info-value">{{ event.date|date:"l, F j, Y" }}</div>
+                                    <div class="info-subtitle">{{ event.date|date:"g:i A" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event Details -->
+                    <div class="event-details">
+                        <div class="detail-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <circle cx="12" cy="11" r="3"/>
+                                <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/>
+                            </svg>
+                            <div class="detail-content">
+                                <h6>Location</h6>
+                                <p>{{ event.location }}</p>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M4 4h16v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/>
+                                <path d="M4 7h16"/>
+                            </svg>
+                            <div class="detail-content">
+                                <h6>Event Description</h6>
+                                <p>{{ event.description|truncatechars:150 }}</p>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <circle cx="12" cy="7" r="4"/>
+                                <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                            </svg>
+                            <div class="detail-content">
+                                <h6>Organizer</h6>
+                                <p>{{ event.organizer.get_full_name|default:event.organizer.username }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next Steps -->
+                    <div class="next-steps">
+                        <div class="next-steps-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="next-steps-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <circle cx="12" cy="12" r="9"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            <div class="next-steps-text">
+                                <h6>What's Next?</h6>
+                                <p>Save this confirmation for your records. You may receive additional details and updates via email closer to the event date. Please arrive 15 minutes early on the day of the event.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button onclick="window.print()" class="btn btn-print">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2"/>
+                                <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"/>
+                                <rect x="7" y="13" width="10" height="8"/>
+                            </svg>
+                            Print Confirmation
+                        </button>
+                        <button onclick="window.close()" class="btn btn-done">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="btn-icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M9 12l2 2l4 -4"/>
+                            </svg>
+                            Done
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'tabler/dist/js/tabler.min.js' %}"></script>
+</body>
+</html>

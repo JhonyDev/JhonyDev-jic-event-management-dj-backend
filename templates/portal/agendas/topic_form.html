@@ -1,0 +1,78 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'portal:dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:event_list' %}">Events</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'portal:agenda_list' event.pk %}">Agendas</a></li>
+            <li class="breadcrumb-item active">{{ title }}</li>
+          </ol>
+        </nav>
+        <h2 class="page-title">{{ title }}</h2>
+        <div class="page-subtitle">For agenda: <strong>{{ agenda.title }}</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">{{ title }}</h3>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="mb-3">
+                    <label class="form-label">Topic Name</label>
+                    {{ form.name }}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Color</label>
+                    {{ form.color }}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    {{ form.description }}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Order</label>
+                    {{ form.order }}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer text-end">
+              <div class="d-flex">
+                <a href="{% url 'portal:agenda_list' event.pk %}" class="btn btn-link">Cancel</a>
+                <button type="submit" class="btn btn-primary ms-auto">
+                  {% if topic %}Update Topic{% else %}Create Topic{% endif %}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

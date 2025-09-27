@@ -1,0 +1,253 @@
+{% extends "include/navigation.html" %}
+{% load static %}
+
+{% block content %}
+<div class="page-header d-print-none">
+  <div class="container-xl">
+    <div class="row g-2 align-items-center">
+      <div class="col">
+        <h2 class="page-title">Browse Events</h2>
+        <div class="text-muted mt-1">Discover and register for upcoming events</div>
+      </div>
+      <div class="col-auto ms-auto d-print-none">
+        <div class="btn-list">
+          <div class="input-icon">
+            <input type="text" class="form-control" placeholder="Search events..." id="searchEvents">
+            <span class="input-icon-addon">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <circle cx="10" cy="10" r="7" />
+                <line x1="21" y1="21" x2="15" y2="15" />
+              </svg>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="container-xl">
+    <div class="row row-cards">
+      {% for event in events %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card">
+          {% if event.status == 'published' %}
+          <div class="card-status-top bg-success"></div>
+          {% elif event.status == 'cancelled' %}
+          <div class="card-status-top bg-danger"></div>
+          {% else %}
+          <div class="card-status-top bg-primary"></div>
+          {% endif %}
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <span class="avatar avatar-lg me-3"
+                style="background-image: url(https://ui-avatars.com/api/?name={{ event.title|urlencode }}&background=random)"></span>
+              <div class="flex-fill">
+                <div class="font-weight-medium">{{ event.title|truncatechars:30 }}</div>
+                <div class="text-muted">{{ event.date|date:"M d, Y" }}</div>
+                {% if event.end_date %}
+                <div class="text-muted small">to {{ event.end_date|date:"M d, Y" }}</div>
+                {% endif %}
+              </div>
+              <div class="ms-auto">
+                {% if event.status == 'cancelled' %}
+                <span class="badge text-white bg-danger">Cancelled</span>
+                {% elif event.status == 'published' %}
+                <span class="badge text-white bg-success">Published</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <p class="text-muted">{{ event.description|truncatechars:120 }}</p>
+
+            <!-- Event Features Section -->
+            <div class="mb-3">
+              <!-- Sessions Info -->
+              {% if event.sessions.exists %}
+              <div class="d-flex align-items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-primary" width="24" height="24"
+                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                  <line x1="4" y1="10" x2="20" y2="10" />
+                  <line x1="10" y1="4" x2="10" y2="20" />
+                </svg>
+                <span class="text-primary fw-bold">{{ event.sessions.count }} Sessions</span>
+              </div>
+              {% endif %}
+
+              <!-- Speakers Info -->
+              {% if event.speakers.exists %}
+              <div class="d-flex align-items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-info" width="24" height="24"
+                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z" />
+                  <line x1="9" y1="9" x2="15" y2="9" />
+                  <line x1="9" y1="13" x2="13" y2="13" />
+                </svg>
+                <span class="text-info fw-bold">{{ event.speakers.count }} Speakers</span>
+                <div class="ms-auto">
+                  {% for speaker in event.speakers.all|slice:":3" %}
+                  <span class="avatar avatar-xs"
+                    style="background-image: url(https://ui-avatars.com/api/?name={{ speaker.name|urlencode }}&background=random)"
+                    title="{{ speaker.name }}"></span>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Exhibition Areas -->
+              {% if event.exhibition_areas.exists %}
+              <div class="d-flex align-items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-success" width="24" height="24"
+                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <rect x="3" y="7" width="18" height="13" rx="2" />
+                  <path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="12" y1="12" x2="12" y2="12.01" />
+                  <path d="M3 13a20 20 0 0 0 18 0" />
+                </svg>
+                <span class="text-success fw-bold">{{ event.exhibition_areas.count }} Exhibition Areas</span>
+              </div>
+              {% endif %}
+
+              <!-- Location Info -->
+              <div class="d-flex align-items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-muted" width="24" height="24"
+                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+                  <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
+                </svg>
+                <span class="text-muted">{{ event.location }}</span>
+              </div>
+
+              <!-- Venue Details -->
+              <div class="d-flex align-items-center mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-muted" width="24" height="24"
+                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <line x1="3" y1="21" x2="21" y2="21" />
+                  <line x1="5" y1="21" x2="5" y2="7" />
+                  <line x1="19" y1="21" x2="19" y2="7" />
+                  <path d="M5 7l7 -4l7 4" />
+                  <line x1="12" y1="3" x2="12" y2="21" />
+                </svg>
+                <span class="text-muted">{{ event.venue_details|default:event.location|truncatechars:30 }}</span>
+              </div>
+
+              <!-- Attendees Count -->
+              <div class="d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2 text-muted" width="24" height="24"
+                  viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                  <line x1="19" y1="7" x2="19" y2="10" />
+                  <line x1="19" y1="14" x2="19" y2="14.01" />
+                </svg>
+                <span class="text-muted">
+                  {{ event.registrations.count }} / {{ event.max_attendees }} attendees
+                </span>
+              </div>
+            </div>
+
+            <!-- Session Highlights -->
+            {% if event.sessions.exists %}
+            <div class="mb-3">
+              <div class="text-muted small mb-1 fw-bold">Featured Sessions:</div>
+              <div class="d-flex flex-column gap-1">
+                {% for session in event.sessions.all|slice:":2" %}
+                <div class="small">
+                  <span class="badge badge-outline text-azure">{{ session.start_time|time:"g:i A" }}</span>
+                  <span class="text-truncate">{{ session.title|truncatechars:40 }}</span>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+
+            <div class="progress mb-2">
+              <div class="progress-bar"
+                style="width: {% widthratio event.registrations.count event.max_attendees 100 %}%" role="progressbar">
+                <span class="progress-bar-label">{% widthratio event.registrations.count event.max_attendees 100 %}%
+                  full</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <div class="d-flex">
+              <a href="{% url 'portal:event_detail' event.pk %}" class="btn btn-sm">View Details</a>
+              {% if user.is_authenticated %}
+              {% if event.pk in user_registrations %}
+              <span class="badge bg-success text-white ms-auto">Registered</span>
+              {% elif event.registrations.count < event.max_attendees %} <a
+                href="{% url 'portal:register_for_event' event.pk %}" class="btn btn-sm btn-primary ms-auto">
+                Register</a>
+                {% else %}
+                <span class="badge bg-danger text-white ms-auto">Full</span>
+                {% endif %}
+                {% else %}
+                <a href="/accounts/login/" class="btn btn-sm btn-outline-primary ms-auto">Login to Register</a>
+                {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="empty">
+          <div class="empty-img"><img
+              src="https://raw.githubusercontent.com/tabler/tabler/master/demo/static/illustrations/undraw_events_2p66.svg"
+              height="128" alt="">
+          </div>
+          <p class="empty-title">No events available</p>
+          <p class="empty-subtitle text-muted">
+            There are no published events at the moment. Check back later!
+          </p>
+          {% if user.is_authenticated %}
+          <div class="empty-action">
+            <a href="{% url 'portal:dashboard' %}" class="btn btn-primary">
+              Go to Dashboard
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('searchEvents');
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        const searchTerm = this.value.toLowerCase();
+        const cards = document.querySelectorAll('.col-md-6.col-lg-4');
+
+        cards.forEach(function (card) {
+          const title = card.textContent.toLowerCase();
+          if (title.includes(searchTerm)) {
+            card.style.display = '';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    }
+  });
+</script>
+{% endblock %}
