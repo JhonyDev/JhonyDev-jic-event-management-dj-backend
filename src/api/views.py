@@ -133,6 +133,77 @@ class EventViewSet(viewsets.ModelViewSet):
             'event_title': event.title
         })
 
+    @action(detail=True, methods=['post'])
+    def check_in(self, request, pk=None):
+        """Handle attendee check-in from React Native app"""
+        event = self.get_object()
+
+        # Get user ID from the request (sent from React Native app)
+        user_id = request.data.get('user_id')
+        if not user_id:
+            return Response(
+                {'error': 'User ID is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Find the registration
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            user = User.objects.get(id=user_id)
+            registration = Registration.objects.get(
+                event=event,
+                user=user,
+                status='confirmed'
+            )
+        except (User.DoesNotExist, Registration.DoesNotExist):
+            return Response(
+                {'error': 'Registration not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Store check-in in session for the organizer to retrieve
+        request.session[f'pending_checkin_{event.id}'] = {
+            'registration_id': registration.id,
+            'name': user.get_full_name() or user.username,
+            'email': user.email,
+            'registered_date': registration.registered_at.strftime('%Y-%m-%d %H:%M'),
+            'checked_in_at': timezone.now().isoformat()
+        }
+
+        return Response({
+            'success': True,
+            'message': 'Check-in successful',
+            'attendee': {
+                'name': user.get_full_name() or user.username,
+                'email': user.email,
+                'event': event.title
+            }
+        })
+
+    @action(detail=True, methods=['get'])
+    def pending_checkins(self, request, pk=None):
+        """Get pending check-ins for the organizer's screen"""
+        event = self.get_object()
+
+        # Only allow event organizers to access this
+        if event.organizer != request.user:
+            return Response(
+                {'error': 'Unauthorized'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Check for pending check-in in session
+        pending_key = f'pending_checkin_{event.id}'
+        if pending_key in request.session:
+            attendee = request.session.pop(pending_key)  # Remove after retrieving
+            return Response({
+                'pending_checkin': True,
+                'attendee': attendee
+            })
+
+        return Response({'pending_checkin': False})
+
     @action(detail=True, methods=['get'])
     def agenda(self, request, pk=None):
         """Get agenda data for an event grouped by agendas/days"""

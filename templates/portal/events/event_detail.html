@@ -1249,59 +1249,77 @@
           <!-- Entry Passes Tab -->
           <div class="tab-pane" id="tab-entry-passes">
             <div class="d-flex align-items-center justify-content-between mb-3">
-              <h3 class="mb-0">Entry Passes</h3>
+              <h3 class="mb-0">Entry Passes - Check-In System</h3>
             </div>
 
-            {% if is_registered or is_organizer %}
-            <div class="row justify-content-center">
-              <div class="col-md-8 col-lg-6">
+            {% if is_organizer %}
+            <!-- Organizer Check-In View -->
+            <div class="row">
+              <div class="col-md-6">
                 <div class="card">
                   <div class="card-body text-center">
-                    <h4 class="card-title mb-4">Your Entry Pass QR Code</h4>
-                    <p class="text-muted mb-4">Show this QR code at the event entrance for check-in</p>
+                    <h4 class="card-title mb-3">Event Check-In QR Code</h4>
+                    <p class="text-muted mb-4">Attendees scan this QR code from their mobile app to check in</p>
 
                     <!-- QR Code Container -->
-                    <div id="entry-pass-qr" class="d-flex justify-content-center mb-4">
+                    <div id="check-in-qr" class="d-flex justify-content-center mb-4">
                       <!-- QR Code will be generated here -->
                       <p class="text-muted" id="qr-loading">Loading QR Code...</p>
                     </div>
 
-                    <!-- Debug Info (remove in production) -->
-                    {% if user_registration %}
-                    <div class="alert alert-secondary small">
-                      <strong>Debug:</strong> Registration ID: {{ user_registration.id }}<br>
-                      <strong>URL:</strong> /portal/events/{{ event.pk }}/entry-pass/{{ user_registration.id }}/
-                    </div>
-                    {% else %}
-                    <div class="alert alert-warning small">
-                      <strong>Debug:</strong> user_registration is None or empty
-                    </div>
-                    {% endif %}
-
                     <div class="alert alert-info">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <circle cx="12" cy="12" r="9" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      <p class="mb-0">Scan this QR code at the event entrance. The entry pass will open in print preview for verification.</p>
+                      <h5 class="alert-title">How it works:</h5>
+                      <ol class="mb-0 text-start">
+                        <li>Display this QR code at the event entrance</li>
+                        <li>Attendees scan with their mobile app</li>
+                        <li>Their details appear on this screen</li>
+                        <li>Click "Print Entry Pass" to give them their badge</li>
+                      </ol>
                     </div>
 
-                    <button type="button" class="btn btn-primary" onclick="window.print()">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                        <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
-                        <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
-                        <rect x="7" y="13" width="10" height="8" rx="2" />
-                      </svg>
-                      Print Entry Pass
-                    </button>
+                    <div class="mt-3">
+                      <span class="badge bg-green text-white">Check-In System Active</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="card">
+                  <div class="card-header">
+                    <h4 class="card-title mb-0">Recent Check-Ins</h4>
+                  </div>
+                  <div class="card-body">
+                    <div id="recent-checkins">
+                      <p class="text-muted text-center">Waiting for attendees to check in...</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {% elif is_registered %}
+            <!-- Registered Attendee View -->
+            <div class="row justify-content-center">
+              <div class="col-md-8 col-lg-6">
+                <div class="card">
+                  <div class="card-body text-center">
+                    <h4 class="card-title mb-4">Your Registration Details</h4>
+                    <p class="text-muted mb-4">Show this information at the event entrance</p>
+
+                    <div class="alert alert-success">
+                      <strong>Registration Confirmed!</strong><br>
+                      Registration ID: #{{ user_registration.id }}
+                    </div>
+
+                    <p>To check in at the event, open your mobile app and scan the QR code displayed at the entrance.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {% else %}
+            <!-- Not Registered View -->
             <div class="empty">
               <div class="empty-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -1310,8 +1328,8 @@
                   <rect x="7" y="7" width="10" height="10" />
                 </svg>
               </div>
-              <p class="empty-title">Entry Pass Not Available</p>
-              <p class="empty-subtitle text-muted">You need to register for this event to get your entry pass</p>
+              <p class="empty-title">Registration Required</p>
+              <p class="empty-subtitle text-muted">Please register for this event to access check-in features</p>
             </div>
             {% endif %}
           </div>
@@ -1320,6 +1338,49 @@
     </div>
   </div>
 </div>
+
+<!-- Check-In Modal for Organizers -->
+{% if is_organizer %}
+<div class="modal fade" id="checkInModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M9 11l3 3l8 -8"/>
+            <path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9"/>
+          </svg>
+          Attendee Check-In
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="attendee-info">
+          <!-- Attendee information will be populated here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="printEntryPass()">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
+            <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
+            <rect x="7" y="13" width="10" height="8" rx="2" />
+          </svg>
+          Print Entry Pass
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Print Content for Check-In -->
+<div id="checkin-print-content" style="display: none;">
+  <!-- Will be populated dynamically when printing -->
+</div>
+{% endif %}
 
 <style>
   .timeline {
@@ -2397,38 +2458,117 @@
       });
     }
 
-    // Entry Pass QR Code Generation
-    {% if user_registration %}
-    const registrationId = {{ user_registration.id }};
-    if (registrationId) {
-      const entryPassUrl = `${window.location.origin}/portal/events/{{ event.pk }}/entry-pass/${registrationId}/`;
+    // Check-In QR Code Generation for Organizers
+    {% if is_organizer %}
+    const checkInUrl = `${window.location.origin}/api/events/{{ event.pk }}/check-in`;
+    const qrContainer = document.getElementById('check-in-qr');
+    const loadingMsg = document.getElementById('qr-loading');
 
-      // Generate QR code using qrcodejs
-      const qrContainer = document.getElementById('entry-pass-qr');
-      const loadingMsg = document.getElementById('qr-loading');
+    if (qrContainer) {
+      if (typeof QRCode !== 'undefined') {
+        // Remove loading message
+        if (loadingMsg) loadingMsg.remove();
 
-      if (qrContainer) {
-        if (typeof QRCode !== 'undefined') {
-          // Remove loading message
-          if (loadingMsg) loadingMsg.remove();
+        // Generate QR code containing the check-in URL
+        new QRCode(qrContainer, {
+          text: checkInUrl,
+          width: 256,
+          height: 256,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
 
-          new QRCode(qrContainer, {
-            text: entryPassUrl,
-            width: 256,
-            height: 256,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-          });
-        } else {
-          // Fallback: show text link if QRCode library not available
-          qrContainer.innerHTML = `<div class="alert alert-danger">QRCode library not loaded. <a href="${entryPassUrl}" target="_blank" class="alert-link">Click here for entry pass</a></div>`;
-          console.error('QRCode library not loaded');
-        }
+        // Start polling for check-ins
+        startCheckInPolling();
+      } else {
+        qrContainer.innerHTML = `<div class="alert alert-danger">QRCode library not loaded</div>`;
+        console.error('QRCode library not loaded');
       }
     }
-    {% else %}
-    console.log('No user_registration found');
+
+    // Function to poll for check-ins
+    function startCheckInPolling() {
+      setInterval(function() {
+        fetch(`/api/events/{{ event.pk }}/pending_checkins/`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.pending_checkin) {
+              showAttendeeModal(data.attendee);
+            }
+          })
+          .catch(error => console.error('Error polling for check-ins:', error));
+      }, 2000); // Poll every 2 seconds
+    }
+
+    // Function to show attendee modal
+    function showAttendeeModal(attendee) {
+      const modal = new bootstrap.Modal(document.getElementById('checkInModal'));
+      const attendeeInfo = document.getElementById('attendee-info');
+
+      attendeeInfo.innerHTML = `
+        <div class="text-center mb-4">
+          <div class="avatar avatar-xl mx-auto mb-3" style="background-image: url('https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&size=128')"></div>
+          <h3 class="mb-1">${attendee.name}</h3>
+          <p class="text-muted">${attendee.email}</p>
+        </div>
+
+        <div class="row">
+          <div class="col-6">
+            <div class="mb-3">
+              <label class="form-label">Registration ID</label>
+              <div class="form-control-plaintext">#${attendee.registration_id}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="mb-3">
+              <label class="form-label">Registration Date</label>
+              <div class="form-control-plaintext">${attendee.registered_date}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-success">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M5 12l5 5l10 -10"/>
+          </svg>
+          <div>
+            <h4 class="alert-title">Check-In Successful!</h4>
+            <div class="text-muted">Attendee has been checked in at ${new Date().toLocaleTimeString()}</div>
+          </div>
+        </div>
+      `;
+
+      // Store attendee data for printing
+      window.currentAttendee = attendee;
+
+      modal.show();
+
+      // Update recent check-ins list
+      updateRecentCheckIns(attendee);
+    }
+
+    // Function to update recent check-ins
+    function updateRecentCheckIns(attendee) {
+      const recentCheckIns = document.getElementById('recent-checkins');
+      const checkInItem = `
+        <div class="d-flex align-items-center mb-2 p-2 border rounded">
+          <div class="avatar avatar-sm me-2" style="background-image: url('https://ui-avatars.com/api/?name=${encodeURIComponent(attendee.name)}&size=32')"></div>
+          <div class="flex-fill">
+            <div class="font-weight-medium">${attendee.name}</div>
+            <div class="text-muted small">${new Date().toLocaleTimeString()}</div>
+          </div>
+          <span class="badge bg-green">Checked In</span>
+        </div>
+      `;
+
+      if (recentCheckIns.querySelector('.text-muted.text-center')) {
+        recentCheckIns.innerHTML = checkInItem;
+      } else {
+        recentCheckIns.insertAdjacentHTML('afterbegin', checkInItem);
+      }
+    }
     {% endif %}
   });
 </script>
@@ -2500,8 +2640,67 @@
   }
 </style>
 
-<!-- Hidden Print Content -->
-{% if is_registered %}
+<!-- Print Function for Entry Pass -->
+<script>
+function printEntryPass() {
+  if (!window.currentAttendee) return;
+
+  const printContent = document.getElementById('checkin-print-content');
+  printContent.innerHTML = `
+    <div class="entry-pass-print">
+      <div class="entry-pass-header">
+        <h1>EVENT ENTRY PASS</h1>
+        <h2>{{ event.title }}</h2>
+      </div>
+
+      <div class="entry-pass-details">
+        <table style="width: 100%; margin-bottom: 20px;">
+          <tr>
+            <td><strong>Attendee:</strong></td>
+            <td>${window.currentAttendee.name}</td>
+          </tr>
+          <tr>
+            <td><strong>Email:</strong></td>
+            <td>${window.currentAttendee.email}</td>
+          </tr>
+          <tr>
+            <td><strong>Event Date:</strong></td>
+            <td>{{ event.date|date:"F j, Y - g:i A" }}</td>
+          </tr>
+          <tr>
+            <td><strong>Location:</strong></td>
+            <td>{{ event.location }}</td>
+          </tr>
+          <tr>
+            <td><strong>Registration ID:</strong></td>
+            <td>#${window.currentAttendee.registration_id}</td>
+          </tr>
+          <tr>
+            <td><strong>Check-In Time:</strong></td>
+            <td>${new Date().toLocaleString()}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="entry-pass-footer">
+        <p>This pass is valid for {{ event.title }} only.</p>
+        <p>For assistance, contact: {{ event.organizer.email }}</p>
+      </div>
+    </div>
+  `;
+
+  // Trigger print
+  window.print();
+
+  // Clear the print content after printing
+  setTimeout(() => {
+    printContent.innerHTML = '';
+  }, 1000);
+}
+</script>
+
+<!-- Old Hidden Print Content (keeping for backward compatibility) -->
+{% if is_registered and false %}
 <div id="entry-pass-print-content">
   <div class="entry-pass-print">
     <div class="entry-pass-header">
