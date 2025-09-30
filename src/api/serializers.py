@@ -51,7 +51,8 @@ class EventSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'description', 'date', 'location',
             'organizer', 'created_at', 'updated_at', 'max_attendees',
-            'image', 'registrations_count', 'is_registered'
+            'image', 'registrations_count', 'is_registered', 'status',
+            'allow_signup_without_qr'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'organizer']
 
@@ -68,7 +69,7 @@ class EventSerializer(serializers.ModelSerializer):
 class EventCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = ['title', 'description', 'date', 'location', 'max_attendees', 'image']
+        fields = ['title', 'description', 'date', 'location', 'max_attendees', 'image', 'allow_signup_without_qr']
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):

@@ -25,6 +25,7 @@ class Event(models.Model):
     image = models.ImageField(upload_to='events/', null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     published_at = models.DateTimeField(null=True, blank=True)
+    allow_signup_without_qr = models.BooleanField(default=False, help_text='Allow users to sign up without scanning QR code')
     sponsors = models.ManyToManyField('Sponsor', blank=True, related_name='events')
 
     class Meta:

@@ -22,10 +22,12 @@ class EventAdmin(admin.ModelAdmin):
         'organizer',
         'attendee_count',
         'max_attendees',
+        'signup_without_qr',
         'created_at'
     ]
     list_filter = [
         'status',
+        'allow_signup_without_qr',
         'date',
         'created_at',
         'published_at'
@@ -51,6 +53,10 @@ class EventAdmin(admin.ModelAdmin):
         }),
         ('Capacity & Status', {
             'fields': ('max_attendees', 'status', 'published_at')
+        }),
+        ('Registration Settings', {
+            'fields': ('allow_signup_without_qr',),
+            'description': 'Configure how users can register for this event'
         }),
         ('Media', {
             'fields': ('image',),
@@ -82,6 +88,12 @@ class EventAdmin(admin.ModelAdmin):
         count = obj.registrations.filter(status='confirmed').count()
         return f"{count}/{obj.max_attendees}"
     attendee_count.short_description = 'Attendees'
+
+    def signup_without_qr(self, obj):
+        if obj.allow_signup_without_qr:
+            return format_html('<span style="color: green;">✓ Yes</span>')
+        return format_html('<span style="color: red;">✗ No</span>')
+    signup_without_qr.short_description = 'Signup w/o QR'
 
     def publish_events(self, request, queryset):
         published_count = 0

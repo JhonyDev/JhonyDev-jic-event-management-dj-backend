@@ -200,6 +200,11 @@ def event_detail(request, pk):
     is_registered = Registration.objects.filter(event=event, user=request.user).exists()
     registrations = event.registrations.filter(status="confirmed")
 
+    # Get user's registration for entry pass
+    user_registration = None
+    if is_registered:
+        user_registration = Registration.objects.filter(event=event, user=request.user, status="confirmed").first()
+
     # Get all related data for tabs
     sessions = Session.objects.filter(agenda__event=event).order_by('start_time')
     speakers = Speaker.objects.filter(sessions__agenda__event=event).distinct()
@@ -209,6 +214,7 @@ def event_detail(request, pk):
     context = {
         "event": event,
         "is_registered": is_registered,
+        "user_registration": user_registration,
         "registrations": registrations,
         "available_spots": event.max_attendees - registrations.count(),
         "sessions": sessions,
@@ -1985,3 +1991,18 @@ def announcement_delete(request, pk):
 
     context = {'announcement': announcement}
     return render(request, 'portal/announcements/announcement_confirm_delete.html', context)
+
+
+@login_required(login_url="/accounts/login/")
+def entry_pass_view(request, event_pk, registration_pk):
+    """Display entry pass when QR code is scanned"""
+    event = get_object_or_404(Event, pk=event_pk)
+    registration = get_object_or_404(Registration, pk=registration_pk, event=event, status='confirmed')
+
+    # Generate entry pass page that will trigger print dialog
+    context = {
+        'event': event,
+        'registration': registration,
+        'attendee': registration.user,
+    }
+    return render(request, 'portal/events/entry_pass.html', context)

@@ -27,7 +27,7 @@ class EventForm(forms.ModelForm):
         model = Event
         fields = [
             'title', 'description', 'date', 'end_date', 'location',
-            'venue_details', 'max_attendees', 'image', 'status'
+            'venue_details', 'max_attendees', 'image', 'status', 'allow_signup_without_qr'
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -37,6 +37,7 @@ class EventForm(forms.ModelForm):
             'max_attendees': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'image': forms.FileInput(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
+            'allow_signup_without_qr': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 

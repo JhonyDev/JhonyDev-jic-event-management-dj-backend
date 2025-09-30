@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entry Pass - {{ event.title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .entry-pass {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border: 3px solid #000;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .entry-pass-header {
+            text-align: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .entry-pass-header h1 {
+            font-size: 32px;
+            color: #000;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .entry-pass-header h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .event-badge {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .entry-pass-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .attendee-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+
+        .detail-row {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            color: #000;
+            font-weight: 500;
+        }
+
+        .qr-section {
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+        }
+
+        .qr-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        #qr-code-container {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .qr-instructions {
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .registration-id {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 20px 0;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 5px;
+        }
+
+        .entry-pass-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .footer-contact {
+            font-size: 11px;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .entry-pass {
+                box-shadow: none;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            @page {
+                margin: 1cm;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .entry-pass-body {
+                grid-template-columns: 1fr;
+            }
+
+            .entry-pass {
+                padding: 20px;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="entry-pass">
+        <div class="entry-pass-header">
+            <h1>✓ Event Entry Pass</h1>
+            <h2>{{ event.title }}</h2>
+            <span class="event-badge">{{ event.status|upper }}</span>
+            <div class="status-badge">CONFIRMED</div>
+        </div>
+
+        <div class="registration-id">
+            Registration ID: #{{ registration.id }}
+        </div>
+
+        <div class="entry-pass-body">
+            <div class="attendee-details">
+                <div class="detail-row">
+                    <div class="detail-label">Attendee Name</div>
+                    <div class="detail-value">{{ attendee.get_full_name|default:attendee.username }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Email Address</div>
+                    <div class="detail-value">{{ attendee.email }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Event Date & Time</div>
+                    <div class="detail-value">{{ event.date|date:"F j, Y" }}<br>{{ event.date|date:"g:i A" }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Venue</div>
+                    <div class="detail-value">{{ event.location }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Registered On</div>
+                    <div class="detail-value">{{ registration.registered_at|date:"M j, Y - g:i A" }}</div>
+                </div>
+            </div>
+
+            <div class="qr-section">
+                <div class="qr-title">Scan for Check-In</div>
+                <div id="qr-code-container"></div>
+                <div class="qr-instructions">
+                    Present this QR code at the entrance
+                </div>
+            </div>
+        </div>
+
+        <div class="entry-pass-footer">
+            <div class="footer-text">
+                <strong>Important:</strong> This pass is valid for <strong>{{ event.title }}</strong> only.
+                Please present this pass along with a valid photo ID at the venue entrance.
+            </div>
+            <div class="footer-text">
+                This pass is non-transferable and must be presented by the registered attendee.
+            </div>
+            <div class="footer-contact">
+                For assistance, please contact: <strong>{{ event.organizer.email }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate QR Code
+        const registrationUrl = window.location.href;
+        const qrContainer = document.getElementById('qr-code-container');
+
+        if (typeof QRCode !== 'undefined') {
+            new QRCode(qrContainer, {
+                text: registrationUrl,
+                width: 180,
+                height: 180,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        } else {
+            qrContainer.innerHTML = '<p style="color: red;">QR Code generation failed</p>';
+        }
+
+        // Auto-trigger print dialog when page loads
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

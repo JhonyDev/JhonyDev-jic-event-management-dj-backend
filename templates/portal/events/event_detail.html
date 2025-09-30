@@ -220,6 +220,17 @@
               Supporting Materials
             </a>
           </li>
+          <li class="nav-item">
+            <a href="#tab-entry-passes" class="nav-link" data-bs-toggle="tab">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24"
+                stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <rect x="7" y="7" width="10" height="10" />
+              </svg>
+              Entry Passes
+            </a>
+          </li>
         </ul>
       </div>
       <div class="card-body">
@@ -228,6 +239,17 @@
           <div class="tab-pane active show" id="tab-overview">
             <div class="row">
               <div class="col-lg-8">
+                <!-- Event Image -->
+                {% if event.image %}
+                <div class=" mb-4">
+                  <div class="card the same " style="max-width: 250px">
+                    <div class="card-body p-0">
+                      <img src="{{ event.image.url }}" alt="{{ event.title }}" class="img-fluid rounded"
+                        style="width: 100%; max-height: 400px; object-fit: contain;">
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
                 <div class="mb-4">
                   <h3>Event Information</h3>
                   <div class="datagrid">
@@ -244,10 +266,17 @@
                       <div class="datagrid-title">To</div>
                       <div class="datagrid-content d-flex" style="gap: 5px">
                         <div>
-                          {% if event.end_date %}{{ event.end_date|date:"g:i A" }}{% else %}{{ event.date|date:"g:i A"
-                          }}{% endif %} <br>
-                          {% if event.end_date %}{{ event.end_date|date:"F jS, Y" }}{% else %}{{ event.date|date:"F jS,
-                          Y" }}{% endif %}
+                          {% if event.end_date %}
+                          {{ event.end_date|date:"g:i A" }}
+                          {% else %}
+                          {{ event.date|date:"g:i A"}}
+                          {% endif %}
+                          <br>
+                          {% if event.end_date %}
+                          {{ event.end_date|date:"F jS, Y" }}
+                          {% else %}
+                          {{ event.date|date:"F jS,Y" }}
+                          {% endif %}
                         </div>
                       </div>
                     </div>
@@ -298,6 +327,8 @@
                       </div>
                     </div>
                   </div>
+
+
 
                   <div class="mt-4">
                     <h4>Description</h4>
@@ -483,20 +514,20 @@
 
                 {% if is_organizer %}
                 <!-- Quick Actions for Organizer -->
-                  {% if event.status == 'draft' %}
-                    <div class="card">
-                      <div class="card-header">
-                        <h3 class="card-title">Quick Actions</h3>
-                      </div>
-                      <div class="card-body">
-                        <div class="d-grid gap-2 btn-list">
-                          <a href="{% url 'portal:event_publish' event.pk %}" class="btn btn-success">
-                            Publish Event
-                          </a>
-                        </div>
-                      </div>
+                {% if event.status == 'draft' %}
+                <div class="card">
+                  <div class="card-header">
+                    <h3 class="card-title">Quick Actions</h3>
+                  </div>
+                  <div class="card-body">
+                    <div class="d-grid gap-2 btn-list">
+                      <a href="{% url 'portal:event_publish' event.pk %}" class="btn btn-success">
+                        Publish Event
+                      </a>
                     </div>
-                    {% endif %}
+                  </div>
+                </div>
+                {% endif %}
                 {% endif %}
               </div>
             </div>
@@ -1213,6 +1244,76 @@
               </div>
               {% endif %}
             </div>
+          </div>
+
+          <!-- Entry Passes Tab -->
+          <div class="tab-pane" id="tab-entry-passes">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <h3 class="mb-0">Entry Passes</h3>
+            </div>
+
+            {% if is_registered or is_organizer %}
+            <div class="row justify-content-center">
+              <div class="col-md-8 col-lg-6">
+                <div class="card">
+                  <div class="card-body text-center">
+                    <h4 class="card-title mb-4">Your Entry Pass QR Code</h4>
+                    <p class="text-muted mb-4">Show this QR code at the event entrance for check-in</p>
+
+                    <!-- QR Code Container -->
+                    <div id="entry-pass-qr" class="d-flex justify-content-center mb-4">
+                      <!-- QR Code will be generated here -->
+                      <p class="text-muted" id="qr-loading">Loading QR Code...</p>
+                    </div>
+
+                    <!-- Debug Info (remove in production) -->
+                    {% if user_registration %}
+                    <div class="alert alert-secondary small">
+                      <strong>Debug:</strong> Registration ID: {{ user_registration.id }}<br>
+                      <strong>URL:</strong> /portal/events/{{ event.pk }}/entry-pass/{{ user_registration.id }}/
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning small">
+                      <strong>Debug:</strong> user_registration is None or empty
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-info">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <circle cx="12" cy="12" r="9" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <p class="mb-0">Scan this QR code at the event entrance. The entry pass will open in print preview for verification.</p>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="window.print()">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" />
+                        <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" />
+                        <rect x="7" y="13" width="10" height="8" rx="2" />
+                      </svg>
+                      Print Entry Pass
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <div class="empty">
+              <div class="empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <rect x="7" y="7" width="10" height="10" />
+                </svg>
+              </div>
+              <p class="empty-title">Entry Pass Not Available</p>
+              <p class="empty-subtitle text-muted">You need to register for this event to get your entry pass</p>
+            </div>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -2295,6 +2396,179 @@
         document.getElementById('deleteMaterialName').textContent = title || '';
       });
     }
+
+    // Entry Pass QR Code Generation
+    {% if user_registration %}
+    const registrationId = {{ user_registration.id }};
+    if (registrationId) {
+      const entryPassUrl = `${window.location.origin}/portal/events/{{ event.pk }}/entry-pass/${registrationId}/`;
+
+      // Generate QR code using qrcodejs
+      const qrContainer = document.getElementById('entry-pass-qr');
+      const loadingMsg = document.getElementById('qr-loading');
+
+      if (qrContainer) {
+        if (typeof QRCode !== 'undefined') {
+          // Remove loading message
+          if (loadingMsg) loadingMsg.remove();
+
+          new QRCode(qrContainer, {
+            text: entryPassUrl,
+            width: 256,
+            height: 256,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } else {
+          // Fallback: show text link if QRCode library not available
+          qrContainer.innerHTML = `<div class="alert alert-danger">QRCode library not loaded. <a href="${entryPassUrl}" target="_blank" class="alert-link">Click here for entry pass</a></div>`;
+          console.error('QRCode library not loaded');
+        }
+      }
+    }
+    {% else %}
+    console.log('No user_registration found');
+    {% endif %}
   });
 </script>
+
+<!-- Print Styles for Entry Pass -->
+<style>
+  @media print {
+    /* Hide everything except entry pass content during print */
+    body * {
+      visibility: hidden;
+    }
+
+    #entry-pass-print-content,
+    #entry-pass-print-content * {
+      visibility: visible;
+    }
+
+    #entry-pass-print-content {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      padding: 20px;
+    }
+
+    /* Entry Pass Print Layout */
+    .entry-pass-print {
+      max-width: 800px;
+      margin: 0 auto;
+      border: 2px solid #000;
+      padding: 30px;
+      background: white;
+    }
+
+    .entry-pass-header {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+
+    .entry-pass-qr {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .entry-pass-details {
+      margin-top: 20px;
+    }
+
+    .entry-pass-footer {
+      margin-top: 30px;
+      text-align: center;
+      border-top: 1px solid #ccc;
+      padding-top: 20px;
+      font-size: 12px;
+    }
+  }
+
+  /* Hide print content on screen */
+  #entry-pass-print-content {
+    display: none;
+  }
+
+  @media print {
+    #entry-pass-print-content {
+      display: block;
+    }
+  }
+</style>
+
+<!-- Hidden Print Content -->
+{% if is_registered %}
+<div id="entry-pass-print-content">
+  <div class="entry-pass-print">
+    <div class="entry-pass-header">
+      <h1>EVENT ENTRY PASS</h1>
+      <h2>{{ event.title }}</h2>
+    </div>
+
+    <div class="entry-pass-details">
+      <table style="width: 100%; margin-bottom: 20px;">
+        <tr>
+          <td><strong>Attendee:</strong></td>
+          <td>{{ request.user.get_full_name|default:request.user.username }}</td>
+        </tr>
+        <tr>
+          <td><strong>Email:</strong></td>
+          <td>{{ request.user.email }}</td>
+        </tr>
+        <tr>
+          <td><strong>Event Date:</strong></td>
+          <td>{{ event.date|date:"F j, Y - g:i A" }}</td>
+        </tr>
+        <tr>
+          <td><strong>Location:</strong></td>
+          <td>{{ event.location }}</td>
+        </tr>
+        <tr>
+          <td><strong>Registration ID:</strong></td>
+          <td>{{ user_registration.id }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="entry-pass-qr">
+      <div id="entry-pass-qr-print"></div>
+      <p style="margin-top: 10px; font-size: 14px;">Scan this QR code at the entrance</p>
+    </div>
+
+    <div class="entry-pass-footer">
+      <p>This pass is valid for {{ event.title }} only. Please present this pass along with a valid ID at the venue entrance.</p>
+      <p>For assistance, contact: {{ event.organizer.email }}</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Generate QR code for print version
+  {% if user_registration %}
+  window.addEventListener('DOMContentLoaded', function() {
+    const registrationId = {{ user_registration.id }};
+    if (registrationId) {
+      const entryPassUrl = `${window.location.origin}/portal/events/{{ event.pk }}/entry-pass/${registrationId}/`;
+      const qrPrintContainer = document.getElementById('entry-pass-qr-print');
+
+      if (qrPrintContainer && typeof QRCode !== 'undefined') {
+        new QRCode(qrPrintContainer, {
+          text: entryPassUrl,
+          width: 200,
+          height: 200,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+    }
+  });
+  {% endif %}
+</script>
+{% endif %}
+
 {% endblock %}

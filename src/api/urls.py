@@ -8,6 +8,10 @@ app_name = 'api'
 router = DefaultRouter()
 router.register(r'events', views.EventViewSet, basename='event')
 router.register(r'registrations', views.RegistrationViewSet, basename='registration')
+router.register(r'faqs', views.FAQViewSet, basename='faq')
+router.register(r'contact-info', views.ContactInfoViewSet, basename='contactinfo')
+router.register(r'app-content', views.AppContentViewSet, basename='appcontent')
+router.register(r'announcements', views.AnnouncementViewSet, basename='announcement')
 
 urlpatterns = [
     # API routes

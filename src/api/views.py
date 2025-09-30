@@ -2,13 +2,15 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.db import models
 
-from .models import Event, Registration, Agenda, Session, Speaker, VenueMap
+from .models import Event, Registration, Agenda, Session, Speaker, VenueMap, FAQ, ContactInfo, AppContent, Announcement
 from .serializers import (
     EventSerializer, EventCreateSerializer,
     RegistrationSerializer, UserSerializer,
     AgendaSerializer, SessionSerializer, SpeakerSerializer,
-    AgendaSessionSerializer
+    AgendaSessionSerializer, FAQSerializer, ContactInfoSerializer,
+    AppContentSerializer, AnnouncementSerializer
 )
 
 
@@ -90,9 +92,26 @@ class EventViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def upcoming(self, request):
-        """Get upcoming events"""
+        """Get upcoming browseable events (published and allow signup without QR)"""
         from django.utils import timezone
-        events = Event.objects.filter(date__gte=timezone.now()).order_by('date')[:10]
+        events = Event.objects.filter(
+            date__gte=timezone.now(),
+            status='published',
+            allow_signup_without_qr=True
+        ).order_by('date')
+        serializer = self.get_serializer(events, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def upcoming_registered(self, request):
+        """Get upcoming events the current user is registered for"""
+        from django.utils import timezone
+        events = Event.objects.filter(
+            registrations__user=request.user,
+            registrations__status='confirmed',
+            date__gte=timezone.now(),
+            status='published'
+        ).distinct().order_by('date')
         serializer = self.get_serializer(events, many=True)
         return Response(serializer.data)
 
@@ -302,3 +321,129 @@ class RegistrationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
+
+
+class FAQViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for viewing FAQs.
+
+    Returns active FAQs grouped by category.
+    """
+    queryset = FAQ.objects.filter(is_active=True).order_by('category', 'order', 'question')
+    serializer_class = FAQSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        """Return FAQs grouped by category"""
+        faqs = self.get_queryset()
+        grouped_faqs = {}
+
+        for faq in faqs:
+            category = faq.category
+            if category not in grouped_faqs:
+                grouped_faqs[category] = []
+
+            grouped_faqs[category].append({
+                'id': faq.id,
+                'question': faq.question,
+                'answer': faq.answer,
+                'order': faq.order
+            })
+
+        return Response(grouped_faqs)
+
+
+class ContactInfoViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for viewing contact information.
+
+    Returns active contact information ordered by type and order.
+    """
+    queryset = ContactInfo.objects.filter(is_active=True).order_by('contact_type', 'order')
+    serializer_class = ContactInfoSerializer
+    permission_classes = [AllowAny]
+
+
+class AppContentViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for app content like Privacy Policy, Help & Support, About.
+    """
+    queryset = AppContent.objects.filter(is_active=True)
+    serializer_class = AppContentSerializer
+    permission_classes = [AllowAny]
+    lookup_field = 'content_type'
+
+    @action(detail=False, methods=['get'])
+    def privacy_policy(self, request):
+        """Get privacy policy content"""
+        try:
+            content = AppContent.objects.get(content_type='privacy_policy', is_active=True)
+            serializer = self.get_serializer(content)
+            return Response(serializer.data)
+        except AppContent.DoesNotExist:
+            return Response({'detail': 'Privacy policy not found'}, status=404)
+
+    @action(detail=False, methods=['get'])
+    def help_support(self, request):
+        """Get help & support content"""
+        try:
+            content = AppContent.objects.get(content_type='help_support', is_active=True)
+            serializer = self.get_serializer(content)
+            return Response(serializer.data)
+        except AppContent.DoesNotExist:
+            return Response({'detail': 'Help & support content not found'}, status=404)
+
+    @action(detail=False, methods=['get'])
+    def about(self, request):
+        """Get about content"""
+        try:
+            content = AppContent.objects.get(content_type='about', is_active=True)
+            serializer = self.get_serializer(content)
+            return Response(serializer.data)
+        except AppContent.DoesNotExist:
+            return Response({'detail': 'About content not found'}, status=404)
+
+
+class AnnouncementViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for viewing announcements.
+
+    Returns active announcements visible to the current user.
+    """
+    queryset = Announcement.objects.filter(is_active=True)
+    serializer_class = AnnouncementSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Filter announcements based on user's registered events"""
+        from django.utils import timezone
+
+        user = self.request.user
+        current_time = timezone.now()
+
+        # Get user's registered events
+        user_events = Event.objects.filter(
+            registrations__user=user,
+            registrations__status='confirmed'
+        )
+
+        # Filter announcements that are:
+        # 1. General announcements from organizers of events user is registered for
+        # 2. Event-specific announcements for events user is registered for
+        # 3. Not expired
+        queryset = Announcement.objects.filter(
+            is_active=True,
+            publish_date__lte=current_time
+        ).filter(
+            models.Q(
+                type='general',
+                author__organized_events__in=user_events
+            ) | models.Q(
+                type='event_specific',
+                event__in=user_events
+            )
+        ).filter(
+            models.Q(expire_date__isnull=True) | models.Q(expire_date__gt=current_time)
+        ).distinct().order_by('-priority', '-created_at')
+
+        return queryset

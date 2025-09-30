@@ -120,4 +120,7 @@ urlpatterns = [
     path('announcements/create/', views.announcement_create, name='announcement_create'),
     path('announcements/<int:pk>/edit/', views.announcement_update, name='announcement_update'),
     path('announcements/<int:pk>/delete/', views.announcement_delete, name='announcement_delete'),
+
+    # Entry Pass
+    path('events/<int:event_pk>/entry-pass/<int:registration_pk>/', views.entry_pass_view, name='entry_pass_view'),
 ]
