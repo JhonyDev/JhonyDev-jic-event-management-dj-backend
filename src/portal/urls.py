@@ -65,6 +65,7 @@ urlpatterns = [
     path('events/<int:event_pk>/agendas/<int:agenda_pk>/sessions/<int:session_pk>/move-up/', views.session_move_up, name='session_move_up'),
     path('events/<int:event_pk>/agendas/<int:agenda_pk>/sessions/<int:session_pk>/move-down/', views.session_move_down, name='session_move_down'),
     path('events/<int:event_pk>/sessions/ajax-move/', views.session_move_ajax, name='session_move_ajax'),
+    path('events/<int:event_pk>/agendas/<int:agenda_pk>/sessions/<int:session_pk>/registrations/', views.session_registrations, name='session_registrations'),
 
 
     # Exhibition Management
@@ -87,6 +88,8 @@ urlpatterns = [
 
     # Session API endpoints
     path('api/session/<int:session_pk>/speakers/', views.session_speakers_api, name='session_speakers_api'),
+    path('api/events/<int:event_pk>/sessions/', views.event_sessions_api, name='event_sessions_api'),
+    path('api/materials/<int:material_pk>/sessions/', views.material_sessions_api, name='material_sessions_api'),
 
     # Global Speaker Management
     path('speakers/', views.speaker_list_global, name='speaker_list_global'),

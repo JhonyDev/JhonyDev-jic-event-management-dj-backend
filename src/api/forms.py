@@ -341,7 +341,7 @@ class SponsorForm(forms.ModelForm):
 class SupportingMaterialForm(forms.ModelForm):
     class Meta:
         model = SupportingMaterial
-        fields = ['title', 'description', 'material_type', 'file', 'is_public', 'order']
+        fields = ['title', 'description', 'material_type', 'file', 'is_public', 'order', 'sessions']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -367,9 +367,14 @@ class SupportingMaterialForm(forms.ModelForm):
                 'min': 1,
                 'value': 1
             }),
+            'sessions': forms.SelectMultiple(attrs={
+                'class': 'form-select',
+                'multiple': True
+            }),
         }
         help_texts = {
             'file': 'Upload supporting material (PDF, PowerPoint, Word, Images, Videos, Archives)',
             'is_public': 'Make this material visible to all attendees',
             'order': 'Display order (lower numbers appear first)',
+            'sessions': 'Select sessions this material is associated with',
         }

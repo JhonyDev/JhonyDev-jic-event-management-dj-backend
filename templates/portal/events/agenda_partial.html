@@ -86,9 +86,38 @@
         </div>
         <div class="col">
           <div class="fw-medium">{{ session.title }}</div>
-          <div class="text-muted small">
+          <div class="text-muted small d-flex align-items-center gap-2">
             {{ session.start_time|time:"g:i A" }} - {{ session.end_time|time:"g:i A" }}
             <span class="badge bg-azure-lt ms-2 ms-md-2 ms-0 mt-1 mt-md-0">{{ session.get_session_type_display }}</span>
+            <!-- Registration Status -->
+            {% if session.allow_registration %}
+            {% if session.slots_available %}
+
+            <span class="badge bg-success-lt badge-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-xs me-1" width="12" height="12"
+                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+                <line x1="16" y1="5" x2="19" y2="8" />
+              </svg>
+              {{ session.registrations.count }}/{{ session.slots_available }} registered
+            </span>
+            {% else %}
+            <span class="badge bg-success-lt badge-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-xs me-1" width="12" height="12"
+                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+                <line x1="16" y1="5" x2="19" y2="8" />
+              </svg>
+              {{ session.registrations.count }} registered
+            </span>
+            {% endif %}
+            {% endif %}
           </div>
 
           <div class="mt-1">
@@ -99,9 +128,25 @@
             {% for speaker in session.speakers.all %}
             <span class="badge bg-purple-lt badge-sm me-1 mb-1">{{ speaker.name }}</span>
             {% endfor %}
-
             {% endif %}
+
+
+
             {% if is_organizer %}
+            {% if session.allow_registration %}
+            <a href="{% url 'portal:session_registrations' event.pk agenda.pk session.pk %}"
+              class="btn btn-sm btn-ghost-success me-1" title="View Registrations">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-xs me-1" width="12" height="12"
+                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+                <line x1="16" y1="5" x2="19" y2="8" />
+              </svg>
+              View Registrations
+            </a>
+            {% endif %}
             <button type="button" class="btn btn-sm btn-ghost-secondary me-1" title="Manage Speakers"
               data-bs-toggle="modal" data-bs-target="#speakerModal"
               onclick="loadSpeakersForSession({{ session.pk }}, '{{ session.title|escapejs }}')">

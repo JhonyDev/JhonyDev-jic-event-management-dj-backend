@@ -7,7 +7,7 @@ from .models import (
     Event, Agenda, Registration, Speaker, Session,
     Exhibitor, ExhibitionArea,
     SessionBookmark, Notification, Sponsor, SupportingMaterial, Announcement,
-    AppContent, FAQ, ContactInfo
+    AppContent, FAQ, ContactInfo, QuickAction
 )
 
 
@@ -740,6 +740,90 @@ class SupportingMaterialAdmin(admin.ModelAdmin):
             )
         return '-'
     file_info.short_description = 'File Info'
+
+
+@admin.register(QuickAction)
+class QuickActionAdmin(admin.ModelAdmin):
+    list_display = [
+        'title',
+        'event_link',
+        'icon_display',
+        'materials_count',
+        'order',
+        'is_active',
+        'created_at'
+    ]
+    list_filter = [
+        'is_active',
+        'icon',
+        'created_at',
+        'event'
+    ]
+    search_fields = [
+        'title',
+        'info_line',
+        'event__title'
+    ]
+    ordering = ['event', 'order', 'created_at']
+    readonly_fields = ['created_at', 'updated_at']
+    filter_horizontal = ('supporting_materials',)  # This creates the nice multi-select widget
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('event', 'title', 'icon', 'info_line')
+        }),
+        ('Supporting Materials', {
+            'fields': ('supporting_materials',),
+            'description': 'Select multiple supporting materials for this quick action. Hold Ctrl/Cmd to select multiple items.'
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Metadata', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+    def event_link(self, obj):
+        url = reverse('admin:api_event_change', args=[obj.event.id])
+        return format_html('<a href="{}">{}</a>', url, obj.event.title[:40])
+    event_link.short_description = 'Event'
+
+    def icon_display(self, obj):
+        icon_class = obj.get_icon_class()
+        return format_html(
+            '<i class="{}" style="font-size: 18px; color: #007bff;"></i> <span style="margin-left: 5px;">{}</span>',
+            icon_class, obj.get_icon_display()
+        )
+    icon_display.short_description = 'Icon'
+
+    def materials_count(self, obj):
+        count = obj.supporting_materials.count()
+        if count > 0:
+            return format_html(
+                '<span class="badge bg-success">{} material{}</span>',
+                count, 's' if count != 1 else ''
+            )
+        return format_html('<span class="badge bg-secondary">No materials</span>')
+    materials_count.short_description = 'Materials'
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        """Customize the queryset for supporting_materials field to show only materials from the same event"""
+        if db_field.name == "supporting_materials":
+            # If we're editing an existing quick action, filter materials by its event
+            if request.resolver_match.kwargs.get('object_id'):
+                try:
+                    quick_action = QuickAction.objects.get(pk=request.resolver_match.kwargs['object_id'])
+                    kwargs["queryset"] = SupportingMaterial.objects.filter(event=quick_action.event, is_public=True)
+                except QuickAction.DoesNotExist:
+                    pass
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    class Media:
+        css = {
+            'all': ('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',)
+        }
 
     def is_public(self, obj):
         if obj.is_public:

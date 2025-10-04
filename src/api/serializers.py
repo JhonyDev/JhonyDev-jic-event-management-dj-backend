@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
     Event, Registration, Announcement, AppContent, FAQ, ContactInfo,
-    Agenda, Session, Speaker
+    Agenda, Session, Speaker, SupportingMaterial, QuickAction
 )
 
 User = get_user_model()
@@ -198,3 +198,63 @@ class AgendaSessionSerializer(serializers.Serializer):
     location = serializers.CharField()
     type = serializers.CharField()  # session_type
     speaker = serializers.CharField(required=False)  # Main speaker name
+
+
+class SupportingMaterialSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SupportingMaterial
+        fields = [
+            'id', 'title', 'description', 'material_type', 'file', 'file_url',
+            'is_public', 'created_at'
+        ]
+
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+
+class QuickActionSerializer(serializers.ModelSerializer):
+    supporting_materials = SupportingMaterialSerializer(many=True, read_only=True)
+    supporting_materials_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        write_only=True,
+        queryset=SupportingMaterial.objects.all(),
+        source='supporting_materials',
+        required=False
+    )
+    icon_class = serializers.CharField(source='get_icon_class', read_only=True)
+    materials_count = serializers.SerializerMethodField()
+    icon_type = serializers.CharField(source='icon', read_only=True)  # Add icon_type for React Native
+    description = serializers.CharField(source='info_line', read_only=True)  # Map info_line to description
+
+    class Meta:
+        model = QuickAction
+        fields = [
+            'id', 'event', 'title', 'icon', 'icon_type', 'icon_class', 'info_line', 'description',
+            'supporting_materials', 'supporting_materials_ids',
+            'materials_count', 'order', 'is_active'
+        ]
+
+    def get_materials_count(self, obj):
+        return obj.supporting_materials.filter(is_public=True).count()
+
+    def create(self, validated_data):
+        materials = validated_data.pop('supporting_materials', [])
+        quick_action = QuickAction.objects.create(**validated_data)
+        quick_action.supporting_materials.set(materials)
+        return quick_action
+
+    def update(self, instance, validated_data):
+        materials = validated_data.pop('supporting_materials', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if materials is not None:
+            instance.supporting_materials.set(materials)
+        return instance

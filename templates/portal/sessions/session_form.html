@@ -138,6 +138,30 @@
                 </div>
               </div>
 
+              <!-- Registration Settings Section -->
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">
+                      <input type="checkbox" name="allow_registration" value="true"
+                             {% if session.allow_registration %}checked{% endif %}>
+                      Allow Registration
+                    </label>
+                    <small class="form-hint d-block">Enable attendees to register for this session</small>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Available Slots</label>
+                    <input type="number" class="form-control" name="slots_available"
+                           value="{{ session.slots_available|default:'' }}"
+                           placeholder="Leave empty for unlimited"
+                           min="1">
+                    <small class="form-hint">Maximum number of attendees. Leave empty for unlimited capacity.</small>
+                  </div>
+                </div>
+              </div>
+
               <!-- Speakers Section -->
               <div class="mb-3">
                 <label class="form-label">Speakers</label>

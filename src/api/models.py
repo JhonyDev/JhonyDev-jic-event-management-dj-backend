@@ -163,6 +163,17 @@ class Session(models.Model):
     materials_url = models.URLField(blank=True)
     order = models.PositiveIntegerField(default=1)
 
+    # Session Registration Fields
+    slots_available = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of available slots. Leave empty for unlimited."
+    )
+    allow_registration = models.BooleanField(
+        default=False,
+        help_text="Allow attendees to register for this session"
+    )
+
     class Meta:
         ordering = ['order', 'start_time']
 
@@ -217,6 +228,64 @@ class ExhibitionArea(models.Model):
 
 
 # Conference Features Models
+class CheckIn(models.Model):
+    """Track attendee check-ins at events"""
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='checkins')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='checkins')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='checkins')
+    checked_in_at = models.DateTimeField(auto_now_add=True)
+    checked_in_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='performed_checkins'
+    )
+    check_in_method = models.CharField(
+        max_length=20,
+        choices=[
+            ('qr_code', 'QR Code'),
+            ('manual', 'Manual'),
+            ('self', 'Self Check-in'),
+        ],
+        default='qr_code'
+    )
+
+    class Meta:
+        ordering = ['-checked_in_at']
+        # Prevent duplicate check-ins for the same registration
+        unique_together = ['registration', 'event']
+
+    def __str__(self):
+        return f"{self.user.username} checked in at {self.event.title} on {self.checked_in_at}"
+
+
+class SessionRegistration(models.Model):
+    """Simple registration tracking for sessions"""
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='registrations')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='session_registrations')
+    registered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-registered_at']
+        unique_together = ['session', 'user']  # Prevent duplicate registrations
+
+    def __str__(self):
+        return f"{self.user.username} - {self.session.title}"
+
+    def save(self, *args, **kwargs):
+        # Check if slots are available before saving
+        if self.session.slots_available is not None:
+            current_registrations = SessionRegistration.objects.filter(
+                session=self.session
+            ).exclude(pk=self.pk).count()
+
+            if current_registrations >= self.session.slots_available:
+                raise ValueError("No slots available for this session")
+
+        super().save(*args, **kwargs)
+
+
 class SessionBookmark(models.Model):
     """Allow attendees to bookmark sessions"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookmarked_sessions')
@@ -314,6 +383,72 @@ class Sponsor(models.Model):
         return self.title
 
 
+class QuickAction(models.Model):
+    """Quick actions for events with supporting materials"""
+    ICON_CHOICES = [
+        ('download', 'Download'),
+        ('view', 'View/Eye'),
+        ('document', 'Document'),
+        ('video', 'Video'),
+        ('image', 'Image'),
+        ('presentation', 'Presentation'),
+        ('link', 'Link'),
+        ('info', 'Info'),
+        ('calendar', 'Calendar'),
+        ('map', 'Map'),
+        ('qrcode', 'QR Code'),
+        ('ticket', 'Ticket'),
+        ('certificate', 'Certificate'),
+        ('badge', 'Badge'),
+        ('folder', 'Folder'),
+        ('poster', 'Poster'),
+        ('banner', 'Banner'),
+        ('research_paper', 'Research Paper'),
+    ]
+
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='quick_actions')
+    title = models.CharField(max_length=200, help_text="Quick action title")
+    icon = models.CharField(max_length=50, choices=ICON_CHOICES, default='download', help_text="Icon for the quick action")
+    info_line = models.CharField(max_length=500, blank=True, help_text="Brief description or info about this action")
+    supporting_materials = models.ManyToManyField('SupportingMaterial', related_name='quick_actions', blank=True, help_text="Select supporting materials for this action")
+    order = models.PositiveIntegerField(default=1, help_text="Display order")
+    is_active = models.BooleanField(default=True, help_text="Is this action active?")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = 'Quick Action'
+        verbose_name_plural = 'Quick Actions'
+
+    def __str__(self):
+        return f"{self.title} - {self.event.title}"
+
+    def get_icon_class(self):
+        """Get the CSS class for the icon"""
+        icon_classes = {
+            'download': 'fas fa-download',
+            'view': 'fas fa-eye',
+            'document': 'fas fa-file-alt',
+            'video': 'fas fa-video',
+            'image': 'fas fa-image',
+            'presentation': 'fas fa-presentation',
+            'link': 'fas fa-link',
+            'info': 'fas fa-info-circle',
+            'calendar': 'fas fa-calendar',
+            'map': 'fas fa-map-marker-alt',
+            'qrcode': 'fas fa-qrcode',
+            'ticket': 'fas fa-ticket-alt',
+            'certificate': 'fas fa-certificate',
+            'badge': 'fas fa-id-badge',
+            'folder': 'fas fa-folder',
+            'poster': 'fas fa-image',
+            'banner': 'fas fa-flag',
+            'research_paper': 'fas fa-file-alt',
+        }
+        return icon_classes.get(self.icon, 'fas fa-file')
+
+
 class SupportingMaterial(models.Model):
     """Supporting materials for events (slides, posters, demo info, etc.)"""
     MATERIAL_TYPES = [
@@ -335,6 +470,7 @@ class SupportingMaterial(models.Model):
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='uploaded_materials')
     is_public = models.BooleanField(default=True, help_text="Make this material publicly accessible")
     order = models.PositiveIntegerField(default=1, help_text="Display order")
+    sessions = models.ManyToManyField('Session', related_name='supporting_materials', blank=True, help_text="Sessions this material is associated with")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

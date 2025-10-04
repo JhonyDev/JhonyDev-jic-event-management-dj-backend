@@ -210,6 +210,10 @@ def event_detail(request, pk):
     speakers = Speaker.objects.filter(sessions__agenda__event=event).distinct()
     exhibition_areas = event.exhibition_areas.all()
     exhibitors = event.exhibitors.filter(approved=True)
+    agendas = Agenda.objects.filter(event=event).prefetch_related(
+        'sessions__speakers',
+        'sessions__registrations'
+    ).order_by('date')
 
     context = {
         "event": event,
@@ -222,6 +226,7 @@ def event_detail(request, pk):
         "exhibition_areas": exhibition_areas,
         "exhibitors": exhibitors,
         "is_organizer": event.organizer == request.user,
+        "agendas": agendas,
     }
     return render(request, "portal/events/event_detail.html", context)
 
@@ -739,6 +744,21 @@ def session_manage(request, event_pk, agenda_pk, session_pk=None):
         if form.is_valid():
             session = form.save(commit=False)
             session.agenda = agenda
+
+            # Handle allow_registration checkbox explicitly
+            # If checkbox is not in POST data, it means it was unchecked
+            session.allow_registration = request.POST.get('allow_registration') == 'true'
+
+            # Handle slots_available
+            slots_available = request.POST.get('slots_available', '').strip()
+            if slots_available:
+                try:
+                    session.slots_available = int(slots_available)
+                except (ValueError, TypeError):
+                    session.slots_available = None
+            else:
+                session.slots_available = None
+
             session.save()
             form.save_m2m()  # Save many-to-many relationships
 
@@ -921,6 +941,39 @@ def session_move_ajax(request, event_pk):
         return JsonResponse({'success': False, 'message': 'Unable to move session in that direction.'})
 
     return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
+
+@login_required(login_url="/accounts/login/")
+def session_registrations(request, event_pk, agenda_pk, session_pk):
+    """View and manage registrations for a session"""
+    from src.api.models import SessionRegistration
+
+    event = get_object_or_404(Event, pk=event_pk, organizer=request.user)
+    agenda = get_object_or_404(Agenda, pk=agenda_pk, event=event)
+    session = get_object_or_404(Session, pk=session_pk, agenda=agenda)
+
+    # Get all registrations for this session
+    registrations = SessionRegistration.objects.filter(session=session).select_related('user')
+
+    # Handle unregistration if requested
+    if request.method == "POST":
+        registration_pk = request.POST.get('registration_pk')
+        if registration_pk:
+            registration = get_object_or_404(SessionRegistration, pk=registration_pk, session=session)
+            user_name = registration.user.get_full_name() or registration.user.username
+            registration.delete()
+            messages.success(request, f"Removed {user_name} from session registration.")
+            return redirect('portal:session_registrations', event_pk=event.pk, agenda_pk=agenda.pk, session_pk=session.pk)
+
+    context = {
+        'event': event,
+        'agenda': agenda,
+        'session': session,
+        'registrations': registrations,
+        'total_registrations': registrations.count(),
+        'slots_remaining': (session.slots_available - registrations.count()) if session.slots_available else None,
+    }
+    return render(request, "portal/sessions/session_registrations.html", context)
 
 
 # EXHIBITION AREA MANAGEMENT
@@ -1400,6 +1453,42 @@ def session_speakers_api(request, session_pk):
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
 
+@login_required(login_url="/accounts/login/")
+def event_sessions_api(request, event_pk):
+    """API endpoint to get all sessions for an event"""
+    event = get_object_or_404(Event, pk=event_pk)
+
+    # Get all sessions for all agendas of this event
+    sessions = Session.objects.filter(agenda__event=event).values(
+        'id', 'title', 'session_type', 'start_time', 'end_time', 'location'
+    )
+
+    # Format time fields
+    sessions_list = []
+    for session in sessions:
+        session_dict = dict(session)
+        if session_dict['start_time']:
+            session_dict['start_time'] = session_dict['start_time'].strftime('%H:%M')
+        if session_dict['end_time']:
+            session_dict['end_time'] = session_dict['end_time'].strftime('%H:%M')
+        sessions_list.append(session_dict)
+
+    return JsonResponse(sessions_list, safe=False)
+
+
+@login_required(login_url="/accounts/login/")
+def material_sessions_api(request, material_pk):
+    """API endpoint to get sessions associated with a supporting material"""
+    material = get_object_or_404(SupportingMaterial, pk=material_pk)
+
+    # Check permission
+    if material.event.organizer != request.user:
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    sessions = material.sessions.values('id', 'title')
+    return JsonResponse(list(sessions), safe=False)
+
+
 # Global Speaker Management Views
 @login_required(login_url="/accounts/login/")
 def speaker_list_global(request):
@@ -1708,10 +1797,21 @@ def supporting_material_create(request, event_pk):
             material.event = event
             material.uploaded_by = request.user
             material.save()
+
+            # Save many-to-many relationships (sessions)
+            form.save_m2m()
+
+            # Also handle sessions from POST if not using form widget
+            session_ids = request.POST.getlist('sessions')
+            if session_ids:
+                material.sessions.set(session_ids)
+
             messages.success(request, f"Supporting material '{material.title}' uploaded successfully!")
             return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-materials')
     else:
         form = SupportingMaterialForm()
+        # Limit sessions to this event's sessions
+        form.fields['sessions'].queryset = Session.objects.filter(agenda__event=event)
 
     context = {
         'form': form,
@@ -1731,10 +1831,21 @@ def supporting_material_edit(request, event_pk, material_pk):
         form = SupportingMaterialForm(request.POST, request.FILES, instance=material)
         if form.is_valid():
             material = form.save()
+
+            # Handle sessions from POST if not using form widget
+            session_ids = request.POST.getlist('sessions')
+            if session_ids:
+                material.sessions.set(session_ids)
+            elif 'sessions' in request.POST:
+                # Clear sessions if none selected
+                material.sessions.clear()
+
             messages.success(request, f"Supporting material '{material.title}' updated successfully!")
             return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-materials')
     else:
         form = SupportingMaterialForm(instance=material)
+        # Limit sessions to this event's sessions
+        form.fields['sessions'].queryset = Session.objects.filter(agenda__event=event)
 
     context = {
         'form': form,

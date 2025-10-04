@@ -3,15 +3,26 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import models
+from django.http import StreamingHttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+import json
+import time
+import queue
+import threading
 
-from .models import Event, Registration, Agenda, Session, Speaker, VenueMap, FAQ, ContactInfo, AppContent, Announcement
+from .models import Event, Registration, Agenda, Session, Speaker, VenueMap, FAQ, ContactInfo, AppContent, Announcement, SessionRegistration, QuickAction, SupportingMaterial
 from .serializers import (
     EventSerializer, EventCreateSerializer,
     RegistrationSerializer, UserSerializer,
     AgendaSerializer, SessionSerializer, SpeakerSerializer,
     AgendaSessionSerializer, FAQSerializer, ContactInfoSerializer,
-    AppContentSerializer, AnnouncementSerializer
+    AppContentSerializer, AnnouncementSerializer,
+    QuickActionSerializer, SupportingMaterialSerializer
 )
+
+# Global dictionary to store SSE connections per event
+event_sse_connections = {}
 
 
 class EventViewSet(viewsets.ModelViewSet):
@@ -135,7 +146,7 @@ class EventViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def check_in(self, request, pk=None):
-        """Handle attendee check-in from React Native app"""
+        """Handle attendee check-in from React Native app for Entry Pass"""
         event = self.get_object()
 
         # Get user ID from the request (sent from React Native app)
@@ -147,6 +158,7 @@ class EventViewSet(viewsets.ModelViewSet):
             )
 
         # Find the registration
+        from django.utils import timezone
         try:
             from django.contrib.auth import get_user_model
             User = get_user_model()
@@ -162,18 +174,74 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Store check-in in session for the organizer to retrieve
-        request.session[f'pending_checkin_{event.id}'] = {
-            'registration_id': registration.id,
-            'name': user.get_full_name() or user.username,
-            'email': user.email,
-            'registered_date': registration.registered_at.strftime('%Y-%m-%d %H:%M'),
-            'checked_in_at': timezone.now().isoformat()
-        }
+        # Check if already checked in
+        from .models import CheckIn
+        existing_checkin = CheckIn.objects.filter(
+            registration=registration,
+            event=event
+        ).first()
+
+        if existing_checkin:
+            # Already checked in - still show in modal but indicate it
+            attendee_data = {
+                'registration_id': registration.id,
+                'user_id': user.id,
+                'name': user.get_full_name() or user.username,
+                'email': user.email,
+                'phone': getattr(user, 'phone', ''),
+                'organization': getattr(user, 'organization', ''),
+                'registered_date': registration.registered_at.strftime('%Y-%m-%d %H:%M'),
+                'checked_in_at': existing_checkin.checked_in_at.isoformat(),
+                'profile_image': user.profile_image.url if hasattr(user, 'profile_image') and user.profile_image else None,
+                'already_checked_in': True
+            }
+        else:
+            # Create new check-in record
+            checkin = CheckIn.objects.create(
+                event=event,
+                user=user,
+                registration=registration,
+                checked_in_by=request.user if request.user.is_authenticated else None,
+                check_in_method='qr_code'
+            )
+
+            attendee_data = {
+                'registration_id': registration.id,
+                'user_id': user.id,
+                'name': user.get_full_name() or user.username,
+                'email': user.email,
+                'phone': getattr(user, 'phone', ''),
+                'organization': getattr(user, 'organization', ''),
+                'registered_date': registration.registered_at.strftime('%Y-%m-%d %H:%M'),
+                'checked_in_at': checkin.checked_in_at.isoformat(),
+                'profile_image': user.profile_image.url if hasattr(user, 'profile_image') and user.profile_image else None,
+                'already_checked_in': False
+            }
+
+        # Store in Django cache for polling (Entry Pass system)
+        from django.core.cache import cache
+        cache_key = f'pending_checkin_{event.id}'
+        # Store for 60 seconds (will be picked up by polling)
+        cache.set(cache_key, attendee_data, 60)
+
+        # Also send to SSE clients if connected
+        event_id = str(event.id)
+        if event_id in event_sse_connections:
+            message = json.dumps({
+                'type': 'attendee_scanned',
+                'data': attendee_data
+            })
+
+            # Send to all connected clients for this event
+            for client_queue in event_sse_connections[event_id]:
+                try:
+                    client_queue.put(f"data: {message}\n\n")
+                except:
+                    pass
 
         return Response({
             'success': True,
-            'message': 'Check-in successful',
+            'message': 'Check-in successful. Entry pass will be generated.',
             'attendee': {
                 'name': user.get_full_name() or user.username,
                 'email': user.email,
@@ -182,8 +250,113 @@ class EventViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=True, methods=['get'])
+    @method_decorator(csrf_exempt)
+    def sse_stream(self, request, pk=None):
+        """Server-Sent Events endpoint for real-time updates"""
+        from django.http import HttpResponseForbidden
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        event = self.get_object()
+
+        # Debug logging
+        logger.info(f"SSE request from user: {request.user}")
+        logger.info(f"User authenticated: {request.user.is_authenticated}")
+        logger.info(f"Event organizer: {event.organizer}")
+
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            logger.warning("SSE connection rejected - user not authenticated")
+            return HttpResponseForbidden('Authentication required')
+
+        # Only allow event organizers to access this
+        if event.organizer != request.user:
+            logger.warning(f"SSE connection rejected - user {request.user} is not organizer of event {event.id}")
+            return HttpResponseForbidden('Only event organizers can access this endpoint')
+
+        def event_stream():
+            event_id = str(event.id)
+            client_queue = queue.Queue()
+
+            # Add this client to the connections
+            if event_id not in event_sse_connections:
+                event_sse_connections[event_id] = []
+            event_sse_connections[event_id].append(client_queue)
+
+            # Send initial connection message
+            yield "data: {\"type\": \"connected\", \"message\": \"SSE connection established\"}\n\n"
+
+            try:
+                while True:
+                    try:
+                        # Wait for messages with timeout to send heartbeat
+                        message = client_queue.get(timeout=30)
+                        yield message
+                    except queue.Empty:
+                        # Send heartbeat to keep connection alive
+                        yield ": heartbeat\n\n"
+            finally:
+                # Remove client on disconnect
+                if event_id in event_sse_connections:
+                    if client_queue in event_sse_connections[event_id]:
+                        event_sse_connections[event_id].remove(client_queue)
+                    if not event_sse_connections[event_id]:
+                        del event_sse_connections[event_id]
+
+        response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'
+        return response
+
+    @action(detail=True, methods=['get'])
+    def recent_checkins(self, request, pk=None):
+        """Get recent check-ins for an event"""
+        event = self.get_object()
+
+        # Check if user is organizer
+        if event.organizer != request.user:
+            return Response(
+                {'error': 'Only organizers can view check-ins'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        from .models import CheckIn
+        # Get last 20 check-ins
+        recent_checkins = CheckIn.objects.filter(event=event).select_related('user', 'registration')[:20]
+
+        checkins_data = []
+        for checkin in recent_checkins:
+            checkins_data.append({
+                'user_id': checkin.user.id,
+                'registration_id': checkin.registration.id,
+                'name': checkin.user.get_full_name() or checkin.user.username,
+                'email': checkin.user.email,
+                'phone': getattr(checkin.user, 'phone', ''),
+                'organization': getattr(checkin.user, 'organization', ''),
+                'registered_date': checkin.registration.registered_at.strftime('%Y-%m-%d %H:%M'),
+                'checked_in_at': checkin.checked_in_at.isoformat(),
+                'profile_image': checkin.user.profile_image.url if hasattr(checkin.user, 'profile_image') and checkin.user.profile_image else None
+            })
+
+        # Also get total stats
+        total_registered = Registration.objects.filter(event=event, status='confirmed').count()
+        total_checked_in = CheckIn.objects.filter(event=event).count()
+
+        return Response({
+            'recent_checkins': checkins_data,
+            'stats': {
+                'total_registered': total_registered,
+                'total_checked_in': total_checked_in,
+                'percentage': round((total_checked_in / total_registered * 100) if total_registered > 0 else 0, 1)
+            }
+        })
+
+    @action(detail=True, methods=['get'])
     def pending_checkins(self, request, pk=None):
         """Get pending check-ins for the organizer's screen"""
+        from django.core.cache import cache
+
         event = self.get_object()
 
         # Only allow event organizers to access this
@@ -193,10 +366,13 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Check for pending check-in in session
-        pending_key = f'pending_checkin_{event.id}'
-        if pending_key in request.session:
-            attendee = request.session.pop(pending_key)  # Remove after retrieving
+        # Check for pending check-in in cache (instead of session)
+        cache_key = f'pending_checkin_{event.id}'
+        attendee = cache.get(cache_key)
+
+        if attendee:
+            # Remove after retrieving
+            cache.delete(cache_key)
             return Response({
                 'pending_checkin': True,
                 'attendee': attendee
@@ -237,6 +413,19 @@ class EventViewSet(viewsets.ModelViewSet):
                 if session.speakers.exists():
                     speaker_name = session.speakers.first().name
 
+                # Check registration info for the session
+                slots_taken = SessionRegistration.objects.filter(session=session).count()
+                is_registered = False
+                if request.user.is_authenticated:
+                    is_registered = SessionRegistration.objects.filter(
+                        session=session,
+                        user=request.user
+                    ).exists()
+
+                # Check if session has attachments
+                has_attachments = session.supporting_materials.filter(is_public=True).exists()
+                attachment_count = session.supporting_materials.filter(is_public=True).count()
+
                 session_data = {
                     'id': session.id,
                     'time': session.start_time.strftime('%I:%M %p') if session.start_time else 'TBD',
@@ -246,7 +435,15 @@ class EventViewSet(viewsets.ModelViewSet):
                     'location': session.location or 'TBD',
                     'type': session.session_type,
                     'speaker': speaker_name,  # Keep for backward compatibility
-                    'speakers': speakers_list  # New field with all speakers
+                    'speakers': speakers_list,  # New field with all speakers
+                    # Session registration fields
+                    'allow_registration': session.allow_registration,
+                    'slots_available': session.slots_available,
+                    'slots_taken': slots_taken,
+                    'is_registered': is_registered,
+                    # Attachment fields
+                    'has_attachments': has_attachments,
+                    'attachment_count': attachment_count
                 }
                 session_list.append(session_data)
 
@@ -518,3 +715,232 @@ class AnnouncementViewSet(viewsets.ReadOnlyModelViewSet):
         ).distinct().order_by('-priority', '-created_at')
 
         return queryset
+
+
+class SessionViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for session management with registration
+    """
+    serializer_class = SessionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Session.objects.all()
+
+    @action(detail=True, methods=['post'])
+    def register(self, request, pk=None):
+        """Register current user for a session"""
+        session = self.get_object()
+
+        # Check if registration is allowed
+        if not session.allow_registration:
+            return Response(
+                {'error': 'Registration is not allowed for this session'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if already registered
+        if SessionRegistration.objects.filter(session=session, user=request.user).exists():
+            return Response(
+                {'message': 'You are already registered for this session'},
+                status=status.HTTP_200_OK
+            )
+
+        # Check slot availability
+        if session.slots_available is not None:
+            current_registrations = SessionRegistration.objects.filter(session=session).count()
+            if current_registrations >= session.slots_available:
+                return Response(
+                    {'error': 'No slots available for this session'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Create registration
+        try:
+            registration = SessionRegistration.objects.create(
+                session=session,
+                user=request.user
+            )
+            return Response({
+                'message': 'Successfully registered for session',
+                'registration_id': registration.id
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'])
+    def unregister(self, request, pk=None):
+        """Unregister current user from a session"""
+        session = self.get_object()
+
+        # Check if registered
+        registration = SessionRegistration.objects.filter(
+            session=session,
+            user=request.user
+        ).first()
+
+        if not registration:
+            return Response(
+                {'error': 'You are not registered for this session'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Delete registration
+        registration.delete()
+        return Response({
+            'message': 'Successfully unregistered from session'
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def attachments(self, request, pk=None):
+        """Get supporting materials attached to a session"""
+        session = self.get_object()
+
+        # Get supporting materials linked to this session
+        materials = session.supporting_materials.filter(
+            is_public=True  # Only show public materials
+        ).order_by('order', 'title')
+
+        # Serialize the materials
+        data = []
+        for material in materials:
+            # Get file extension
+            file_extension = ''
+            if material.file:
+                file_name = material.file.name
+                if '.' in file_name:
+                    file_extension = file_name.split('.')[-1].lower()
+
+            data.append({
+                'id': material.id,
+                'title': material.title,
+                'description': material.description,
+                'material_type': material.material_type,
+                'file_extension': file_extension,
+                'file': material.file.url if material.file else None,
+                'file_url': request.build_absolute_uri(material.file.url) if material.file else None,
+                'is_public': material.is_public,
+                'order': material.order,
+                'uploaded_at': material.uploaded_at.isoformat() if hasattr(material, 'uploaded_at') else None,
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def registrations(self, request, pk=None):
+        """Get all registrations for a session (organizers only)"""
+        session = self.get_object()
+
+        # Check if user is the event organizer
+        if session.get_event() and session.get_event().organizer != request.user:
+            return Response(
+                {'error': 'Only event organizers can view registrations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        registrations = SessionRegistration.objects.filter(session=session).select_related('user')
+        registration_data = []
+        for reg in registrations:
+            registration_data.append({
+                'id': reg.id,
+                'user_id': reg.user.id,
+                'name': reg.user.get_full_name() or reg.user.username,
+                'email': reg.user.email,
+                'registered_at': reg.registered_at.isoformat()
+            })
+
+        return Response({
+            'session': session.title,
+            'total_registrations': len(registration_data),
+            'slots_available': session.slots_available,
+            'registrations': registration_data
+        })
+
+
+class QuickActionViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for Quick Actions.
+
+    Full CRUD operations for quick actions for events.
+    """
+    serializer_class = QuickActionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Filter quick actions by event if event_id is provided"""
+        queryset = QuickAction.objects.filter(is_active=True)
+        event_id = self.request.query_params.get('event_id', None)
+
+        if event_id:
+            queryset = queryset.filter(event_id=event_id)
+
+        return queryset.prefetch_related('supporting_materials').order_by('order')
+
+    @action(detail=False, methods=['get'])
+    def by_event(self, request):
+        """Get all quick actions for a specific event"""
+        event_id = request.query_params.get('event_id')
+
+        if not event_id:
+            return Response(
+                {'error': 'event_id parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            event = Event.objects.get(pk=event_id)
+        except Event.DoesNotExist:
+            return Response(
+                {'error': 'Event not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        quick_actions = QuickAction.objects.filter(
+            event=event,
+            is_active=True
+        ).prefetch_related('supporting_materials').order_by('order')
+
+        serializer = self.get_serializer(quick_actions, many=True)
+
+        return Response({
+            'event_id': event.id,
+            'event_title': event.title,
+            'quick_actions': serializer.data
+        })
+
+    @action(detail=True, methods=['get'])
+    def attachments(self, request, pk=None):
+        """Get supporting materials for a specific quick action"""
+        try:
+            quick_action = self.get_object()
+            materials = quick_action.supporting_materials.filter(is_public=True)
+            serializer = SupportingMaterialSerializer(materials, many=True, context={'request': request})
+            return Response(serializer.data)
+        except QuickAction.DoesNotExist:
+            return Response(
+                {'error': 'Quick action not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class SupportingMaterialViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for Supporting Materials.
+
+    Lists and retrieves supporting materials for events.
+    """
+    serializer_class = SupportingMaterialSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """Filter materials by event and public status"""
+        queryset = SupportingMaterial.objects.filter(is_public=True)
+        event_id = self.request.query_params.get('event_id', None)
+
+        if event_id:
+            queryset = queryset.filter(event_id=event_id)
+
+        return queryset.order_by('created_at')
