@@ -103,8 +103,7 @@ ehthumbs.db
 Desktop.ini
 
 # Static files (if collected)
-/static/
-/staticfiles/
+
 
 # Media files
 /media/
