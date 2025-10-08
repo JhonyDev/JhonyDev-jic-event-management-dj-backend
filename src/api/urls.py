@@ -23,6 +23,7 @@ urlpatterns = [
     # Authentication API endpoints
     path('auth/login/', auth_views.login, name='api_login'),
     path('auth/register/', auth_views.register, name='api_register'),
+    path('auth/external-register/', auth_views.external_register, name='api_external_register'),
     path('auth/logout/', auth_views.logout, name='api_logout'),
     path('auth/profile/', auth_views.profile, name='api_profile'),
     path('auth/change-password/', auth_views.change_password, name='api_change_password'),

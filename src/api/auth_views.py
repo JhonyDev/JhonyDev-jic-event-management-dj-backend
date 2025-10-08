@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 from django.db import models
-from .serializers import UserSerializer, UserProfileSerializer, AnnouncementSerializer, AppContentSerializer, FAQSerializer, ContactInfoSerializer
+from .serializers import UserSerializer, UserProfileSerializer, AnnouncementSerializer, AppContentSerializer, FAQSerializer, ContactInfoSerializer, ExternalRegistrationSerializer
 from .models import Announcement, Registration, AppContent, FAQ, ContactInfo
 
 User = get_user_model()
@@ -248,3 +248,56 @@ def contact_info(request):
     contacts = ContactInfo.objects.filter(is_active=True).order_by('contact_type', 'order')
     serializer = ContactInfoSerializer(contacts, many=True)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def external_register(request):
+    """
+    Register user from external form without password.
+    Creates user with unusable password for later activation.
+    Requires X-API-Key header for authentication.
+    """
+    from django.conf import settings
+
+    # Check API key in header
+    api_key = request.headers.get('X-API-Key')
+    if not api_key or api_key != settings.EXTERNAL_REGISTRATION_API_KEY:
+        return Response(
+            {'error': 'Invalid or missing API key'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    serializer = ExternalRegistrationSerializer(data=request.data)
+
+    if serializer.is_valid():
+        # Check if user with this email already exists
+        email = serializer.validated_data.get('email')
+        if User.objects.filter(email=email).exists():
+            return Response(
+                {'error': 'A user with this email already exists'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = serializer.save()
+            return Response(
+                {
+                    'success': True,
+                    'message': 'User registered successfully',
+                    'user': {
+                        'id': user.id,
+                        'email': user.email,
+                        'first_name': user.first_name,
+                        'last_name': user.last_name
+                    }
+                },
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Registration failed: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

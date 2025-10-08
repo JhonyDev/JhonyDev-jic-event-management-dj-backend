@@ -32,6 +32,38 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return None
 
 
+class ExternalRegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for external registration without password"""
+
+    class Meta:
+        model = User
+        fields = [
+            'email', 'first_name', 'last_name', 'designation',
+            'affiliations', 'address', 'country', 'phone_number',
+            'registration_type'
+        ]
+
+    def create(self, validated_data):
+        # Create user without password
+        email = validated_data.get('email')
+        user = User.objects.create(
+            username=email,
+            email=email,
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            designation=validated_data.get('designation'),
+            affiliations=validated_data.get('affiliations'),
+            address=validated_data.get('address'),
+            country=validated_data.get('country'),
+            phone_number=validated_data.get('phone_number'),
+            registration_type=validated_data.get('registration_type')
+        )
+        # Set unusable password
+        user.set_unusable_password()
+        user.save()
+        return user
+
+
 class RegistrationSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
 

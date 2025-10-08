@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -23,26 +24,20 @@ from src.portal.views import self_register
 
 urlpatterns = [
     # Admin
-    path('admin/', admin.site.urls),
-
+    path("admin/", admin.site.urls),
     # Authentication (django-allauth)
-    path('accounts/', include('allauth.urls')),
-
+    path("accounts/", include("allauth.urls")),
     # Public website
-    path('', include('src.website.urls')),
-
+    path("", include("src.website.urls")),
     # Redirect /dashboard/ to /portal/dashboard/
-    path('dashboard/', lambda request: redirect('/portal/dashboard/')),
-
+    path("dashboard/", lambda request: redirect("/portal/dashboard/")),
     # Portal (authenticated area)
-    path('portal/', include('src.portal.urls')),
-
+    path("portal/", include("src.portal.urls")),
     # Self-registration (no auth required)
-    path('register/<int:pk>/', self_register, name='self_register'),
-
+    path("register/<int:pk>/", self_register, name="self_register"),
     # API endpoints
-    path('api/', include('src.api.urls')),
-    path('api-auth/', include('rest_framework.urls')),
+    path("api/", include("src.api.urls")),
+    path("api-auth/", include("rest_framework.urls")),
 ]
 
 if settings.DEBUG:
