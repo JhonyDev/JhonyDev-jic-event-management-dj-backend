@@ -259,6 +259,7 @@ def external_register(request):
     Requires X-API-Key header for authentication.
     """
     from django.conf import settings
+    from .models import Session, SessionRegistration
 
     # Check API key in header
     api_key = request.headers.get('X-API-Key')
@@ -281,19 +282,53 @@ def external_register(request):
 
         try:
             user = serializer.save()
-            return Response(
-                {
-                    'success': True,
-                    'message': 'User registered successfully',
-                    'user': {
-                        'id': user.id,
-                        'email': user.email,
-                        'first_name': user.first_name,
-                        'last_name': user.last_name
-                    }
-                },
-                status=status.HTTP_201_CREATED
-            )
+
+            # Workshop name to session PK mapping
+            workshop_mapping = {
+                "Hands-on Workshop on Next-Generation Sequencing (NGS) Data Analysis and Bioinformatics Skills Development": 22,
+                "Workshop on Precision in Practice: Advanced Imaging, Physiology and Interventions in the Modern Cath Lab": 25,
+                "Workshop on Artificial Intelligence in Instrument Development": 21,
+                "Workshop on Regenerative Medicine and 3D Bioprinting: from Concept to Tissue Fabrication": 23,
+                "Hands-on Workshop on Nanomedicine Preparation and Characterization Techniques": 24,
+                "Symposium cum Workshop on Emerging Trends in Clinical Genetics and Genomics": 26,
+            }
+
+            # Handle workshop registration if provided
+            workshop_selection = getattr(user, '_workshop_selection', None)
+            workshop_registered = None
+
+            if workshop_selection and workshop_selection not in ['N-A', "I don't want to attend any workshop"]:
+                session_pk = workshop_mapping.get(workshop_selection)
+                if session_pk:
+                    try:
+                        session = Session.objects.get(pk=session_pk)
+                        # Create session registration
+                        SessionRegistration.objects.create(
+                            session=session,
+                            user=user
+                        )
+                        workshop_registered = session.title
+                    except Session.DoesNotExist:
+                        pass  # Silently skip if session doesn't exist
+                    except Exception:
+                        pass  # Silently skip registration errors
+
+            response_data = {
+                'success': True,
+                'message': 'User registered successfully',
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name
+                }
+            }
+
+            if workshop_registered:
+                response_data['workshop'] = workshop_registered
+
+            return Response(response_data, status=status.HTTP_201_CREATED)
+
         except Exception as e:
             return Response(
                 {'error': f'Registration failed: {str(e)}'},

@@ -34,18 +34,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class ExternalRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for external registration without password"""
+    workshop_selection = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = User
         fields = [
             'email', 'first_name', 'last_name', 'designation',
             'affiliations', 'address', 'country', 'phone_number',
-            'registration_type'
+            'registration_type', 'workshop_selection'
         ]
 
     def create(self, validated_data):
-        # Create user without password
+        # Remove workshop_selection from validated_data (we'll handle it separately)
+        workshop_selection = validated_data.pop('workshop_selection', None)
+
+        # Create user with phone number as password
         email = validated_data.get('email')
+        phone_number = validated_data.get('phone_number')
+
         user = User.objects.create(
             username=email,
             email=email,
@@ -55,12 +61,20 @@ class ExternalRegistrationSerializer(serializers.ModelSerializer):
             affiliations=validated_data.get('affiliations'),
             address=validated_data.get('address'),
             country=validated_data.get('country'),
-            phone_number=validated_data.get('phone_number'),
+            phone_number=phone_number,
             registration_type=validated_data.get('registration_type')
         )
-        # Set unusable password
-        user.set_unusable_password()
+
+        # Set phone number as password if provided, otherwise set unusable password
+        if phone_number:
+            user.set_password(phone_number)
+        else:
+            user.set_unusable_password()
         user.save()
+
+        # Store workshop_selection for later use in the view
+        user._workshop_selection = workshop_selection
+
         return user
 
 

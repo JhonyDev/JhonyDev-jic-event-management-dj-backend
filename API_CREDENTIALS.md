@@ -27,9 +27,12 @@ curl -X POST https://your-domain.com/api/auth/external-register/ \
     "address": "123 Main Street",
     "country": "USA",
     "phone_number": "+1234567890",
-    "registration_type": "Student Participant"
+    "registration_type": "Student Participant",
+    "workshop_selection": "Workshop on Artificial Intelligence in Instrument Development"
   }'
 ```
+
+**Note:** The `workshop_selection` field is optional. Pass the exact workshop name from your dropdown, and the API will automatically register the user for that workshop session.
 
 ---
 
