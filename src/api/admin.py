@@ -335,13 +335,17 @@ class SessionAdmin(admin.ModelAdmin):
     )
 
     def agenda_link(self, obj):
-        url = reverse('admin:api_agenda_change', args=[obj.agenda.id])
-        return format_html('<a href="{}">{}</a>', url, obj.agenda.title[:30])
+        if obj.agenda:
+            url = reverse('admin:api_agenda_change', args=[obj.agenda.id])
+            return format_html('<a href="{}">{}</a>', url, obj.agenda.title[:30])
+        return '-'
     agenda_link.short_description = 'Agenda'
 
     def event_link(self, obj):
-        url = reverse('admin:api_event_change', args=[obj.agenda.event.id])
-        return format_html('<a href="{}">{}</a>', url, obj.agenda.event.title[:30])
+        if obj.agenda and obj.agenda.event:
+            url = reverse('admin:api_event_change', args=[obj.agenda.event.id])
+            return format_html('<a href="{}">{}</a>', url, obj.agenda.event.title[:30])
+        return '-'
     event_link.short_description = 'Event'
 
     def session_type_badge(self, obj):
@@ -362,7 +366,11 @@ class SessionAdmin(admin.ModelAdmin):
 
     def duration(self, obj):
         if obj.start_time and obj.end_time:
-            delta = obj.end_time - obj.start_time
+            from datetime import datetime, date
+            # Combine times with a date to calculate duration
+            start = datetime.combine(date.today(), obj.start_time)
+            end = datetime.combine(date.today(), obj.end_time)
+            delta = end - start
             hours = int(delta.total_seconds() // 3600)
             minutes = int((delta.total_seconds() % 3600) // 60)
             if hours:
