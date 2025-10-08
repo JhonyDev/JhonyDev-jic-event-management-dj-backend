@@ -7,7 +7,7 @@ from .models import (
     Event, Agenda, Registration, Speaker, Session,
     Exhibitor, ExhibitionArea,
     SessionBookmark, Notification, Sponsor, SupportingMaterial, Announcement,
-    AppContent, FAQ, ContactInfo, QuickAction
+    AppContent, FAQ, ContactInfo, QuickAction, AppDownload
 )
 
 
@@ -1061,3 +1061,42 @@ class ContactInfoAdmin(admin.ModelAdmin):
             return format_html('<span style="color: green;">✓ Active</span>')
         return format_html('<span style="color: red;">✗ Inactive</span>')
     status_badge.short_description = 'Status'
+
+
+@admin.register(AppDownload)
+class AppDownloadAdmin(admin.ModelAdmin):
+    list_display = [
+        'version',
+        'file_size',
+        'is_active_badge',
+        'uploaded_at'
+    ]
+    list_filter = [
+        'is_active',
+        'uploaded_at'
+    ]
+    search_fields = [
+        'version',
+        'release_notes'
+    ]
+    readonly_fields = ['file_size', 'uploaded_at']
+    ordering = ['-uploaded_at']
+
+    fieldsets = (
+        ('Version Information', {
+            'fields': ('version', 'is_active')
+        }),
+        ('APK File', {
+            'fields': ('apk_file', 'file_size')
+        }),
+        ('Release Information', {
+            'fields': ('release_notes', 'uploaded_at'),
+            'classes': ('collapse',)
+        })
+    )
+
+    def is_active_badge(self, obj):
+        if obj.is_active:
+            return format_html('<span style="color: green;">✓ Active</span>')
+        return format_html('<span style="color: gray;">Inactive</span>')
+    is_active_badge.short_description = 'Status'

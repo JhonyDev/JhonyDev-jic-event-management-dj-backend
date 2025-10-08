@@ -21,6 +21,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
 from src.portal.views import self_register
+from src.accounts.views import download_app
 
 urlpatterns = [
     # Admin
@@ -35,6 +36,8 @@ urlpatterns = [
     path("portal/", include("src.portal.urls")),
     # Self-registration (no auth required)
     path("register/<int:pk>/", self_register, name="self_register"),
+    # App download page
+    path("download/", download_app, name="download_app"),
     # API endpoints
     path("api/", include("src.api.urls")),
     path("api-auth/", include("rest_framework.urls")),

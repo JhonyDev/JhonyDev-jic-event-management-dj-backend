@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download JIC App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #a0a0a0;
+            margin-bottom: 40px;
+        }
+
+        .version-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .version-badge {
+            font-size: 16px;
+            font-weight: 300;
+            color: #a0a0a0;
+            margin-bottom: 8px;
+        }
+
+        .version-badge span {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 20px;
+        }
+
+        .file-size {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            margin-bottom: 20px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+        }
+
+        .download-icon {
+            display: inline-block;
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        .release-notes {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .release-notes h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .release-notes p {
+            color: #c0c0c0;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .no-app {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .no-app h2 {
+            font-size: 32px;
+            margin-bottom: 15px;
+            color: #888;
+        }
+
+        .no-app p {
+            font-size: 16px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .download-btn {
+                padding: 15px 40px;
+                font-size: 16px;
+            }
+
+            .logo {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if app %}
+            <div class="logo">JIC</div>
+            <h1>Download JIC App</h1>
+            <p class="subtitle">Experience seamless event management on the go</p>
+
+            <div class="version-info">
+                <div class="version-badge">Version <span>{{ app.version }}</span></div>
+                <div class="file-size">{{ app.file_size }}</div>
+            </div>
+
+            <a href="{{ app.apk_file.url }}" class="download-btn" download>
+                <span class="download-icon">📥</span>
+                Download APK Now
+            </a>
+
+            {% if app.release_notes %}
+            <div class="release-notes">
+                <h3>What's New</h3>
+                <p>{{ app.release_notes }}</p>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="no-app">
+                <div class="logo">JIC</div>
+                <h2>App Coming Soon</h2>
+                <p>The JIC app is currently being prepared. Please check back later!</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

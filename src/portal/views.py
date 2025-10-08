@@ -1315,6 +1315,10 @@ def registration_qr_display(request, pk):
 
 def self_register(request, pk):
     """Self-registration page for attendees (no login required)"""
+    # Redirect to external form for event ID 1
+    if pk == 1:
+        return redirect('https://bankintegration.technospyre.com/CombineRegistrationForm')
+
     event = get_object_or_404(Event, pk=pk, status='published')
 
     # Check if event is still accepting registrations
@@ -1362,9 +1366,14 @@ def self_register(request, pk):
         messages.success(request, f"Successfully registered for {event.title}!")
         return render(request, "portal/events/registration_success.html", {"event": event, "user": user})
 
+    # Get active APK for download button
+    from src.api.models import AppDownload
+    active_apk = AppDownload.objects.filter(is_active=True).first()
+
     context = {
         "event": event,
         "available_spots": available_spots,
+        "app": active_apk,
     }
     return render(request, "portal/events/self_register.html", context)
 

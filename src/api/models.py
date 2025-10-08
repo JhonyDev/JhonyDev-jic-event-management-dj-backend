@@ -640,3 +640,37 @@ class ContactInfo(models.Model):
 
     def __str__(self):
         return f"{self.label}: {self.value}"
+
+class AppDownload(models.Model):
+    """Model to store APK files for app download"""
+    version = models.CharField(max_length=20, help_text="App version (e.g., 1.0.0)")
+    apk_file = models.FileField(upload_to='apk/', help_text="Upload the APK file")
+    release_notes = models.TextField(blank=True, help_text="What's new in this version")
+    is_active = models.BooleanField(default=True, help_text="Only one version should be active at a time")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    file_size = models.CharField(max_length=50, blank=True, editable=False)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'App Download'
+        verbose_name_plural = 'App Downloads'
+
+    def __str__(self):
+        return f"JIC App v{self.version}"
+
+    def save(self, *args, **kwargs):
+        # Calculate file size
+        if self.apk_file:
+            size_bytes = self.apk_file.size
+            if size_bytes < 1024:
+                self.file_size = f"{size_bytes} B"
+            elif size_bytes < 1024 * 1024:
+                self.file_size = f"{size_bytes / 1024:.2f} KB"
+            else:
+                self.file_size = f"{size_bytes / (1024 * 1024):.2f} MB"
+        
+        # If this is being set as active, deactivate all others
+        if self.is_active:
+            AppDownload.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
+        
+        super().save(*args, **kwargs)
