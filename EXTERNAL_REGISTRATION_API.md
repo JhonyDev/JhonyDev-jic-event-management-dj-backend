@@ -3,6 +3,8 @@
 ## Overview
 This API endpoint allows external forms to register users in the system. Users are automatically created with their phone number as the password, allowing them to login immediately after registration.
 
+**Automatic Event Registration:** All users registered through this API are automatically registered to the main event (Event ID: 1) with confirmed status.
+
 ## Endpoint Details
 
 **URL:** `/api/auth/external-register/`

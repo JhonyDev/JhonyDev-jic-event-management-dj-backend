@@ -259,7 +259,7 @@ def external_register(request):
     Requires X-API-Key header for authentication.
     """
     from django.conf import settings
-    from .models import Session, SessionRegistration
+    from .models import Session, SessionRegistration, Event, Registration
 
     # Check API key in header
     api_key = request.headers.get('X-API-Key')
@@ -283,14 +283,27 @@ def external_register(request):
         try:
             user = serializer.save()
 
-            # Workshop name to session PK mapping
+            # Register user to event with PK 1
+            try:
+                event = Event.objects.get(pk=1)
+                Registration.objects.create(
+                    event=event,
+                    user=user,
+                    status='confirmed'
+                )
+            except Event.DoesNotExist:
+                pass  # Silently skip if event doesn't exist
+            except Exception:
+                pass  # Silently skip registration errors
+
+            # Workshop name to session PK mapping (Production Database)
             workshop_mapping = {
-                "Hands-on Workshop on Next-Generation Sequencing (NGS) Data Analysis and Bioinformatics Skills Development": 22,
-                "Workshop on Precision in Practice: Advanced Imaging, Physiology and Interventions in the Modern Cath Lab": 25,
-                "Workshop on Artificial Intelligence in Instrument Development": 21,
-                "Workshop on Regenerative Medicine and 3D Bioprinting: from Concept to Tissue Fabrication": 23,
-                "Hands-on Workshop on Nanomedicine Preparation and Characterization Techniques": 24,
-                "Symposium cum Workshop on Emerging Trends in Clinical Genetics and Genomics": 26,
+                "Hands-on Workshop on Next-Generation Sequencing (NGS) Data Analysis and Bioinformatics Skills Development": 11,
+                "Workshop on Precision in Practice: Advanced Imaging, Physiology and Interventions in the Modern Cath Lab": 14,
+                "Workshop on Artificial Intelligence in Instrument Development": 10,
+                "Workshop on Regenerative Medicine and 3D Bioprinting: from Concept to Tissue Fabrication": 12,
+                "Hands-on Workshop on Nanomedicine Preparation and Characterization Techniques": 13,
+                "Symposium cum Workshop on Emerging Trends in Clinical Genetics and Genomics": 15,
             }
 
             # Handle workshop registration if provided

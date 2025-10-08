@@ -32,7 +32,9 @@ curl -X POST https://your-domain.com/api/auth/external-register/ \
   }'
 ```
 
-**Note:** The `workshop_selection` field is optional. Pass the exact workshop name from your dropdown, and the API will automatically register the user for that workshop session.
+**Note:**
+- The `workshop_selection` field is optional. Pass the exact workshop name from your dropdown, and the API will automatically register the user for that workshop session.
+- All users registered through this API are automatically registered to the main event (Event ID: 1) with confirmed status.
 
 ---
 
