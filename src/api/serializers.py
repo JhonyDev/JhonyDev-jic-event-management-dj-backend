@@ -98,7 +98,8 @@ class EventSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'date', 'location',
             'organizer', 'created_at', 'updated_at', 'max_attendees',
             'image', 'registrations_count', 'is_registered', 'status',
-            'allow_signup_without_qr'
+            'allow_signup_without_qr', 'is_paid_event', 'registration_fee',
+            'payment_methods'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'organizer']
 
@@ -115,7 +116,11 @@ class EventSerializer(serializers.ModelSerializer):
 class EventCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = ['title', 'description', 'date', 'location', 'max_attendees', 'image', 'allow_signup_without_qr']
+        fields = [
+            'title', 'description', 'date', 'location', 'max_attendees',
+            'image', 'allow_signup_without_qr', 'is_paid_event',
+            'registration_fee', 'payment_methods'
+        ]
 
 
 class AnnouncementSerializer(serializers.ModelSerializer):
@@ -176,14 +181,33 @@ class SessionSerializer(serializers.ModelSerializer):
     start_time_formatted = serializers.SerializerMethodField()
     end_time_formatted = serializers.SerializerMethodField()
     duration = serializers.SerializerMethodField()
+    is_registered = serializers.SerializerMethodField()
+    registrations_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Session
         fields = [
             'id', 'title', 'description', 'session_type', 'speakers',
             'start_time', 'end_time', 'start_time_formatted', 'end_time_formatted',
-            'duration', 'location', 'max_attendees', 'materials_url', 'order'
+            'duration', 'location', 'max_attendees', 'materials_url', 'order',
+            'allow_registration', 'slots_available', 'is_paid_session',
+            'session_fee', 'payment_methods', 'is_registered', 'registrations_count'
         ]
+
+    def get_is_registered(self, obj):
+        """Check if current user is registered for this session"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            from .models import SessionRegistration
+            return SessionRegistration.objects.filter(
+                session=obj,
+                user=request.user
+            ).exists()
+        return False
+
+    def get_registrations_count(self, obj):
+        """Get count of registered users for this session"""
+        return obj.registrations.count()
 
     def get_start_time_formatted(self, obj):
         """Format start time for mobile app (e.g., '09:00 AM')"""

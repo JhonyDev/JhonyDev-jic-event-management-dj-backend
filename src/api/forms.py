@@ -27,7 +27,8 @@ class EventForm(forms.ModelForm):
         model = Event
         fields = [
             'title', 'description', 'date', 'end_date', 'location',
-            'venue_details', 'max_attendees', 'image', 'status', 'allow_signup_without_qr'
+            'venue_details', 'max_attendees', 'image', 'status', 'allow_signup_without_qr',
+            'is_paid_event', 'registration_fee', 'payment_methods'
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -38,6 +39,14 @@ class EventForm(forms.ModelForm):
             'image': forms.FileInput(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
             'allow_signup_without_qr': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_paid_event': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'registration_fee': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'step': '0.01'}),
+            'payment_methods': forms.CheckboxSelectMultiple(choices=[('mwallet', 'Mobile Wallet (JazzCash)'), ('card', 'Credit/Debit Card')]),
+        }
+        help_texts = {
+            'is_paid_event': 'Check this if attendees need to pay for event registration',
+            'registration_fee': 'Registration fee in Pakistani Rupees (PKR)',
+            'payment_methods': 'Select allowed payment methods for this event',
         }
 
 
@@ -137,7 +146,8 @@ class SessionForm(forms.ModelForm):
         model = Session
         fields = [
             'title', 'description', 'session_type', 'speakers',
-            'start_time', 'end_time', 'location', 'max_attendees', 'materials_url'
+            'start_time', 'end_time', 'location', 'max_attendees', 'materials_url',
+            'allow_registration', 'slots_available', 'is_paid_session', 'session_fee', 'payment_methods'
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -147,9 +157,19 @@ class SessionForm(forms.ModelForm):
             'location': forms.TextInput(attrs={'class': 'form-control'}),
             'max_attendees': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
             'materials_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'allow_registration': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'slots_available': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'is_paid_session': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'session_fee': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'step': '0.01'}),
+            'payment_methods': forms.CheckboxSelectMultiple(choices=[('mwallet', 'Mobile Wallet (JazzCash)'), ('card', 'Credit/Debit Card')]),
         }
         help_texts = {
             'session_type': '<ul class="mb-0 ps-3"><li><strong>Keynote:</strong> Main featured presentation</li><li><strong>Workshop:</strong> Interactive hands-on session</li><li><strong>Panel:</strong> Group discussion with multiple speakers</li><li><strong>Networking:</strong> Social interaction time</li><li><strong>Break:</strong> Coffee/lunch break</li><li><strong>Presentation:</strong> Standard talk or lecture</li></ul>',
+            'allow_registration': 'Allow attendees to register for this specific session',
+            'slots_available': 'Number of available slots (leave empty for unlimited)',
+            'is_paid_session': 'Check this if attendees need to pay to register for this session',
+            'session_fee': 'Session registration fee in Pakistani Rupees (PKR)',
+            'payment_methods': 'Select allowed payment methods for this session',
         }
 
     def __init__(self, *args, **kwargs):

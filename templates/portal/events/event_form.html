@@ -196,6 +196,104 @@
                     </small>
                   </div>
 
+                  <h4 class="mb-3 mt-4">Payment Settings</h4>
+
+                  <!-- Is Paid Event Checkbox -->
+                  <div class="mb-3">
+                    <label class="form-check form-switch">
+                      <input type="checkbox" class="form-check-input" name="is_paid_event" value="true"
+                             {% if form.instance.is_paid_event %}checked{% endif %}>
+                      <span class="form-check-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted me-1" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                          <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                          <rect x="3" y="5" width="18" height="14" rx="3" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                          <line x1="7" y1="15" x2="7.01" y2="15" />
+                          <line x1="11" y1="15" x2="13" y2="15" />
+                        </svg>
+                        Is Paid Event
+                      </span>
+                    </label>
+                    {% if form.is_paid_event.errors %}
+                      <div class="invalid-feedback d-block">
+                        {% for error in form.is_paid_event.errors %}{{ error }}{% endfor %}
+                      </div>
+                    {% endif %}
+                    <small class="form-hint text-muted">Check this if attendees need to pay for event registration</small>
+                  </div>
+
+                  <div class="row">
+                    <!-- Registration Fee Field -->
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">{{ form.registration_fee.label }}</label>
+                        <div class="input-group">
+                          <span class="input-group-text">PKR</span>
+                          {{ form.registration_fee }}
+                        </div>
+                        {% if form.registration_fee.errors %}
+                          <div class="invalid-feedback d-block">
+                            {% for error in form.registration_fee.errors %}{{ error }}{% endfor %}
+                          </div>
+                        {% endif %}
+                        {% if form.registration_fee.help_text %}
+                          <small class="form-hint">{{ form.registration_fee.help_text }}</small>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Payment Methods Field -->
+                  <div class="mb-3">
+                    <label class="form-label">Payment Methods</label>
+                    <div class="form-selectgroup form-selectgroup-boxes d-flex flex-row">
+                      <label class="form-selectgroup-item flex-fill">
+                        <input type="checkbox" name="payment_methods" value="mwallet" class="form-selectgroup-input"
+                               {% if form.instance.payment_methods and 'mwallet' in form.instance.payment_methods %}checked{% endif %}>
+                        <div class="form-selectgroup-label d-flex align-items-center p-3">
+                          <div class="me-3">
+                            <span class="form-selectgroup-check"></span>
+                          </div>
+                          <div class="form-selectgroup-label-content d-flex align-items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-md text-blue me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                              <rect x="7" y="4" width="10" height="16" rx="1" />
+                              <line x1="11" y1="5" x2="13" y2="5" />
+                              <line x1="12" y1="17" x2="12" y2="17.01" />
+                            </svg>
+                            <div>
+                              <div class="font-weight-medium">Mobile Wallet (JazzCash)</div>
+                              <div class="text-secondary">Pay using JazzCash mobile wallet</div>
+                            </div>
+                          </div>
+                        </div>
+                      </label>
+                      <label class="form-selectgroup-item flex-fill">
+                        <input type="checkbox" name="payment_methods" value="card" class="form-selectgroup-input"
+                               {% if form.instance.payment_methods and 'card' in form.instance.payment_methods %}checked{% endif %}>
+                        <div class="form-selectgroup-label d-flex align-items-center p-3">
+                          <div class="me-3">
+                            <span class="form-selectgroup-check"></span>
+                          </div>
+                          <div class="form-selectgroup-label-content d-flex align-items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-md text-green me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                              <rect x="3" y="5" width="18" height="14" rx="3" />
+                              <line x1="3" y1="10" x2="21" y2="10" />
+                              <line x1="7" y1="15" x2="7.01" y2="15" />
+                              <line x1="11" y1="15" x2="13" y2="15" />
+                            </svg>
+                            <div>
+                              <div class="font-weight-medium">Credit/Debit Card</div>
+                              <div class="text-secondary">Pay using Visa, Mastercard, etc.</div>
+                            </div>
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+                    <small class="form-hint">Select allowed payment methods for this event</small>
+                  </div>
+
                   <!-- Event Image Field -->
                   <div class="mb-3">
                     <label class="form-label">{{ form.image.label }}</label>

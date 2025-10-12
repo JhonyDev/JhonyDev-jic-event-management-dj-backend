@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "src.accounts",
     "src.portal",
     "src.website",
+    "src.payments",
 ]
 
 MIDDLEWARE = [
@@ -224,3 +225,27 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 
 # External registration API key
 EXTERNAL_REGISTRATION_API_KEY = config("EXTERNAL_REGISTRATION_API_KEY", default="your-secret-key-here")
+
+# JazzCash Payment Gateway Configuration
+JAZZCASH_CONFIG = {
+    'MERCHANT_ID': config('JAZZCASH_MERCHANT_ID', default=''),
+    'PASSWORD': config('JAZZCASH_PASSWORD', default=''),
+    'INTEGRITY_SALT': config('JAZZCASH_INTEGRITY_SALT', default=''),
+    'RETURN_URL': config('JAZZCASH_RETURN_URL', default=''),
+    'IPN_URL': config('JAZZCASH_IPN_URL', default=''),
+    'ENVIRONMENT': config('JAZZCASH_ENVIRONMENT', default='sandbox'),
+    'CURRENCY': 'PKR',
+    'LANGUAGE': 'EN',
+    'SANDBOX_URL': {
+        'MWALLET': 'https://sandbox.jazzcash.com.pk/ApplicationAPI/API/2.0/Purchase/DoMWalletTransaction',
+        'CARD': 'https://sandbox.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/',
+        'STATUS_INQUIRY': 'https://sandbox.jazzcash.com.pk/ApplicationAPI/API/PaymentInquiry/Inquire',
+        'REFUND': 'https://sandbox.jazzcash.com.pk/ApplicationAPI/API/authorize/Refund',
+    },
+    'PRODUCTION_URL': {
+        'MWALLET': 'https://payments.jazzcash.com.pk/ApplicationAPI/API/2.0/Purchase/DoMWalletTransaction',
+        'CARD': 'https://payments.jazzcash.com.pk/CustomerPortal/transactionmanagement/merchantform/',
+        'STATUS_INQUIRY': 'https://payments.jazzcash.com.pk/ApplicationAPI/API/PaymentInquiry/Inquire',
+        'REFUND': 'https://payments.jazzcash.com.pk/ApplicationAPI/API/authorize/Refund',
+    },
+}

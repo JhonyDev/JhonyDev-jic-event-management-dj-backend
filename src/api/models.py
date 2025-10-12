@@ -28,6 +28,11 @@ class Event(models.Model):
     allow_signup_without_qr = models.BooleanField(default=False, help_text='Allow users to sign up without scanning QR code')
     sponsors = models.ManyToManyField('Sponsor', blank=True, related_name='events')
 
+    # Payment fields
+    is_paid_event = models.BooleanField(default=False, help_text='Does this event require payment?')
+    registration_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Registration fee in PKR')
+    payment_methods = models.JSONField(default=list, blank=True, help_text='Allowed payment methods: ["mwallet", "card"]')
+
     class Meta:
         ordering = ['-date']
 
@@ -114,8 +119,22 @@ class Registration(models.Model):
             ('cancelled', 'Cancelled'),
         ],
         default='pending'
-        
+
     )
+
+    # Payment fields
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('unpaid', 'Unpaid'),
+            ('pending', 'Payment Pending'),
+            ('paid', 'Paid'),
+            ('refunded', 'Refunded'),
+        ],
+        default='unpaid'
+    )
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    payment_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ['event', 'user']
@@ -173,6 +192,11 @@ class Session(models.Model):
         default=False,
         help_text="Allow attendees to register for this session"
     )
+
+    # Payment fields
+    is_paid_session = models.BooleanField(default=False, help_text='Does this session require payment?')
+    session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Session registration fee in PKR')
+    payment_methods = models.JSONField(default=list, blank=True, help_text='Allowed payment methods: ["mwallet", "card"]')
 
     class Meta:
         ordering = ['order', 'start_time']
@@ -265,6 +289,29 @@ class SessionRegistration(models.Model):
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='registrations')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='session_registrations')
     registered_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('confirmed', 'Confirmed'),
+            ('pending', 'Pending'),
+            ('cancelled', 'Cancelled'),
+        ],
+        default='pending'
+    )
+
+    # Payment fields
+    payment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('unpaid', 'Unpaid'),
+            ('pending', 'Payment Pending'),
+            ('paid', 'Paid'),
+            ('refunded', 'Refunded'),
+        ],
+        default='unpaid'
+    )
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    payment_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-registered_at']

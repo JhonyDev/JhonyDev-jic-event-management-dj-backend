@@ -7,7 +7,7 @@ This API endpoint allows external forms to register users in the system. Users a
 
 ## Endpoint Details
 
-**URL:** `/api/auth/external-register/`
+**URL:** `https://event.jic.agency/api/auth/external-register/`
 
 **Method:** `POST`
 

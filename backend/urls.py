@@ -41,6 +41,8 @@ urlpatterns = [
     # API endpoints
     path("api/", include("src.api.urls")),
     path("api-auth/", include("rest_framework.urls")),
+    # JazzCash Payment Gateway
+    path("api/payments/", include("src.payments.urls")),
 ]
 
 if settings.DEBUG:

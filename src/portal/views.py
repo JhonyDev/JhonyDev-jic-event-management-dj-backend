@@ -158,10 +158,18 @@ def all_exhibitions(request):
 def event_create(request):
     """Create a new event"""
     if request.method == "POST":
-        form = EventForm(request.POST)
+        form = EventForm(request.POST, request.FILES)
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
+
+            # Handle is_paid_event checkbox explicitly
+            event.is_paid_event = request.POST.get('is_paid_event') == 'true'
+
+            # Handle payment_methods (checkboxes return a list)
+            payment_methods = request.POST.getlist('payment_methods')
+            event.payment_methods = payment_methods if payment_methods else []
+
             event.save()
             return redirect("portal:event_list")
     else:
@@ -174,9 +182,18 @@ def event_update(request, pk):
     """Update an existing event"""
     event = get_object_or_404(Event, pk=pk, organizer=request.user)
     if request.method == "POST":
-        form = EventForm(request.POST, instance=event)
+        form = EventForm(request.POST, request.FILES, instance=event)
         if form.is_valid():
-            form.save()
+            event = form.save(commit=False)
+
+            # Handle is_paid_event checkbox explicitly
+            event.is_paid_event = request.POST.get('is_paid_event') == 'true'
+
+            # Handle payment_methods (checkboxes return a list)
+            payment_methods = request.POST.getlist('payment_methods')
+            event.payment_methods = payment_methods if payment_methods else []
+
+            event.save()
             return redirect("portal:event_list")
     else:
         form = EventForm(instance=event)
@@ -758,6 +775,20 @@ def session_manage(request, event_pk, agenda_pk, session_pk=None):
                     session.slots_available = None
             else:
                 session.slots_available = None
+
+            # Handle payment settings
+            session.is_paid_session = request.POST.get('is_paid_session') == 'true'
+
+            # Handle session_fee
+            session_fee = request.POST.get('session_fee', '0').strip()
+            try:
+                session.session_fee = float(session_fee) if session_fee else 0
+            except (ValueError, TypeError):
+                session.session_fee = 0
+
+            # Handle payment_methods (checkboxes return a list)
+            payment_methods = request.POST.getlist('payment_methods')
+            session.payment_methods = payment_methods if payment_methods else []
 
             session.save()
             form.save_m2m()  # Save many-to-many relationships
