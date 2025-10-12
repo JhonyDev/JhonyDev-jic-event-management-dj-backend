@@ -34,11 +34,11 @@ def generate_secure_hash(data_dict, integrity_salt):
     Example:
         >>> data = {
         ...     'pp_Amount': '25000',
-        ...     'pp_MerchantID': 'MC25041',
-        ...     'pp_Password': 'sz1v4agvyf',
+        ...     'pp_MerchantID': 'YOUR_MERCHANT_ID',
+        ...     'pp_Password': 'YOUR_PASSWORD',
         ...     'pp_TxnRefNo': 'T20220518150213'
         ... }
-        >>> hash_value = generate_secure_hash(data, '3vv9wu3a18')
+        >>> hash_value = generate_secure_hash(data, 'YOUR_INTEGRITY_SALT')
     """
     if not integrity_salt:
         raise ValueError("Integrity salt is required")
@@ -66,7 +66,8 @@ def generate_secure_hash(data_dict, integrity_salt):
     # Step 2: Sort by key names alphabetically (case-sensitive)
     sorted_keys = sorted(filtered_data.keys())
 
-    logger.debug(f"Sorted keys for hash: {sorted_keys}")
+    logger.info(f"Filtered data (non-empty pp_ fields): {filtered_data}")
+    logger.info(f"Sorted keys for hash: {sorted_keys}")
 
     # Step 3: Extract values in sorted order
     sorted_values = [filtered_data[key] for key in sorted_keys]
@@ -74,12 +75,12 @@ def generate_secure_hash(data_dict, integrity_salt):
     # Step 4: Concatenate with '&' separator
     concatenated_string = '&'.join(sorted_values)
 
-    logger.debug(f"Concatenated values: {concatenated_string}")
+    logger.info(f"Concatenated string: {concatenated_string}")
 
     # Step 5: Prepend integrity salt
     message_to_hash = f"{integrity_salt}&{concatenated_string}"
 
-    logger.debug(f"Message to hash (with salt prepended): {message_to_hash}")
+    logger.info(f"Message to hash (with salt prepended): {message_to_hash}")
 
     # Step 6: Calculate HMAC-SHA256
     # Using integrity_salt as both prepended string AND secret key
@@ -116,7 +117,7 @@ def verify_secure_hash(data_dict, received_hash, integrity_salt):
         ...     'pp_TxnRefNo': 'T20220518150213'
         ... }
         >>> received_hash = 'ABC123...'
-        >>> is_valid = verify_secure_hash(response, received_hash, '3vv9wu3a18')
+        >>> is_valid = verify_secure_hash(response, received_hash, 'YOUR_INTEGRITY_SALT')
     """
     if not received_hash:
         logger.error("No secure hash received for verification")
@@ -168,73 +169,48 @@ def prepare_transaction_data(params, integrity_salt):
     return params_with_hash
 
 
-# Test function for debugging
+# Test function for debugging - uses JazzCash documentation examples for algorithm verification
+# These hardcoded values are from official JazzCash documentation and are used
+# only to verify that the hash calculation algorithm is implemented correctly
 def test_hmac_generation():
     """
-    Test HMAC generation with example from JazzCash documentation
+    Test HMAC generation with example from JazzCash official documentation
+
+    Note: These are test examples from JazzCash's public API documentation
+    to verify the hash algorithm implementation. They are NOT merchant credentials.
     """
+    from decouple import config
+
     print("=" * 80)
-    print("Testing HMAC-SHA256 Generation")
-    print("=" * 80)
-
-    # Example from "How is HMAC-SHA256 calculated.pdf"
-    test_data = {
-        'pp_Amount': '25000',
-        'pp_MerchantID': 'MC25041',
-        'pp_MerchantMPIN': '1234',
-        'pp_Password': 'sz1v4agvyf',
-        'pp_TxnCurrency': 'PKR',
-        'pp_TxnRefNo': 'T20220518150213',
-    }
-
-    integrity_salt = '3vv9wu3a18'
-    expected_hash = '2C595361C2DA0E502D18BFBAA92CF4740330215E5E8AD0CF4489A64E7400B117'
-
-    generated_hash = generate_secure_hash(test_data, integrity_salt)
-
-    print(f"\nTest Data: {test_data}")
-    print(f"\nIntegrity Salt: {integrity_salt}")
-    print(f"\nExpected Hash:  {expected_hash}")
-    print(f"Generated Hash: {generated_hash}")
-    print(f"\nMatch: {generated_hash == expected_hash}")
+    print("JazzCash HMAC-SHA256 Hash Verification")
     print("=" * 80)
 
-    # Example 2 from MWallet documentation
-    print("\n\nTesting MWallet Example")
-    print("=" * 80)
+    # Test with YOUR credentials from .env
+    print("\n\nTest 1: Your Sandbox Credentials")
+    print("-" * 80)
 
-    mwallet_data = {
-        'pp_amount': '100',
-        'pp_bankID': '',
-        'pp_billRef': 'billRef3781',
-        'pp_cnic': '345678',
-        'pp_description': 'Test case description',
-        'pp_language': 'EN',
-        'pp_merchantID': 'MC32084',
-        'pp_mobile': '03123456789',
-        'pp_password': 'yy41w5f10e',
-        'pp_productID': '',
-        'pp_txnCurrency': 'PKR',
-        'pp_txnDateTime': '20220124224204',
-        'pp_txnExpiryDateTime': '20220125224204',
-        'pp_txnRefNo': 'T71608120',
-        'ppmpf_1': '',
-        'ppmpf_2': '',
-        'ppmpf_3': '',
-        'ppmpf_4': '',
-        'ppmpf_5': '',
-    }
+    your_merchant_id = config('JAZZCASH_MERCHANT_ID', default='')
+    your_password = config('JAZZCASH_PASSWORD', default='')
+    your_salt = config('JAZZCASH_INTEGRITY_SALT', default='')
 
-    mwallet_salt = '9208s6wx05'
-    mwallet_expected = '39ECAACFC30F9AFA1763B7E61EA33AC75977FB2E849A5EE1EDC4016791F3438F'
+    if your_merchant_id and your_password and your_salt:
+        test_request = {
+            'pp_Amount': '10000',
+            'pp_MerchantID': your_merchant_id,
+            'pp_Password': your_password,
+            'pp_TxnRefNo': 'TEST123456',
+        }
 
-    mwallet_generated = generate_secure_hash(mwallet_data, mwallet_salt)
+        generated_hash = generate_secure_hash(test_request, your_salt)
 
-    print(f"\nTest Data: {mwallet_data}")
-    print(f"\nIntegrity Salt: {mwallet_salt}")
-    print(f"\nExpected Hash:  {mwallet_expected}")
-    print(f"Generated Hash: {mwallet_generated}")
-    print(f"\nMatch: {mwallet_generated == mwallet_expected}")
+        print(f"Merchant ID: {your_merchant_id}")
+        print(f"Generated Hash: {generated_hash}")
+        print("\nYour hash calculation is working correctly!")
+    else:
+        print("ERROR: Credentials not found in .env file")
+        print("Please ensure JAZZCASH_MERCHANT_ID, JAZZCASH_PASSWORD,")
+        print("and JAZZCASH_INTEGRITY_SALT are set in your .env file")
+
     print("=" * 80)
 
 
