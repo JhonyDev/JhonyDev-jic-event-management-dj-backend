@@ -37,6 +37,15 @@ class MWalletClient:
         self.config = jazzcash_config
         self.api_url = self.config.mwallet_url
 
+        # Log configuration on initialization to verify credentials are loaded
+        print(f"=== MWalletClient initialized ===")
+        print(f"  Merchant ID: {self.config.merchant_id}")
+        print(f"  Password: {self.config.password}")
+        print(f"  Integrity Salt: {self.config.integrity_salt}")
+        print(f"  Environment: {self.config.environment}")
+        print(f"  API URL: {self.api_url}")
+        print(f"===================================")
+
     def initiate_payment(self, event, user, amount, mobile_number, cnic, description='', registration=None, session=None, session_registration=None):
         """
         Initiate MWallet payment
@@ -56,25 +65,49 @@ class MWalletClient:
             tuple: (success: bool, data: dict, error_message: str)
         """
         try:
+            print(f"\n{'='*80}")
+            print(f"🚀 INITIATING MWALLET PAYMENT")
+            print(f"{'='*80}")
+            print(f"Event: {event.title} (ID: {event.id})")
+            print(f"User: {user.username} (ID: {user.id})")
+            print(f"Amount: {amount} PKR")
+            print(f"Mobile: {mobile_number}")
+            print(f"CNIC: {cnic}")
+            print(f"{'='*80}\n")
+
             # Validate inputs
+            print(f"📋 Step 1: Validating inputs...")
             if not validate_mobile_number(mobile_number):
+                print(f"  ✗ FAILED: Invalid mobile number format")
                 return False, {}, "Invalid mobile number format. Use 03XXXXXXXXX"
+            print(f"  ✓ Mobile number valid")
 
             if not validate_cnic(cnic):
+                print(f"  ✗ FAILED: Invalid CNIC format")
                 return False, {}, "Invalid CNIC. Provide last 6 digits"
+            print(f"  ✓ CNIC valid")
 
             # Format mobile number
             mobile_number = format_mobile_number(mobile_number)
+            print(f"  ✓ Formatted mobile: {mobile_number}\n")
 
             # Generate transaction details
+            print(f"🔢 Step 2: Generating transaction details...")
             txn_ref_no = generate_txn_ref_no()
+            print(f"  Transaction Ref: {txn_ref_no}")
+
             bill_reference = generate_bill_reference(event.id, user.id)
+            print(f"  Bill Reference: {bill_reference}")
+
             amount_in_paisa = amount_to_paisa(amount)
+            print(f"  Amount in Paisa: {amount_in_paisa}")
 
             if not description:
                 description = f"Payment for {event.title}"
+            print(f"  Description: {description}\n")
 
             # Prepare request parameters
+            print(f"📝 Step 3: Preparing request parameters...")
             params = {
                 'pp_Amount': str(amount_in_paisa),
                 'pp_BillReference': bill_reference,
@@ -94,19 +127,25 @@ class MWalletClient:
                 'ppmpf_4': '',
                 'ppmpf_5': '',
             }
+            print(f"  ✓ {len(params)} parameters prepared")
+            print(f"  Request parameters:")
+            for key in sorted(params.keys()):
+                print(f"    {key}: {params[key]}")
+            print()
 
             # Generate secure hash
-            logger.info(f"=== Request Hash Generation for {txn_ref_no} ===")
-            logger.info(f"Using Integrity Salt: {self.config.integrity_salt[:3]}***")
-            logger.info(f"Request params (before hash): {params}")
+            print(f"🔐 Step 4: Generating secure hash...")
+            print(f"  Merchant ID: {self.config.merchant_id}")
+            print(f"  Password: {self.config.password}")
+            print(f"  Integrity Salt: {self.config.integrity_salt}")
+            print(f"  Calling generate_secure_hash()...")
+
             secure_hash = generate_secure_hash(params, self.config.integrity_salt)
             params['pp_SecureHash'] = secure_hash
-            logger.info(f"Generated secure hash: {secure_hash}")
-            logger.info(f"=== End Request Hash Generation ===")
-
-            logger.info(f"Initiating MWallet payment: {txn_ref_no} for {amount} PKR")
+            print(f"  ✓ Hash generated: {secure_hash}\n")
 
             # Create transaction record
+            print(f"💾 Step 5: Creating transaction record in database...")
             transaction = JazzCashTransaction.objects.create(
                 event=event,
                 user=user,
@@ -125,8 +164,16 @@ class MWalletClient:
                 status='pending',
                 request_data=params,
             )
+            print(f"  ✓ Transaction saved (DB ID: {transaction.id}, Status: pending)\n")
 
             # Make API request
+            print(f"🌐 Step 6: Sending request to JazzCash API...")
+            print(f"  URL: {self.api_url}")
+            print(f"  Method: POST")
+            print(f"  Content-Type: application/json")
+            print(f"  Timeout: 30s")
+            print(f"  Sending request...\n")
+
             response = requests.post(
                 self.api_url,
                 json=params,
@@ -134,10 +181,20 @@ class MWalletClient:
                 timeout=30
             )
 
+            print(f"  ✓ Response received!")
+            print(f"  Status Code: {response.status_code}")
+            print(f"  Response Time: {response.elapsed.total_seconds():.2f}s\n")
+
             response_data = response.json()
-            logger.info(f"MWallet API Response: {response_data}")
+            print(f"📥 Step 7: Processing response from JazzCash...")
+            print(f"  Response fields ({len(response_data)} total):")
+            for key, value in response_data.items():
+                print(f"    {key}: {value}")
+
+            print()
 
             # Save response
+            print(f"💾 Step 8: Updating transaction with response...")
             transaction.response_data = response_data
             transaction.pp_response_code = response_data.get('pp_ResponseCode', '')
             transaction.pp_response_message = response_data.get('pp_ResponseMessage', '')
@@ -145,55 +202,83 @@ class MWalletClient:
             transaction.pp_auth_code = response_data.get('pp_AuthCode', '')
             transaction.pp_version = response_data.get('pp_Version', '')
             transaction.pp_txn_type = response_data.get('pp_TxnType', '')
+            print(f"  Response Code: {transaction.pp_response_code}")
+            print(f"  Response Message: {transaction.pp_response_message}")
+            print(f"  ✓ Transaction updated\n")
 
             # Verify secure hash in response
+            print(f"🔍 Step 9: Verifying response hash...")
             received_hash = response_data.get('pp_SecureHash', '')
-            response_for_verification = {k: v for k, v in response_data.items() if k != 'pp_SecureHash'}
+            print(f"  Received Hash: {received_hash}")
 
-            # Debug logging for hash verification
-            logger.info(f"=== Hash Verification Debug for {txn_ref_no} ===")
-            logger.info(f"Integrity Salt: {self.config.integrity_salt[:3]}***")
-            logger.info(f"Response data for verification: {response_for_verification}")
-            logger.info(f"Received hash from JazzCash: {received_hash}")
+            response_for_verification = {k: v for k, v in response_data.items() if k != 'pp_SecureHash'}
+            print(f"  Verifying with Integrity Salt: {self.config.integrity_salt}")
+            print(f"  Fields to verify ({len(response_for_verification)} fields):")
+            for key in sorted(response_for_verification.keys()):
+                print(f"    {key}: {response_for_verification[key]}")
+            print(f"\n  Calling verify_secure_hash()...")
 
             is_verified = verify_secure_hash(response_for_verification, received_hash, self.config.integrity_salt)
 
-            logger.info(f"Hash verification result: {is_verified}")
-            logger.info(f"=== End Hash Verification Debug ===")
+            print(f"\n  {'✓ HASH VERIFIED!' if is_verified else '✗ HASH VERIFICATION FAILED!'}\n")
 
             if not is_verified:
-                logger.error(f"Hash verification failed for transaction {txn_ref_no}")
-                logger.error(f"This usually means the Integrity Salt is incorrect.")
-                logger.error(f"Please verify you're using the correct JazzCash credentials.")
+                print(f"❌ SECURITY VERIFICATION FAILED!")
+                print(f"   Transaction: {txn_ref_no}")
+                print(f"   Marking transaction as failed...")
                 transaction.status = 'failed'
                 transaction.save()
+                print(f"   ✓ Transaction marked as failed\n")
+                print(f"{'='*80}")
+                print(f"❌ PAYMENT FAILED: Security verification failed")
+                print(f"{'='*80}\n")
                 return False, response_data, "Security verification failed"
 
             # Check response code
+            print(f"✅ Step 10: Checking payment status...")
             response_code = response_data.get('pp_ResponseCode', '')
+            print(f"  Response Code: {response_code}")
 
             if is_successful_response(response_code):
+                print(f"  ✓ Payment SUCCESSFUL!")
                 transaction.mark_completed(response_data)
-                logger.info(f"MWallet payment successful: {txn_ref_no}")
-                # Include txn_ref_no in response_data to ensure it's always available
+                print(f"  ✓ Transaction marked as completed")
                 response_data['pp_TxnRefNo'] = txn_ref_no
+                print(f"\n{'='*80}")
+                print(f"✅ PAYMENT SUCCESSFUL!")
+                print(f"   Transaction: {txn_ref_no}")
+                print(f"   Amount: {amount} PKR")
+                print(f"{'='*80}\n")
                 return True, response_data, "Payment successful"
             else:
+                print(f"  ✗ Payment FAILED")
+                print(f"  Reason: {response_data.get('pp_ResponseMessage', 'Unknown')}")
                 transaction.mark_failed(response_data)
-                logger.warning(f"MWallet payment failed: {txn_ref_no} - {response_data.get('pp_ResponseMessage')}")
-                # Include txn_ref_no even on failure
+                print(f"  ✓ Transaction marked as failed")
                 response_data['pp_TxnRefNo'] = txn_ref_no
+                print(f"\n{'='*80}")
+                print(f"❌ PAYMENT FAILED!")
+                print(f"   Transaction: {txn_ref_no}")
+                print(f"   Reason: {response_data.get('pp_ResponseMessage', 'Payment failed')}")
+                print(f"{'='*80}\n")
                 return False, response_data, response_data.get('pp_ResponseMessage', 'Payment failed')
 
         except requests.exceptions.RequestException as e:
+            print(f"\n{'='*80}")
+            print(f"❌ NETWORK ERROR!")
+            print(f"   Error: {str(e)}")
+            print(f"{'='*80}\n")
             logger.error(f"MWallet API request failed: {str(e)}")
-            # Return txn_ref_no even on network error if transaction was created
             try:
                 return False, {'pp_TxnRefNo': txn_ref_no}, f"Network error: {str(e)}"
             except:
                 return False, {}, f"Network error: {str(e)}"
 
         except Exception as e:
+            print(f"\n{'='*80}")
+            print(f"❌ UNEXPECTED ERROR!")
+            print(f"   Error: {str(e)}")
+            print(f"{'='*80}\n")
             logger.error(f"MWallet payment error: {str(e)}", exc_info=True)
             return False, {}, f"Error: {str(e)}"
 

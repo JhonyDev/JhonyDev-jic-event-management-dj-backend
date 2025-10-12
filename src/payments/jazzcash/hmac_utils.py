@@ -66,8 +66,8 @@ def generate_secure_hash(data_dict, integrity_salt):
     # Step 2: Sort by key names alphabetically (case-sensitive)
     sorted_keys = sorted(filtered_data.keys())
 
-    logger.info(f"Filtered data (non-empty pp_ fields): {filtered_data}")
-    logger.info(f"Sorted keys for hash: {sorted_keys}")
+    print(f"  Filtered data (non-empty pp_ fields): {filtered_data}")
+    print(f"  Sorted keys for hash: {sorted_keys}")
 
     # Step 3: Extract values in sorted order
     sorted_values = [filtered_data[key] for key in sorted_keys]
@@ -75,12 +75,12 @@ def generate_secure_hash(data_dict, integrity_salt):
     # Step 4: Concatenate with '&' separator
     concatenated_string = '&'.join(sorted_values)
 
-    logger.info(f"Concatenated string: {concatenated_string}")
+    print(f"  Concatenated string: {concatenated_string}")
 
     # Step 5: Prepend integrity salt
     message_to_hash = f"{integrity_salt}&{concatenated_string}"
 
-    logger.info(f"Message to hash (with salt prepended): {message_to_hash}")
+    print(f"  Message to hash (with salt prepended): {message_to_hash}")
 
     # Step 6: Calculate HMAC-SHA256
     # Using integrity_salt as both prepended string AND secret key
@@ -93,7 +93,7 @@ def generate_secure_hash(data_dict, integrity_salt):
     # Get hexadecimal digest in UPPERCASE
     secure_hash = hash_object.hexdigest().upper()
 
-    logger.debug(f"Generated secure hash: {secure_hash}")
+    print(f"  Calculated hash: {secure_hash}")
 
     return secure_hash
 
@@ -135,11 +135,11 @@ def verify_secure_hash(data_dict, received_hash, integrity_salt):
         is_valid = calculated_hash.upper() == received_hash.upper()
 
         if not is_valid:
-            logger.error(f"Hash verification failed!")
-            logger.error(f"Received:   {received_hash.upper()}")
-            logger.error(f"Calculated: {calculated_hash.upper()}")
+            print(f"  ✗ Hash verification FAILED!")
+            print(f"  Received:   {received_hash.upper()}")
+            print(f"  Calculated: {calculated_hash.upper()}")
         else:
-            logger.info("Hash verification successful")
+            print(f"  ✓ Hash verification SUCCESSFUL!")
 
         return is_valid
 

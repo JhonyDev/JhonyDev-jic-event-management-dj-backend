@@ -162,3 +162,6 @@ celerybeat.pid
 
 # Profiling data
 .prof
+
+# Log files
+logs/*.log
