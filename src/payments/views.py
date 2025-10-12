@@ -312,15 +312,18 @@ def ipn_listener_view(request):
 
     POST /api/payments/jazzcash/ipn/
     """
+    print("ipn received")
     try:
         ipn_data = request.data if hasattr(request, 'data') else request.POST.dict()
 
         logger.info(f"IPN received: {ipn_data}")
+        print(f"IPN received: {ipn_data}")
 
         handler = IPNHandler()
         success, response_data, message = handler.process_ipn(ipn_data)
 
         logger.info(f"IPN response: {response_data}")
+        print(f"IPN response: {response_data}")
 
         return JsonResponse(response_data, status=200 if success else 400)
 

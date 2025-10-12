@@ -96,8 +96,13 @@ class MWalletClient:
             }
 
             # Generate secure hash
+            logger.info(f"=== Request Hash Generation for {txn_ref_no} ===")
+            logger.info(f"Using Integrity Salt: {self.config.integrity_salt[:3]}***")
+            logger.info(f"Request params (before hash): {params}")
             secure_hash = generate_secure_hash(params, self.config.integrity_salt)
             params['pp_SecureHash'] = secure_hash
+            logger.info(f"Generated secure hash: {secure_hash}")
+            logger.info(f"=== End Request Hash Generation ===")
 
             logger.info(f"Initiating MWallet payment: {txn_ref_no} for {amount} PKR")
 
@@ -144,10 +149,22 @@ class MWalletClient:
             # Verify secure hash in response
             received_hash = response_data.get('pp_SecureHash', '')
             response_for_verification = {k: v for k, v in response_data.items() if k != 'pp_SecureHash'}
+
+            # Debug logging for hash verification
+            logger.info(f"=== Hash Verification Debug for {txn_ref_no} ===")
+            logger.info(f"Integrity Salt: {self.config.integrity_salt[:3]}***")
+            logger.info(f"Response data for verification: {response_for_verification}")
+            logger.info(f"Received hash from JazzCash: {received_hash}")
+
             is_verified = verify_secure_hash(response_for_verification, received_hash, self.config.integrity_salt)
+
+            logger.info(f"Hash verification result: {is_verified}")
+            logger.info(f"=== End Hash Verification Debug ===")
 
             if not is_verified:
                 logger.error(f"Hash verification failed for transaction {txn_ref_no}")
+                logger.error(f"This usually means the Integrity Salt is incorrect.")
+                logger.error(f"Please verify you're using the correct JazzCash credentials.")
                 transaction.status = 'failed'
                 transaction.save()
                 return False, response_data, "Security verification failed"
