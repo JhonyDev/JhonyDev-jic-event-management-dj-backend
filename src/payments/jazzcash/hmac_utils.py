@@ -46,22 +46,26 @@ def generate_secure_hash(data_dict, integrity_salt):
     if not data_dict:
         raise ValueError("Data dictionary cannot be empty")
 
-    # Step 1: Filter fields starting with 'pp_' (case-insensitive) and remove empty values
+    # Step 1: Filter fields starting with 'pp_' or 'ppmpf_' (case-insensitive)
+    # IMPORTANT: Include empty string fields - JazzCash includes them in hash calculation
     filtered_data = {}
     for key, value in data_dict.items():
         # Check if key starts with 'pp_' (case-insensitive)
-        if key.lower().startswith('pp_'):
-            # Convert value to string and check if not empty
+        if key.lower().startswith('pp'):
+            # Convert value to string
+            if value is None or str(value).lower() == 'none':
+                # Skip None values (but keep empty strings)
+                continue
             str_value = str(value).strip() if value is not None else ''
-            if str_value:  # Include only non-empty values
-                filtered_data[key] = str_value
+            # Include ALL values, even empty strings
+            filtered_data[key] = str_value
 
     if not filtered_data:
         logger.warning("No pp_ fields found in data dictionary")
         # JazzCash might send data without pp_ prefix in some cases
-        # If no pp_ fields found, use all non-empty fields
+        # If no pp_ fields found, use all fields
         filtered_data = {k: str(v).strip() for k, v in data_dict.items()
-                        if v is not None and str(v).strip()}
+                        if v is not None and str(v).lower() != 'none'}
 
     # Step 2: Sort by key names alphabetically (case-sensitive)
     sorted_keys = sorted(filtered_data.keys())
