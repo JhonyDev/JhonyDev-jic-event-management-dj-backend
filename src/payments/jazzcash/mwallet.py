@@ -134,13 +134,14 @@ class MWalletClient:
             print()
 
             # Generate secure hash
-            print(f"🔐 Step 4: Generating secure hash...")
+            print(f"🔐 Step 4: Generating secure hash for REQUEST...")
             print(f"  Merchant ID: {self.config.merchant_id}")
             print(f"  Password: {self.config.password}")
             print(f"  Integrity Salt: {self.config.integrity_salt}")
+            print(f"  Mode: Exclude empty fields (include_empty=False)")
             print(f"  Calling generate_secure_hash()...")
 
-            secure_hash = generate_secure_hash(params, self.config.integrity_salt)
+            secure_hash = generate_secure_hash(params, self.config.integrity_salt, include_empty=False)
             params['pp_SecureHash'] = secure_hash
             print(f"  ✓ Hash generated: {secure_hash}\n")
 
@@ -207,12 +208,13 @@ class MWalletClient:
             print(f"  ✓ Transaction updated\n")
 
             # Verify secure hash in response
-            print(f"🔍 Step 9: Verifying response hash...")
+            print(f"🔍 Step 9: Verifying RESPONSE hash...")
             received_hash = response_data.get('pp_SecureHash', '')
             print(f"  Received Hash: {received_hash}")
 
             response_for_verification = {k: v for k, v in response_data.items() if k != 'pp_SecureHash'}
             print(f"  Verifying with Integrity Salt: {self.config.integrity_salt}")
+            print(f"  Mode: Include empty fields (include_empty=True)")
             print(f"  Fields to verify ({len(response_for_verification)} fields):")
             for key in sorted(response_for_verification.keys()):
                 print(f"    {key}: {response_for_verification[key]}")

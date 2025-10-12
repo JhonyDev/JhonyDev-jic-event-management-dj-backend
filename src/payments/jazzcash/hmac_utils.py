@@ -20,13 +20,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def generate_secure_hash(data_dict, integrity_salt):
+def generate_secure_hash(data_dict, integrity_salt, include_empty=False):
     """
     Generate HMAC-SHA256 secure hash for JazzCash transaction
 
     Args:
         data_dict (dict): Dictionary containing transaction parameters
         integrity_salt (str): Merchant's integrity salt from JazzCash
+        include_empty (bool): Whether to include empty string fields in hash
+                             False for REQUEST (default), True for RESPONSE verification
 
     Returns:
         str: Uppercase hexadecimal HMAC-SHA256 hash
@@ -47,17 +49,21 @@ def generate_secure_hash(data_dict, integrity_salt):
         raise ValueError("Data dictionary cannot be empty")
 
     # Step 1: Filter fields starting with 'pp_' or 'ppmpf_' (case-insensitive)
-    # IMPORTANT: Include empty string fields - JazzCash includes them in hash calculation
     filtered_data = {}
     for key, value in data_dict.items():
         # Check if key starts with 'pp_' (case-insensitive)
         if key.lower().startswith('pp'):
             # Convert value to string
             if value is None or str(value).lower() == 'none':
-                # Skip None values (but keep empty strings)
+                # Skip None values
                 continue
             str_value = str(value).strip() if value is not None else ''
-            # Include ALL values, even empty strings
+
+            # For REQUEST: exclude empty strings (except for required fields)
+            # For RESPONSE: include all fields including empty strings
+            if not include_empty and str_value == '':
+                continue
+
             filtered_data[key] = str_value
 
     if not filtered_data:
@@ -70,8 +76,9 @@ def generate_secure_hash(data_dict, integrity_salt):
     # Step 2: Sort by key names alphabetically (case-sensitive)
     sorted_keys = sorted(filtered_data.keys())
 
-    print(f"  Filtered data (non-empty pp_ fields): {filtered_data}")
-    print(f"  Sorted keys for hash: {sorted_keys}")
+    mode = "including empty fields" if include_empty else "excluding empty fields"
+    print(f"  Filtered data ({mode}): {filtered_data}")
+    print(f"  Sorted keys for hash ({len(sorted_keys)} fields): {sorted_keys}")
 
     # Step 3: Extract values in sorted order
     sorted_values = [filtered_data[key] for key in sorted_keys]
@@ -132,8 +139,8 @@ def verify_secure_hash(data_dict, received_hash, integrity_salt):
         data_for_verification = {k: v for k, v in data_dict.items()
                                 if k.lower() not in ['pp_securehash', 'securehash', 'pp_secure_hash']}
 
-        # Calculate hash
-        calculated_hash = generate_secure_hash(data_for_verification, integrity_salt)
+        # Calculate hash - INCLUDE empty fields for response verification
+        calculated_hash = generate_secure_hash(data_for_verification, integrity_salt, include_empty=True)
 
         # Compare (case-insensitive)
         is_valid = calculated_hash.upper() == received_hash.upper()
