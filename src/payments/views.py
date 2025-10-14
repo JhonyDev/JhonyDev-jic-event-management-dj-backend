@@ -158,55 +158,154 @@ class SessionMWalletPaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = MWalletPaymentRequestSerializer(data=request.data)
+        print("\n" + "="*80)
+        print("🔷 SESSION MWALLET PAYMENT REQUEST RECEIVED")
+        print("="*80)
+        print(f"User: {request.user.username} (ID: {request.user.id})")
+        print(f"Request Data: {request.data}")
+        print("="*80 + "\n")
 
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = MWalletPaymentRequestSerializer(data=request.data)
 
-        data = serializer.validated_data
+            if not serializer.is_valid():
+                print(f"❌ Serializer validation failed: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get session instead of event
-        session = get_object_or_404(Session, id=data.get('session_id'))
+            data = serializer.validated_data
+            print(f"✅ Serializer validated successfully")
+            print(f"Validated data: {data}")
 
-        # Check if session requires payment
-        if not getattr(session, 'is_paid_session', False):
-            return Response(
-                {'error': 'This session does not require payment'},
-                status=status.HTTP_400_BAD_REQUEST
+            # Get session instead of event
+            session_id = data.get('session_id')
+            print(f"\n📋 Step 1: Getting session with ID: {session_id}")
+
+            session = get_object_or_404(Session, id=session_id)
+            print(f"✅ Session found:")
+            print(f"   - ID: {session.id}")
+            print(f"   - Title: {session.title}")
+            print(f"   - Has direct event field: {hasattr(session, 'event')}")
+            print(f"   - Direct event value: {session.event if hasattr(session, 'event') else 'N/A'}")
+            print(f"   - Has agenda field: {hasattr(session, 'agenda')}")
+            print(f"   - Agenda value: {session.agenda if hasattr(session, 'agenda') else 'N/A'}")
+            print(f"   - Agenda ID: {session.agenda.id if session.agenda else 'N/A'}")
+            print(f"   - is_paid_session: {getattr(session, 'is_paid_session', False)}")
+            print(f"   - session_fee: {getattr(session, 'session_fee', 'N/A')}")
+
+            # Check if session requires payment
+            if not getattr(session, 'is_paid_session', False):
+                print(f"❌ Session does not require payment")
+                return Response(
+                    {'error': 'This session does not require payment'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            print(f"✅ Session requires payment")
+
+            # Don't create session registration yet - only create after successful payment
+            # Check if already registered
+            print(f"\n📋 Step 2: Checking existing session registration...")
+            existing_session_registration = SessionRegistration.objects.filter(
+                session=session,
+                user=request.user
+            ).first()
+            if existing_session_registration:
+                print(f"✅ Found existing session registration: ID {existing_session_registration.id}")
+            else:
+                print(f"✅ No existing session registration found")
+
+            # Get event through agenda relationship
+            print(f"\n📋 Step 3: Getting event through agenda relationship...")
+            print(f"Session object details before calling get_event():")
+            print(f"   - session: {session}")
+            print(f"   - session type: {type(session)}")
+            print(f"   - session.__dict__: {session.__dict__ if hasattr(session, '__dict__') else 'N/A'}")
+
+            print(f"\nCalling session.get_event()...")
+            try:
+                event = session.get_event()
+                print(f"✅ get_event() completed successfully")
+            except Exception as e:
+                print(f"❌ ERROR in session.get_event(): {type(e).__name__}: {str(e)}")
+                import traceback
+                print(traceback.format_exc())
+                return Response(
+                    {'error': f'Error getting event from session: {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            print(f"\nResult: {event}")
+            if event:
+                print(f"✅ Event found:")
+                print(f"   - ID: {event.id}")
+                print(f"   - Title: {event.title}")
+            else:
+                print(f"❌ Event is None!")
+                print(f"   - Session.event: {session.event if hasattr(session, 'event') else 'N/A'}")
+                print(f"   - Session.agenda: {session.agenda}")
+                if session.agenda:
+                    print(f"   - Session.agenda.event: {session.agenda.event if hasattr(session.agenda, 'event') else 'N/A'}")
+
+            if not event:
+                print(f"❌ FAILED: Session is not associated with any event")
+                return Response(
+                    {'error': 'Session is not associated with any event. Please ensure the session is linked to an event through an agenda.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Initiate payment
+            print(f"\n📋 Step 4: Initiating MWallet payment...")
+            print(f"Payment details:")
+            print(f"   - Event: {event.title} (ID: {event.id})")
+            print(f"   - Session: {session.title} (ID: {session.id})")
+            print(f"   - Amount: {data['amount']}")
+            print(f"   - Mobile: {data['mobile_number']}")
+            print(f"   - CNIC: {data['cnic']}")
+
+            client = MWalletClient()
+            print(f"\n📋 Calling client.initiate_payment() with:")
+            print(f"   - event: {event} (type: {type(event).__name__})")
+            print(f"   - user: {request.user} (type: {type(request.user).__name__})")
+            print(f"   - session: {session} (type: {type(session).__name__})")
+
+            success, response_data, message = client.initiate_payment(
+                event=event,
+                user=request.user,
+                amount=data['amount'],
+                mobile_number=data['mobile_number'],
+                cnic=data['cnic'],
+                description=data.get('description', f'Payment for session: {session.title}'),
+                session=session,
+                session_registration=existing_session_registration  # Pass existing or None
             )
 
-        # Don't create session registration yet - only create after successful payment
-        # Check if already registered
-        existing_session_registration = SessionRegistration.objects.filter(
-            session=session,
-            user=request.user
-        ).first()
+            if success:
+                print(f"✅ Payment initiated successfully")
+                print(f"   - TxnRefNo: {response_data.get('pp_TxnRefNo')}")
+                return Response({
+                    'success': True,
+                    'message': message,
+                    'data': response_data,
+                    'txn_ref_no': response_data.get('pp_TxnRefNo'),
+                }, status=status.HTTP_200_OK)
+            else:
+                print(f"❌ Payment initiation failed: {message}")
+                return Response({
+                    'success': False,
+                    'error': message,
+                    'data': response_data,
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Initiate payment
-        client = MWalletClient()
-        success, response_data, message = client.initiate_payment(
-            event=session.event,  # Still need event for context
-            user=request.user,
-            amount=data['amount'],
-            mobile_number=data['mobile_number'],
-            cnic=data['cnic'],
-            description=data.get('description', f'Payment for session: {session.title}'),
-            session=session,
-            session_registration=existing_session_registration  # Pass existing or None
-        )
-
-        if success:
-            return Response({
-                'success': True,
-                'message': message,
-                'data': response_data,
-                'txn_ref_no': response_data.get('pp_TxnRefNo'),
-            }, status=status.HTTP_200_OK)
-        else:
+        except Exception as e:
+            print(f"\n❌ EXCEPTION OCCURRED!")
+            print(f"Exception type: {type(e).__name__}")
+            print(f"Exception message: {str(e)}")
+            import traceback
+            print(f"Traceback:")
+            print(traceback.format_exc())
+            logger.error(f"Session MWallet payment error: {str(e)}", exc_info=True)
             return Response({
                 'success': False,
-                'error': message,
-                'data': response_data,
+                'error': f'Error: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -219,52 +318,149 @@ class SessionCardPaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        serializer = CardPaymentRequestSerializer(data=request.data)
+        print("\n" + "="*80)
+        print("🔷 SESSION CARD PAYMENT REQUEST RECEIVED")
+        print("="*80)
+        print(f"User: {request.user.username} (ID: {request.user.id})")
+        print(f"Request Data: {request.data}")
+        print("="*80 + "\n")
 
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = CardPaymentRequestSerializer(data=request.data)
 
-        data = serializer.validated_data
+            if not serializer.is_valid():
+                print(f"❌ Serializer validation failed: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get session
-        session = get_object_or_404(Session, id=data.get('session_id'))
+            data = serializer.validated_data
+            print(f"✅ Serializer validated successfully")
+            print(f"Validated data: {data}")
 
-        # Check if session requires payment
-        if not getattr(session, 'is_paid_session', False):
-            return Response(
-                {'error': 'This session does not require payment'},
-                status=status.HTTP_400_BAD_REQUEST
+            # Get session
+            session_id = data.get('session_id')
+            print(f"\n📋 Step 1: Getting session with ID: {session_id}")
+
+            session = get_object_or_404(Session, id=session_id)
+            print(f"✅ Session found:")
+            print(f"   - ID: {session.id}")
+            print(f"   - Title: {session.title}")
+            print(f"   - Has direct event field: {hasattr(session, 'event')}")
+            print(f"   - Direct event value: {session.event if hasattr(session, 'event') else 'N/A'}")
+            print(f"   - Has agenda field: {hasattr(session, 'agenda')}")
+            print(f"   - Agenda value: {session.agenda if hasattr(session, 'agenda') else 'N/A'}")
+            print(f"   - Agenda ID: {session.agenda.id if session.agenda else 'N/A'}")
+            print(f"   - is_paid_session: {getattr(session, 'is_paid_session', False)}")
+            print(f"   - session_fee: {getattr(session, 'session_fee', 'N/A')}")
+
+            # Check if session requires payment
+            if not getattr(session, 'is_paid_session', False):
+                print(f"❌ Session does not require payment")
+                return Response(
+                    {'error': 'This session does not require payment'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            print(f"✅ Session requires payment")
+
+            # Don't create session registration yet - only create after successful payment
+            # Check if already registered
+            print(f"\n📋 Step 2: Checking existing session registration...")
+            existing_session_registration = SessionRegistration.objects.filter(
+                session=session,
+                user=request.user
+            ).first()
+            if existing_session_registration:
+                print(f"✅ Found existing session registration: ID {existing_session_registration.id}")
+            else:
+                print(f"✅ No existing session registration found")
+
+            # Get event through agenda relationship
+            print(f"\n📋 Step 3: Getting event through agenda relationship...")
+            print(f"Session object details before calling get_event():")
+            print(f"   - session: {session}")
+            print(f"   - session type: {type(session)}")
+            print(f"   - session.__dict__: {session.__dict__ if hasattr(session, '__dict__') else 'N/A'}")
+
+            print(f"\nCalling session.get_event()...")
+            try:
+                event = session.get_event()
+                print(f"✅ get_event() completed successfully")
+            except Exception as e:
+                print(f"❌ ERROR in session.get_event(): {type(e).__name__}: {str(e)}")
+                import traceback
+                print(traceback.format_exc())
+                return Response(
+                    {'error': f'Error getting event from session: {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            print(f"\nResult: {event}")
+            if event:
+                print(f"✅ Event found:")
+                print(f"   - ID: {event.id}")
+                print(f"   - Title: {event.title}")
+            else:
+                print(f"❌ Event is None!")
+                print(f"   - Session.event: {session.event if hasattr(session, 'event') else 'N/A'}")
+                print(f"   - Session.agenda: {session.agenda}")
+                if session.agenda:
+                    print(f"   - Session.agenda.event: {session.agenda.event if hasattr(session.agenda, 'event') else 'N/A'}")
+
+            if not event:
+                print(f"❌ FAILED: Session is not associated with any event")
+                return Response(
+                    {'error': 'Session is not associated with any event. Please ensure the session is linked to an event through an agenda.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Prepare payment form
+            print(f"\n📋 Step 4: Preparing card payment form...")
+            print(f"Payment details:")
+            print(f"   - Event: {event.title} (ID: {event.id})")
+            print(f"   - Session: {session.title} (ID: {session.id})")
+            print(f"   - Amount: {data['amount']}")
+
+            handler = CardPaymentHandler()
+            print(f"\n📋 Calling handler.prepare_payment_form() with:")
+            print(f"   - event: {event} (type: {type(event).__name__})")
+            print(f"   - user: {request.user} (type: {type(request.user).__name__})")
+            print(f"   - session: {session} (type: {type(session).__name__})")
+
+            success, form_data, message = handler.prepare_payment_form(
+                event=event,
+                user=request.user,
+                amount=data['amount'],
+                description=data.get('description', f'Payment for session: {session.title}'),
+                session=session,
+                session_registration=existing_session_registration  # Pass existing or None
             )
 
-        # Don't create session registration yet - only create after successful payment
-        # Check if already registered
-        existing_session_registration = SessionRegistration.objects.filter(
-            session=session,
-            user=request.user
-        ).first()
+            if success:
+                print(f"✅ Payment form prepared successfully")
+                print(f"   - TxnRefNo: {form_data.get('txn_ref_no')}")
+                return Response({
+                    'success': True,
+                    'form_data': form_data,
+                    'message': 'Payment form prepared',
+                    'txn_ref_no': form_data.get('txn_ref_no'),  # Include txn_ref_no at top level
+                }, status=status.HTTP_200_OK)
+            else:
+                print(f"❌ Payment form preparation failed: {message}")
+                return Response({
+                    'success': False,
+                    'error': message
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Prepare payment form
-        handler = CardPaymentHandler()
-        success, form_data, message = handler.prepare_payment_form(
-            event=session.event,
-            user=request.user,
-            amount=data['amount'],
-            description=data.get('description', f'Payment for session: {session.title}'),
-            session=session,
-            session_registration=existing_session_registration  # Pass existing or None
-        )
-
-        if success:
-            return Response({
-                'success': True,
-                'form_data': form_data,
-                'message': 'Payment form prepared',
-                'txn_ref_no': form_data.get('txn_ref_no'),  # Include txn_ref_no at top level
-            }, status=status.HTTP_200_OK)
-        else:
+        except Exception as e:
+            print(f"\n❌ EXCEPTION OCCURRED!")
+            print(f"Exception type: {type(e).__name__}")
+            print(f"Exception message: {str(e)}")
+            import traceback
+            print(f"Traceback:")
+            print(traceback.format_exc())
+            logger.error(f"Session Card payment error: {str(e)}", exc_info=True)
             return Response({
                 'success': False,
-                'error': message
+                'error': f'Error: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
 
 

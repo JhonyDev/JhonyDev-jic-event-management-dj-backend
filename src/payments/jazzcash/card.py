@@ -49,10 +49,60 @@ class CardPaymentHandler:
             tuple: (success: bool, form_data: dict, error_message: str)
         """
         try:
+            print(f"\n{'='*80}")
+            print(f"💳 PREPARING CARD PAYMENT FORM")
+            print(f"{'='*80}")
+
+            # Validate all objects before accessing their attributes
+            print(f"📋 Validating input objects...")
+            print(f"   - event: {event} (type: {type(event).__name__})")
+            if event is None:
+                print(f"   ❌ ERROR: event is None!")
+                return False, {}, "Event object is None"
+            else:
+                print(f"   ✅ event.id: {event.id}")
+                print(f"   ✅ event.title: {event.title}")
+
+            print(f"   - user: {user} (type: {type(user).__name__})")
+            if user is None:
+                print(f"   ❌ ERROR: user is None!")
+                return False, {}, "User object is None"
+            else:
+                print(f"   ✅ user.id: {user.id}")
+                print(f"   ✅ user.username: {user.username}")
+
+            print(f"   - session: {session} (type: {type(session).__name__ if session else 'NoneType'})")
+            if session is not None:
+                print(f"   ✅ session.id: {session.id}")
+                print(f"   ✅ session.title: {session.title}")
+
+            print(f"   - registration: {registration} (type: {type(registration).__name__ if registration else 'NoneType'})")
+            if registration is not None:
+                print(f"   ✅ registration.id: {registration.id}")
+
+            print(f"   - session_registration: {session_registration} (type: {type(session_registration).__name__ if session_registration else 'NoneType'})")
+            if session_registration is not None:
+                print(f"   ✅ session_registration.id: {session_registration.id}")
+
+            print(f"\n💰 Payment Details:")
+            print(f"   - Amount: {amount} PKR")
+            print(f"{'='*80}\n")
+
             # Generate transaction details
+            print(f"📋 Generating transaction details...")
             txn_ref_no = generate_txn_ref_no()
-            bill_reference = generate_bill_reference(event.id, user.id)
+            print(f"  ✅ Transaction Ref: {txn_ref_no}")
+
+            print(f"  📋 Calling generate_bill_reference(event.id={event.id}, user.id={user.id})")
+            try:
+                bill_reference = generate_bill_reference(event.id, user.id)
+                print(f"  ✅ Bill Reference: {bill_reference}")
+            except Exception as e:
+                print(f"  ❌ ERROR in generate_bill_reference: {type(e).__name__}: {str(e)}")
+                raise
+
             amount_in_paisa = amount_to_paisa(amount)
+            print(f"  ✅ Amount in Paisa: {amount_in_paisa}")
 
             if not description:
                 description = f"Payment for {event.title}"
@@ -89,22 +139,40 @@ class CardPaymentHandler:
             logger.info(f"Preparing card payment form: {txn_ref_no} for {amount} PKR")
 
             # Create transaction record
-            transaction = JazzCashTransaction.objects.create(
-                event=event,
-                user=user,
-                registration=registration,
-                session=session,
-                session_registration=session_registration,
-                txn_ref_no=txn_ref_no,
-                txn_type='MPAY',
-                amount=amount,
-                amount_in_paisa=amount_in_paisa,
-                currency=self.config.currency,
-                bill_reference=bill_reference,
-                description=description,
-                status='pending',
-                request_data=params,
-            )
+            print(f"\n💾 Creating transaction record in database...")
+            print(f"  📋 Transaction data:")
+            print(f"     - event: {event} (id: {event.id if event else 'N/A'})")
+            print(f"     - user: {user} (id: {user.id if user else 'N/A'})")
+            print(f"     - registration: {registration} (id: {registration.id if registration else 'N/A'})")
+            print(f"     - session: {session} (id: {session.id if session else 'N/A'})")
+            print(f"     - session_registration: {session_registration} (id: {session_registration.id if session_registration else 'N/A'})")
+            print(f"     - txn_ref_no: {txn_ref_no}")
+            print(f"     - amount: {amount}")
+
+            try:
+                transaction = JazzCashTransaction.objects.create(
+                    event=event,
+                    user=user,
+                    registration=registration,
+                    session=session,
+                    session_registration=session_registration,
+                    txn_ref_no=txn_ref_no,
+                    txn_type='MPAY',
+                    amount=amount,
+                    amount_in_paisa=amount_in_paisa,
+                    currency=self.config.currency,
+                    bill_reference=bill_reference,
+                    description=description,
+                    status='pending',
+                    request_data=params,
+                )
+                print(f"  ✅ Transaction saved (DB ID: {transaction.id}, Status: pending)\n")
+            except Exception as e:
+                print(f"  ❌ ERROR creating transaction: {type(e).__name__}: {str(e)}")
+                import traceback
+                print(f"  Traceback:")
+                print(traceback.format_exc())
+                raise
 
             # Return form data
             form_data = {
