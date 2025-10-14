@@ -176,6 +176,58 @@ class CardPaymentHandler:
             if is_successful_response(response_code):
                 transaction.mark_completed(response_data)
                 logger.info(f"Card payment successful: {txn_ref_no}")
+
+                # Handle event registration
+                if transaction.event:
+                    if transaction.registration:
+                        # Update existing registration
+                        transaction.registration.status = 'confirmed'
+                        transaction.registration.payment_status = 'paid'
+                        transaction.registration.payment_amount = transaction.amount
+                        transaction.registration.payment_date = timezone.now()
+                        transaction.registration.save()
+                        logger.info(f"Registration {transaction.registration.id} marked as paid")
+                    else:
+                        # Create new registration after successful payment
+                        from src.api.models import Registration
+                        from django.utils import timezone
+                        registration = Registration.objects.create(
+                            event=transaction.event,
+                            user=transaction.user,
+                            status='confirmed',
+                            payment_status='paid',
+                            payment_amount=transaction.amount,
+                            payment_date=timezone.now()
+                        )
+                        transaction.registration = registration
+                        transaction.save()
+                        logger.info(f"Created new registration {registration.id} after successful payment")
+
+                # Handle session registration
+                if transaction.session:
+                    if transaction.session_registration:
+                        # Update existing session registration
+                        transaction.session_registration.status = 'confirmed'
+                        transaction.session_registration.payment_status = 'paid'
+                        transaction.session_registration.payment_amount = transaction.amount
+                        transaction.session_registration.payment_date = timezone.now()
+                        transaction.session_registration.save()
+                        logger.info(f"Session registration {transaction.session_registration.id} marked as paid")
+                    else:
+                        # Create new session registration after successful payment
+                        from src.api.models import SessionRegistration
+                        session_registration = SessionRegistration.objects.create(
+                            session=transaction.session,
+                            user=transaction.user,
+                            status='confirmed',
+                            payment_status='paid',
+                            payment_amount=transaction.amount,
+                            payment_date=timezone.now()
+                        )
+                        transaction.session_registration = session_registration
+                        transaction.save()
+                        logger.info(f"Created new session registration {session_registration.id} after successful payment")
+
                 return True, transaction, "Payment successful"
             else:
                 transaction.mark_failed(response_data)
