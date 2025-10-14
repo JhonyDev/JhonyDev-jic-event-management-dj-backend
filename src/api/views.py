@@ -441,6 +441,10 @@ class EventViewSet(viewsets.ModelViewSet):
                     'slots_available': session.slots_available,
                     'slots_taken': slots_taken,
                     'is_registered': is_registered,
+                    # Payment fields
+                    'is_paid_session': session.is_paid_session,
+                    'session_fee': str(session.session_fee) if session.session_fee else '0',
+                    'payment_methods': session.payment_methods or [],
                     # Attachment fields
                     'has_attachments': has_attachments,
                     'attachment_count': attachment_count
@@ -753,6 +757,23 @@ class SessionViewSet(viewsets.ModelViewSet):
                 return Response(
                     {'error': 'No slots available for this session'},
                     status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Check if session requires payment
+        if session.is_paid_session:
+            from src.payments.models import JazzCashTransaction
+
+            # Check if user has a completed payment for this session
+            has_paid = JazzCashTransaction.objects.filter(
+                session=session,
+                user=request.user,
+                status='completed'
+            ).exists()
+
+            if not has_paid:
+                return Response(
+                    {'error': 'Payment required for this session. Please complete payment before registering.'},
+                    status=status.HTTP_402_PAYMENT_REQUIRED
                 )
 
         # Create registration
