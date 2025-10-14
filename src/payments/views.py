@@ -473,13 +473,29 @@ def payment_return_view(request):
     GET/POST /api/payments/jazzcash/return/
     """
     try:
+        print(f"\n{'='*80}")
+        print(f"🌐 PAYMENT RETURN VIEW CALLED")
+        print(f"{'='*80}")
+        print(f"Method: {request.method}")
+
         # Get response data (could be GET or POST)
         response_data = request.POST.dict() if request.method == 'POST' else request.GET.dict()
 
+        print(f"Response data:")
+        for key, value in response_data.items():
+            print(f"   {key}: {value}")
+        print(f"{'='*80}\n")
+
         logger.info(f"Payment return received: {response_data}")
 
+        print(f"📋 Calling CardPaymentHandler.handle_return_response()...")
         handler = CardPaymentHandler()
         success, transaction, message = handler.handle_return_response(response_data)
+
+        print(f"\n📤 Handler returned:")
+        print(f"   success: {success}")
+        print(f"   transaction: {transaction.id if transaction else None}")
+        print(f"   message: {message}")
 
         # Render response page
         context = {
@@ -488,9 +504,19 @@ def payment_return_view(request):
             'transaction': transaction,
         }
 
+        print(f"\n📄 Rendering template with context:")
+        print(f"   success: {context['success']}")
+        print(f"   message: {context['message']}")
+        print(f"   transaction: {context['transaction']}")
+        print(f"{'='*80}\n")
+
         return render(request, 'payments/payment_return.html', context)
 
     except Exception as e:
+        print(f"\n❌ EXCEPTION in payment_return_view!")
+        print(f"   Error: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
         logger.error(f"Error in payment return: {str(e)}", exc_info=True)
         return render(request, 'payments/payment_return.html', {
             'success': False,

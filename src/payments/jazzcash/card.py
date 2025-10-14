@@ -204,32 +204,61 @@ class CardPaymentHandler:
             tuple: (success: bool, transaction: JazzCashTransaction, message: str)
         """
         try:
+            print(f"\n{'='*80}")
+            print(f"📥 HANDLING CARD PAYMENT RETURN RESPONSE")
+            print(f"{'='*80}")
+            print(f"Response data received:")
+            for key, value in response_data.items():
+                print(f"   {key}: {value}")
+            print(f"{'='*80}\n")
+
             txn_ref_no = response_data.get('pp_TxnRefNo', '')
+            print(f"📋 Step 1: Extracting transaction reference...")
+            print(f"   TxnRefNo: {txn_ref_no}")
 
             if not txn_ref_no:
+                print(f"   ❌ ERROR: No transaction reference in response")
                 logger.error("No transaction reference in response")
                 return False, None, "Invalid response: No transaction reference"
+            print(f"   ✅ Transaction reference found\n")
 
             # Get transaction
+            print(f"📋 Step 2: Looking up transaction in database...")
             try:
                 transaction = JazzCashTransaction.objects.get(txn_ref_no=txn_ref_no)
+                print(f"   ✅ Transaction found: ID {transaction.id}")
+                print(f"      - User: {transaction.user.username}")
+                print(f"      - Amount: {transaction.amount} PKR")
+                print(f"      - Current Status: {transaction.status}")
             except JazzCashTransaction.DoesNotExist:
+                print(f"   ❌ ERROR: Transaction not found in database")
                 logger.error(f"Transaction not found: {txn_ref_no}")
                 return False, None, "Transaction not found"
+            print()
 
             # Verify secure hash
+            print(f"📋 Step 3: Verifying security hash...")
             received_hash = response_data.get('pp_SecureHash', '')
+            print(f"   Received Hash: {received_hash}")
+
             response_for_verification = {k: v for k, v in response_data.items() if k != 'pp_SecureHash'}
+            print(f"   Fields to verify: {len(response_for_verification)}")
+            print(f"   Calling verify_secure_hash()...")
+
             is_verified = verify_secure_hash(response_for_verification, received_hash, self.config.integrity_salt)
 
             if not is_verified:
+                print(f"   ❌ HASH VERIFICATION FAILED!")
                 logger.error(f"Hash verification failed for transaction {txn_ref_no}")
                 transaction.status = 'failed'
                 transaction.response_data = response_data
                 transaction.save()
+                print(f"   Transaction marked as failed")
                 return False, transaction, "Security verification failed"
+            print(f"   ✅ Hash verified successfully\n")
 
             # Update transaction with response
+            print(f"📋 Step 4: Updating transaction with response data...")
             transaction.response_data = response_data
             transaction.pp_response_code = response_data.get('pp_ResponseCode', '')
             transaction.pp_response_message = response_data.get('pp_ResponseMessage', '')
@@ -237,12 +266,20 @@ class CardPaymentHandler:
             transaction.pp_auth_code = response_data.get('pp_AuthCode', '')
             transaction.pp_version = response_data.get('pp_Version', '')
             transaction.pp_txn_type = response_data.get('pp_TxnType', '')
+            print(f"   Response Code: {transaction.pp_response_code}")
+            print(f"   Response Message: {transaction.pp_response_message}")
+            print(f"   ✅ Transaction updated\n")
 
             # Check response code
+            print(f"📋 Step 5: Checking payment status...")
             response_code = response_data.get('pp_ResponseCode', '')
+            print(f"   Response Code: {response_code}")
+            print(f"   Calling is_successful_response({response_code})...")
 
             if is_successful_response(response_code):
+                print(f"   ✅ Payment is SUCCESSFUL!")
                 transaction.mark_completed(response_data)
+                print(f"   ✅ Transaction marked as completed")
                 logger.info(f"Card payment successful: {txn_ref_no}")
 
                 # Handle event registration
@@ -296,13 +333,34 @@ class CardPaymentHandler:
                         transaction.save()
                         logger.info(f"Created new session registration {session_registration.id} after successful payment")
 
+                print(f"\n{'='*80}")
+                print(f"✅ PAYMENT SUCCESSFUL!")
+                print(f"   Transaction: {txn_ref_no}")
+                print(f"   Amount: {transaction.amount} PKR")
+                print(f"   Status: completed")
+                print(f"{'='*80}\n")
+                print(f"📤 Returning to view: success=True, message='Payment successful'")
                 return True, transaction, "Payment successful"
             else:
+                print(f"   ❌ Payment FAILED!")
+                print(f"   Reason: {response_data.get('pp_ResponseMessage', 'Unknown')}")
                 transaction.mark_failed(response_data)
+                print(f"   ✅ Transaction marked as failed")
                 logger.warning(f"Card payment failed: {txn_ref_no} - {response_data.get('pp_ResponseMessage')}")
+
+                print(f"\n{'='*80}")
+                print(f"❌ PAYMENT FAILED!")
+                print(f"   Transaction: {txn_ref_no}")
+                print(f"   Reason: {response_data.get('pp_ResponseMessage', 'Payment failed')}")
+                print(f"{'='*80}\n")
+                print(f"📤 Returning to view: success=False, message='{response_data.get('pp_ResponseMessage', 'Payment failed')}'")
                 return False, transaction, response_data.get('pp_ResponseMessage', 'Payment failed')
 
         except Exception as e:
+            print(f"\n❌ EXCEPTION in handle_return_response!")
+            print(f"   Error: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
             logger.error(f"Error handling return response: {str(e)}", exc_info=True)
             return False, None, f"Error: {str(e)}"
 
