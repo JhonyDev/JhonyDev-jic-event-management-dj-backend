@@ -305,10 +305,15 @@ class MWalletClient:
                 print(f"     - transaction.registration: {transaction.registration} (id: {transaction.registration.id if transaction.registration else 'N/A'})")
                 print(f"     - transaction.session_registration: {transaction.session_registration} (id: {transaction.session_registration.id if transaction.session_registration else 'N/A'})")
 
-                # Handle event registration
-                if transaction.event:
+                # Handle event registration (only if this is an event payment, not a session payment)
+                if transaction.event and not transaction.session:
                     print(f"\n  📌 Processing EVENT registration...")
+                    print(f"     Event ID: {transaction.event.id}")
+                    print(f"     Event Title: {transaction.event.title}")
+
                     if transaction.registration:
+                        print(f"     Existing registration found (linked to transaction): ID {transaction.registration.id}")
+                        print(f"     Updating existing registration...")
                         # Update existing registration
                         from django.utils import timezone
                         transaction.registration.status = 'confirmed'
@@ -317,23 +322,46 @@ class MWalletClient:
                         transaction.registration.payment_date = timezone.now()
                         transaction.registration.save()
                         logger.info(f"Registration {transaction.registration.id} marked as paid")
-                        print(f"  ✓ Registration {transaction.registration.id} marked as paid")
+                        print(f"     ✅ Registration {transaction.registration.id} updated to PAID")
                     else:
-                        # Create new registration after successful payment
+                        # Check if registration already exists in database
                         from src.api.models import Registration
                         from django.utils import timezone
-                        registration = Registration.objects.create(
+                        print(f"     No registration linked to transaction")
+                        print(f"     Checking if registration exists in database...")
+
+                        existing_reg = Registration.objects.filter(
                             event=transaction.event,
-                            user=transaction.user,
-                            status='confirmed',
-                            payment_status='paid',
-                            payment_amount=transaction.amount,
-                            payment_date=timezone.now()
-                        )
-                        transaction.registration = registration
-                        transaction.save()
-                        logger.info(f"Created new registration {registration.id} after successful payment")
-                        print(f"  ✓ Created new registration {registration.id}")
+                            user=transaction.user
+                        ).first()
+
+                        if existing_reg:
+                            print(f"     ✅ Found existing registration in DB: ID {existing_reg.id}")
+                            print(f"     Updating existing registration...")
+                            existing_reg.status = 'confirmed'
+                            existing_reg.payment_status = 'paid'
+                            existing_reg.payment_amount = transaction.amount
+                            existing_reg.payment_date = timezone.now()
+                            existing_reg.save()
+                            transaction.registration = existing_reg
+                            transaction.save()
+                            logger.info(f"Updated existing registration {existing_reg.id}")
+                            print(f"     ✅ Registration {existing_reg.id} updated to PAID")
+                        else:
+                            print(f"     No existing registration found, creating new one...")
+                            # Create new registration after successful payment
+                            registration = Registration.objects.create(
+                                event=transaction.event,
+                                user=transaction.user,
+                                status='confirmed',
+                                payment_status='paid',
+                                payment_amount=transaction.amount,
+                                payment_date=timezone.now()
+                            )
+                            transaction.registration = registration
+                            transaction.save()
+                            logger.info(f"Created new registration {registration.id} after successful payment")
+                            print(f"     ✅ NEW registration created: ID {registration.id}")
 
                 # Handle session registration
                 if transaction.session:
@@ -344,7 +372,7 @@ class MWalletClient:
                     print(f"     User: {transaction.user.username}")
 
                     if transaction.session_registration:
-                        print(f"     Existing session_registration found: ID {transaction.session_registration.id}")
+                        print(f"     Existing session_registration found (linked to transaction): ID {transaction.session_registration.id}")
                         print(f"     Updating existing session registration...")
                         # Update existing session registration
                         from django.utils import timezone
@@ -356,38 +384,62 @@ class MWalletClient:
                         logger.info(f"Session registration {transaction.session_registration.id} marked as paid")
                         print(f"     ✅ Session registration {transaction.session_registration.id} updated to PAID")
                     else:
-                        print(f"     No existing session_registration found")
-                        print(f"     Creating NEW session registration...")
-                        # Create new session registration after successful payment
+                        # Check if session registration already exists in database
                         from src.api.models import SessionRegistration
                         from django.utils import timezone
-                        try:
-                            session_registration = SessionRegistration.objects.create(
-                                session=transaction.session,
-                                user=transaction.user,
-                                status='confirmed',
-                                payment_status='paid',
-                                payment_amount=transaction.amount,
-                                payment_date=timezone.now()
-                            )
-                            print(f"     ✅ NEW session registration created! ID: {session_registration.id}")
-                            print(f"        - Session: {session_registration.session.title} (ID: {session_registration.session.id})")
-                            print(f"        - User: {session_registration.user.username} (ID: {session_registration.user.id})")
-                            print(f"        - Status: {session_registration.status}")
-                            print(f"        - Payment Status: {session_registration.payment_status}")
-                            print(f"        - Payment Amount: {session_registration.payment_amount}")
+                        print(f"     No session_registration linked to transaction")
+                        print(f"     Checking if session registration exists in database...")
 
-                            transaction.session_registration = session_registration
+                        existing_session_reg = SessionRegistration.objects.filter(
+                            session=transaction.session,
+                            user=transaction.user
+                        ).first()
+
+                        if existing_session_reg:
+                            print(f"     ✅ Found existing session registration in DB: ID {existing_session_reg.id}")
+                            print(f"     Updating existing session registration...")
+                            existing_session_reg.status = 'confirmed'
+                            existing_session_reg.payment_status = 'paid'
+                            existing_session_reg.payment_amount = transaction.amount
+                            existing_session_reg.payment_date = timezone.now()
+                            existing_session_reg.save()
+                            transaction.session_registration = existing_session_reg
                             transaction.save()
-                            print(f"     ✅ Transaction updated with session_registration link")
+                            logger.info(f"Updated existing session registration {existing_session_reg.id}")
+                            print(f"     ✅ Session registration {existing_session_reg.id} updated to PAID")
+                        else:
+                            print(f"     No existing session registration found, creating new one...")
+                            # Create new session registration after successful payment
+                            try:
+                                session_registration = SessionRegistration.objects.create(
+                                    session=transaction.session,
+                                    user=transaction.user,
+                                    status='confirmed',
+                                    payment_status='paid',
+                                    payment_amount=transaction.amount,
+                                    payment_date=timezone.now()
+                                )
+                                print(f"     ✅ NEW session registration created! ID: {session_registration.id}")
+                                print(f"        - Session: {session_registration.session.title} (ID: {session_registration.session.id})")
+                                print(f"        - User: {session_registration.user.username} (ID: {session_registration.user.id})")
+                                print(f"        - Status: {session_registration.status}")
+                                print(f"        - Payment Status: {session_registration.payment_status}")
+                                print(f"        - Payment Amount: {session_registration.payment_amount}")
 
-                            logger.info(f"Created new session registration {session_registration.id} after successful payment")
-                        except Exception as e:
-                            print(f"     ❌ ERROR creating session registration: {type(e).__name__}: {str(e)}")
-                            import traceback
-                            print(traceback.format_exc())
+                                transaction.session_registration = session_registration
+                                transaction.save()
+                                print(f"     ✅ Transaction updated with session_registration link")
+
+                                logger.info(f"Created new session registration {session_registration.id} after successful payment")
+                            except Exception as e:
+                                print(f"     ❌ ERROR creating session registration: {type(e).__name__}: {str(e)}")
+                                import traceback
+                                print(traceback.format_exc())
                 else:
-                    print(f"\n  ℹ️ No session associated with this transaction (event payment only)")
+                    if transaction.event and not transaction.session:
+                        print(f"\n  ℹ️  This is an EVENT payment (no session involved)")
+                    else:
+                        print(f"\n  ⚠️  Warning: No session or event associated with this transaction")
 
                 response_data['pp_TxnRefNo'] = txn_ref_no
                 print(f"\n{'='*80}")
