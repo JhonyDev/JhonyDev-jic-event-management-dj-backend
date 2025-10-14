@@ -82,8 +82,8 @@ class CardPaymentHandler:
                 'ppmpf_5': '',
             }
 
-            # Generate secure hash
-            secure_hash = generate_secure_hash(params, self.config.integrity_salt)
+            # Generate secure hash - include empty fields
+            secure_hash = generate_secure_hash(params, self.config.integrity_salt, include_empty=True)
             params['pp_SecureHash'] = secure_hash
 
             logger.info(f"Preparing card payment form: {txn_ref_no} for {amount} PKR")
