@@ -139,16 +139,19 @@ def verify_secure_hash(data_dict, received_hash, integrity_salt):
         data_for_verification = {k: v for k, v in data_dict.items()
                                 if k.lower() not in ['pp_securehash', 'securehash', 'pp_secure_hash']}
 
-        # Calculate hash - INCLUDE empty fields for response verification
-        calculated_hash = generate_secure_hash(data_for_verification, integrity_salt, include_empty=True)
+        # Calculate hash - EXCLUDE empty fields (JazzCash excludes empty fields in both requests and responses)
+        calculated_hash = generate_secure_hash(data_for_verification, integrity_salt, include_empty=False)
 
         # Compare (case-insensitive)
         is_valid = calculated_hash.upper() == received_hash.upper()
 
         if not is_valid:
-            print(f"  ✗ Hash verification FAILED!")
+            print(f"\n  ✗ Hash verification FAILED!")
             print(f"  Received:   {received_hash.upper()}")
             print(f"  Calculated: {calculated_hash.upper()}")
+            print(f"\n  Response data received from JazzCash:")
+            for key, value in sorted(data_for_verification.items()):
+                print(f"    {key} = '{value}' (len={len(str(value))})")
         else:
             print(f"  ✓ Hash verification SUCCESSFUL!")
 
