@@ -138,10 +138,10 @@ class MWalletClient:
             print(f"  Merchant ID: {self.config.merchant_id}")
             print(f"  Password: {self.config.password}")
             print(f"  Integrity Salt: {self.config.integrity_salt}")
-            print(f"  Mode: Include empty fields (include_empty=True)")
+            print(f"  Mode: Exclude empty fields (include_empty=False)")
             print(f"  Calling generate_secure_hash()...")
 
-            secure_hash = generate_secure_hash(params, self.config.integrity_salt, include_empty=True)
+            secure_hash = generate_secure_hash(params, self.config.integrity_salt, include_empty=False)
             params['pp_SecureHash'] = secure_hash
             print(f"  ✓ Hash generated: {secure_hash}\n")
 

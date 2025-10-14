@@ -51,8 +51,8 @@ class StatusInquiryClient:
                 'pp_Password': self.config.password,
             }
 
-            # Generate secure hash - include empty fields
-            secure_hash = generate_secure_hash(params, self.config.integrity_salt, include_empty=True)
+            # Generate secure hash - exclude empty fields
+            secure_hash = generate_secure_hash(params, self.config.integrity_salt, include_empty=False)
             params['pp_SecureHash'] = secure_hash
 
             logger.info(f"Inquiring transaction status: {txn_ref_no}")

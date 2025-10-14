@@ -65,7 +65,7 @@ class IPNHandler:
 
             try:
                 from .hmac_utils import generate_secure_hash
-                secure_hash_calculated = generate_secure_hash(ipn_for_verification, self.config.integrity_salt, include_empty=True)
+                secure_hash_calculated = generate_secure_hash(ipn_for_verification, self.config.integrity_salt, include_empty=False)
                 is_verified = secure_hash_calculated.upper() == secure_hash_received.upper()
             except Exception as e:
                 logger.error(f"Error verifying IPN hash: {str(e)}")
