@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Confirmed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .content h2 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info-box p {
+            margin: 5px 0;
+        }
+        .info-box strong {
+            color: #667eea;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+        }
+        .workshops-list {
+            list-style: none;
+            padding: 0;
+        }
+        .workshops-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .workshops-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🎉 Registration Confirmed!</h1>
+        </div>
+
+        <div class="content">
+            <h2>Dear {{ user.first_name }} {{ user.last_name }},</h2>
+
+            <p>Thank you for registering for <strong>{{ event.title }}</strong>! We're excited to have you join us.</p>
+
+            <div class="info-box">
+                <p><strong>Event Details:</strong></p>
+                <p><strong>Event:</strong> {{ event.title }}</p>
+                <p><strong>Date:</strong> {{ event.start_date|date:"F d, Y" }}{% if event.end_date %} - {{ event.end_date|date:"F d, Y" }}{% endif %}</p>
+                <p><strong>Location:</strong> {{ event.location|default:"To be announced" }}</p>
+                {% if registration.registration_type %}
+                <p><strong>Registration Type:</strong> {{ registration.registration_type.name }}</p>
+                {% endif %}
+            </div>
+
+            {% if transaction %}
+            <div class="info-box">
+                <p><strong>Payment Information:</strong></p>
+                <p><strong>Amount Paid:</strong> PKR {{ transaction.amount }}</p>
+                <p><strong>Transaction Reference:</strong> {{ transaction.txn_ref_no }}</p>
+                <p><strong>Payment Date:</strong> {{ transaction.completed_at|date:"F d, Y H:i" }}</p>
+            </div>
+            {% endif %}
+
+            {% if workshops %}
+            <div class="info-box">
+                <p><strong>Selected Workshops:</strong></p>
+                <ul class="workshops-list">
+                    {% for workshop in workshops %}
+                    <li>{{ workshop.title }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <p>Your registration has been successfully processed and confirmed. You will receive further details about the event closer to the date.</p>
+
+            {% if event.website %}
+            <center>
+                <a href="{{ event.website }}" class="button">Visit Event Website</a>
+            </center>
+            {% endif %}
+
+            <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
+
+            <p>We look forward to seeing you at the event!</p>
+
+            <p>Best regards,<br>
+            <strong>{{ event.title }} Team</strong></p>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>If you did not register for this event, please contact us immediately.</p>
+        </div>
+    </div>
+</body>
+</html>

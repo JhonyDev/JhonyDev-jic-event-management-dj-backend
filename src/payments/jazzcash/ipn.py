@@ -138,6 +138,13 @@ class IPNHandler:
                         transaction.registration.save()
                         logger.info(f"Registration {transaction.registration.id} marked as paid")
 
+                        # Map transaction type to payment method
+                        payment_method_map = {
+                            'MWALLET': 'mwallet',
+                            'MPAY': 'card',
+                        }
+                        payment_method = payment_method_map.get(transaction.txn_type, 'unknown')
+
                         # Log successful payment
                         from src.api.models import RegistrationLog
                         RegistrationLog.objects.create(
@@ -150,10 +157,10 @@ class IPNHandler:
                             last_name=transaction.user.last_name,
                             phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
                             registration_type=transaction.registration.registration_type,
-                            payment_method=transaction.payment_method,
+                            payment_method=payment_method,
                             payment_amount=transaction.amount,
                             transaction_reference=transaction.txn_ref_no,
-                            notes=f'Payment successful via IPN. Response: {response_message}'
+                            notes=f'Payment successful via IPN. Response: {ipn_data.get("pp_ResponseMessage", "")}'
                         )
 
                         # Log registration completed
@@ -167,11 +174,65 @@ class IPNHandler:
                             last_name=transaction.user.last_name,
                             phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
                             registration_type=transaction.registration.registration_type,
-                            payment_method=transaction.payment_method,
+                            payment_method=payment_method,
                             payment_amount=transaction.amount,
                             transaction_reference=transaction.txn_ref_no,
                             notes=f'Registration completed successfully with payment confirmation'
                         )
+
+                        # Send registration success email
+                        try:
+                            from src.api.email_utils import send_registration_success_email
+
+                            # Get selected workshops if any
+                            workshops = transaction.registration.selected_workshops.all() if hasattr(transaction.registration, 'selected_workshops') else []
+
+                            success, message = send_registration_success_email(
+                                user=transaction.user,
+                                event=transaction.event,
+                                registration=transaction.registration,
+                                transaction=transaction,
+                                workshops=workshops
+                            )
+
+                            if success:
+                                logger.info(f"Registration email sent to {transaction.user.email}")
+                                # Log email sent
+                                RegistrationLog.objects.create(
+                                    event=transaction.event,
+                                    user=transaction.user,
+                                    registration=transaction.registration,
+                                    action='email_sent',
+                                    email=transaction.user.email,
+                                    first_name=transaction.user.first_name,
+                                    last_name=transaction.user.last_name,
+                                    phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                                    registration_type=transaction.registration.registration_type,
+                                    payment_method=payment_method,
+                                    payment_amount=transaction.amount,
+                                    transaction_reference=transaction.txn_ref_no,
+                                    notes=f'Registration confirmation email sent successfully'
+                                )
+                            else:
+                                logger.error(f"Failed to send registration email: {message}")
+                                # Log email failed
+                                RegistrationLog.objects.create(
+                                    event=transaction.event,
+                                    user=transaction.user,
+                                    registration=transaction.registration,
+                                    action='email_failed',
+                                    email=transaction.user.email,
+                                    first_name=transaction.user.first_name,
+                                    last_name=transaction.user.last_name,
+                                    phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                                    registration_type=transaction.registration.registration_type,
+                                    payment_method=payment_method,
+                                    payment_amount=transaction.amount,
+                                    transaction_reference=transaction.txn_ref_no,
+                                    notes=f'Failed to send registration email: {message}'
+                                )
+                        except Exception as e:
+                            logger.error(f"Error sending registration email: {str(e)}", exc_info=True)
                     else:
                         # Create new registration after successful payment
                         from src.api.models import Registration
@@ -219,6 +280,13 @@ class IPNHandler:
 
                 # Log failed payment
                 if transaction.event and transaction.registration:
+                    # Map transaction type to payment method
+                    payment_method_map = {
+                        'MWALLET': 'mwallet',
+                        'MPAY': 'card',
+                    }
+                    payment_method = payment_method_map.get(transaction.txn_type, 'unknown')
+
                     from src.api.models import RegistrationLog
                     RegistrationLog.objects.create(
                         event=transaction.event,
@@ -230,10 +298,10 @@ class IPNHandler:
                         last_name=transaction.user.last_name,
                         phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
                         registration_type=transaction.registration.registration_type if transaction.registration else None,
-                        payment_method=transaction.payment_method,
+                        payment_method=payment_method,
                         payment_amount=transaction.amount,
                         transaction_reference=transaction.txn_ref_no,
-                        notes=f'Payment failed via IPN. Response: {response_message} (Code: {response_code})'
+                        notes=f'Payment failed via IPN. Response: {ipn_data.get("pp_ResponseMessage", "")} (Code: {response_code})'
                     )
 
                     # Log registration failed
@@ -247,7 +315,7 @@ class IPNHandler:
                         last_name=transaction.user.last_name,
                         phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
                         registration_type=transaction.registration.registration_type if transaction.registration else None,
-                        payment_method=transaction.payment_method,
+                        payment_method=payment_method,
                         payment_amount=transaction.amount,
                         transaction_reference=transaction.txn_ref_no,
                         notes=f'Registration failed due to payment failure'

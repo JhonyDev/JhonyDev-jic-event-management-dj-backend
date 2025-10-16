@@ -1,0 +1,42 @@
+Registration Confirmed - {{ event.title }}
+
+Dear {{ user.first_name }} {{ user.last_name }},
+
+Thank you for registering for {{ event.title }}! We're excited to have you join us.
+
+EVENT DETAILS:
+--------------
+Event: {{ event.title }}
+Date: {{ event.start_date|date:"F d, Y" }}{% if event.end_date %} - {{ event.end_date|date:"F d, Y" }}{% endif %}
+Location: {{ event.location|default:"To be announced" }}
+{% if registration.registration_type %}Registration Type: {{ registration.registration_type.name }}{% endif %}
+
+{% if transaction %}
+PAYMENT INFORMATION:
+--------------------
+Amount Paid: PKR {{ transaction.amount }}
+Transaction Reference: {{ transaction.txn_ref_no }}
+Payment Date: {{ transaction.completed_at|date:"F d, Y H:i" }}
+{% endif %}
+
+{% if workshops %}
+SELECTED WORKSHOPS:
+-------------------
+{% for workshop in workshops %}• {{ workshop.title }}
+{% endfor %}
+{% endif %}
+
+Your registration has been successfully processed and confirmed. You will receive further details about the event closer to the date.
+
+{% if event.website %}Event Website: {{ event.website }}{% endif %}
+
+If you have any questions or need assistance, please don't hesitate to contact us.
+
+We look forward to seeing you at the event!
+
+Best regards,
+{{ event.title }} Team
+
+---
+This is an automated message. Please do not reply to this email.
+If you did not register for this event, please contact us immediately.

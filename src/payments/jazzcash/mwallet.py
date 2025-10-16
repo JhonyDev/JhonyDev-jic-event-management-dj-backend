@@ -323,6 +323,29 @@ class MWalletClient:
                         transaction.registration.save()
                         logger.info(f"Registration {transaction.registration.id} marked as paid")
                         print(f"     ✅ Registration {transaction.registration.id} updated to PAID")
+
+                        # Send registration success email
+                        try:
+                            from src.api.email_utils import send_registration_success_email
+                            workshops = transaction.registration.selected_workshops.all() if hasattr(transaction.registration, 'selected_workshops') else []
+
+                            success, message = send_registration_success_email(
+                                user=transaction.user,
+                                event=transaction.event,
+                                registration=transaction.registration,
+                                transaction=transaction,
+                                workshops=workshops
+                            )
+
+                            if success:
+                                logger.info(f"Registration email sent to {transaction.user.email}")
+                                print(f"     📧 Registration confirmation email sent to {transaction.user.email}")
+                            else:
+                                logger.error(f"Failed to send registration email: {message}")
+                                print(f"     ❌ Failed to send email: {message}")
+                        except Exception as e:
+                            logger.error(f"Error sending registration email: {str(e)}", exc_info=True)
+                            print(f"     ❌ Email error: {str(e)}")
                     else:
                         # Check if registration already exists in database
                         from src.api.models import Registration
@@ -347,6 +370,29 @@ class MWalletClient:
                             transaction.save()
                             logger.info(f"Updated existing registration {existing_reg.id}")
                             print(f"     ✅ Registration {existing_reg.id} updated to PAID")
+
+                            # Send registration success email
+                            try:
+                                from src.api.email_utils import send_registration_success_email
+                                workshops = existing_reg.selected_workshops.all() if hasattr(existing_reg, 'selected_workshops') else []
+
+                                success, message = send_registration_success_email(
+                                    user=transaction.user,
+                                    event=transaction.event,
+                                    registration=existing_reg,
+                                    transaction=transaction,
+                                    workshops=workshops
+                                )
+
+                                if success:
+                                    logger.info(f"Registration email sent to {transaction.user.email}")
+                                    print(f"     📧 Registration confirmation email sent to {transaction.user.email}")
+                                else:
+                                    logger.error(f"Failed to send registration email: {message}")
+                                    print(f"     ❌ Failed to send email: {message}")
+                            except Exception as e:
+                                logger.error(f"Error sending registration email: {str(e)}", exc_info=True)
+                                print(f"     ❌ Email error: {str(e)}")
                         else:
                             print(f"     No existing registration found, creating new one...")
                             # Create new registration after successful payment
@@ -362,6 +408,29 @@ class MWalletClient:
                             transaction.save()
                             logger.info(f"Created new registration {registration.id} after successful payment")
                             print(f"     ✅ NEW registration created: ID {registration.id}")
+
+                            # Send registration success email
+                            try:
+                                from src.api.email_utils import send_registration_success_email
+                                workshops = registration.selected_workshops.all() if hasattr(registration, 'selected_workshops') else []
+
+                                success, message = send_registration_success_email(
+                                    user=transaction.user,
+                                    event=transaction.event,
+                                    registration=registration,
+                                    transaction=transaction,
+                                    workshops=workshops
+                                )
+
+                                if success:
+                                    logger.info(f"Registration email sent to {transaction.user.email}")
+                                    print(f"     📧 Registration confirmation email sent to {transaction.user.email}")
+                                else:
+                                    logger.error(f"Failed to send registration email: {message}")
+                                    print(f"     ❌ Failed to send email: {message}")
+                            except Exception as e:
+                                logger.error(f"Error sending registration email: {str(e)}", exc_info=True)
+                                print(f"     ❌ Email error: {str(e)}")
 
                 # Handle session registration
                 if transaction.session:
