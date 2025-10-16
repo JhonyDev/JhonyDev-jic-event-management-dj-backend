@@ -4,6 +4,11 @@ Dear {{ user.first_name }} {{ user.last_name }},
 
 Thank you for registering for {{ event.title }}! We're excited to have you join us.
 
+════════════════════════════════════════════════════════════
+YOUR REGISTRATION ID: {{ registration.id }}
+════════════════════════════════════════════════════════════
+Please keep this ID for your records. You may need it for future reference.
+
 EVENT DETAILS:
 --------------
 Event: {{ event.title }}
