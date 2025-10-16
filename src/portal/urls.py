@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import payment_views
 
 app_name = 'portal'
 
@@ -26,6 +27,14 @@ urlpatterns = [
     path('events/<int:pk>/agenda-qr/', views.agenda_qr_code, name='agenda_qr_code'),
     path('events/<int:pk>/registration-qr/', views.registration_qr_code, name='registration_qr_code'),
     path('events/<int:pk>/registration-qr-display/', views.registration_qr_display, name='registration_qr_display'),
+
+    # Anonymous Payment Endpoints for Self-Registration
+    path('register/<int:event_pk>/payment/mwallet/', payment_views.anonymous_mwallet_payment, name='anonymous_mwallet_payment'),
+    path('register/<int:event_pk>/payment/card/', payment_views.anonymous_card_payment, name='anonymous_card_payment'),
+    path('register/<int:event_pk>/payment/bank/', payment_views.anonymous_bank_transfer, name='anonymous_bank_transfer'),
+    path('register/<int:event_pk>/payment/status/<str:txn_ref_no>/', payment_views.payment_status_view, name='payment_status_view'),
+    path('register/<int:event_pk>/payment/status/check/<str:txn_ref_no>/', payment_views.check_payment_status, name='check_payment_status'),
+    path('register/<int:event_pk>/log/payment-success/<str:txn_ref_no>/', payment_views.log_payment_success_view, name='log_payment_success_view'),
 
     # Attendees
     path('attendees/', views.attendees, name='attendees'),
@@ -86,6 +95,12 @@ urlpatterns = [
     path('api/notifications/archive-all/', views.archive_all_notifications, name='archive_all_notifications'),
     path('api/notifications/count/', views.notification_count, name='notification_count'),
 
+    # Registration Type API endpoints
+    path('api/registration-types/', views.registration_type_create, name='registration_type_create'),
+    path('api/registration-types/<int:pk>/', views.registration_type_detail, name='registration_type_detail'),
+    path('events/<int:event_pk>/registration-types/<int:reg_type_pk>/edit/', views.registration_type_edit, name='registration_type_edit'),
+    path('events/<int:event_pk>/registration-types/<int:reg_type_pk>/delete/', views.registration_type_delete, name='registration_type_delete'),
+
     # Session API endpoints
     path('api/session/<int:session_pk>/speakers/', views.session_speakers_api, name='session_speakers_api'),
     path('api/events/<int:event_pk>/sessions/', views.event_sessions_api, name='event_sessions_api'),
@@ -126,4 +141,13 @@ urlpatterns = [
 
     # Entry Pass
     path('events/<int:event_pk>/entry-pass/<int:registration_pk>/', views.entry_pass_view, name='entry_pass_view'),
+
+    # Bank Payment Management
+    path('events/<int:pk>/bank-details/update/', views.update_bank_details, name='update_bank_details'),
+    path('events/<int:event_pk>/receipts/<int:receipt_pk>/approve/', views.approve_bank_receipt, name='approve_bank_receipt'),
+    path('events/<int:event_pk>/receipts/<int:receipt_pk>/reject/', views.reject_bank_receipt, name='reject_bank_receipt'),
+    path('events/<int:event_pk>/receipts/<int:receipt_pk>/delete/', views.delete_bank_receipt, name='delete_bank_receipt'),
+
+    # Registration Logs
+    path('events/<int:pk>/registration-logs/', views.registration_logs, name='registration_logs'),
 ]

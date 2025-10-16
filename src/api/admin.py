@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Count, Sum
 from .models import (
-    Event, Agenda, Registration, Speaker, Session,
+    Event, EventRegistrationType, Agenda, Registration, Speaker, Session,
     Exhibitor, ExhibitionArea,
     SessionBookmark, Notification, Sponsor, SupportingMaterial, Announcement,
     AppContent, FAQ, ContactInfo, QuickAction, AppDownload
@@ -113,6 +113,85 @@ class EventAdmin(admin.ModelAdmin):
         updated = queryset.update(status='completed')
         self.message_user(request, f"{updated} event(s) marked as completed.")
     mark_as_completed.short_description = "Mark as completed"
+
+
+@admin.register(EventRegistrationType)
+class EventRegistrationTypeAdmin(admin.ModelAdmin):
+    list_display = [
+        'name',
+        'event_link',
+        'payment_badge',
+        'amount_display',
+        'order',
+        'status_badge',
+        'created_at'
+    ]
+    list_filter = [
+        'is_paid',
+        'is_active',
+        'event',
+        'created_at'
+    ]
+    search_fields = [
+        'name',
+        'description',
+        'event__title'
+    ]
+    ordering = ['event', 'order', 'name']
+    readonly_fields = ['created_at']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('event', 'name', 'description')
+        }),
+        ('Payment Settings', {
+            'fields': ('is_paid', 'amount', 'payment_methods'),
+            'description': 'Configure payment requirements for this registration type'
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Metadata', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        })
+    )
+
+    def event_link(self, obj):
+        url = reverse('admin:api_event_change', args=[obj.event.id])
+        return format_html('<a href="{}">{}</a>', url, obj.event.title[:40])
+    event_link.short_description = 'Event'
+
+    def payment_badge(self, obj):
+        if obj.is_paid:
+            return format_html('<span style="color: green;">💳 Paid</span>')
+        return format_html('<span style="color: gray;">Free</span>')
+    payment_badge.short_description = 'Type'
+
+    def amount_display(self, obj):
+        if obj.is_paid and obj.amount > 0:
+            return f"PKR {obj.amount:,.2f}"
+        return '-'
+    amount_display.short_description = 'Amount'
+    amount_display.admin_order_field = 'amount'
+
+    def status_badge(self, obj):
+        if obj.is_active:
+            return format_html('<span style="color: green;">✓ Active</span>')
+        return format_html('<span style="color: red;">✗ Inactive</span>')
+    status_badge.short_description = 'Status'
+
+    actions = ['activate_types', 'deactivate_types']
+
+    def activate_types(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} registration type(s) activated.")
+    activate_types.short_description = "Activate selected types"
+
+    def deactivate_types(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} registration type(s) deactivated.")
+    deactivate_types.short_description = "Deactivate selected types"
 
 
 @admin.register(Agenda)

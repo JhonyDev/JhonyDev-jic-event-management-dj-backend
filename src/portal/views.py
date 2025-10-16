@@ -213,6 +213,8 @@ def event_delete(request, pk):
 @login_required(login_url="/accounts/login/")
 def event_detail(request, pk):
     """View event details with all related information"""
+    from src.api.models import EventRegistrationType
+
     event = get_object_or_404(Event, pk=pk)
     is_registered = Registration.objects.filter(event=event, user=request.user).exists()
     registrations = event.registrations.filter(status="confirmed")
@@ -232,6 +234,25 @@ def event_detail(request, pk):
         'sessions__registrations'
     ).order_by('date')
 
+    # Get registration types for this event
+    registration_types = EventRegistrationType.objects.filter(event=event).order_by('order', 'name')
+
+    # Get registration logs if user is organizer (paginated)
+    registration_logs = None
+    logs_page_obj = None
+    if event.organizer == request.user:
+        from src.api.models import RegistrationLog
+        from django.core.paginator import Paginator
+
+        logs = RegistrationLog.objects.filter(event=event).select_related(
+            'user', 'registration', 'registration_type'
+        ).order_by('-timestamp')
+
+        # Pagination - 50 logs per page
+        paginator = Paginator(logs, 50)
+        page_number = request.GET.get('logs_page', 1)
+        logs_page_obj = paginator.get_page(page_number)
+
     context = {
         "event": event,
         "is_registered": is_registered,
@@ -244,6 +265,8 @@ def event_detail(request, pk):
         "exhibitors": exhibitors,
         "is_organizer": event.organizer == request.user,
         "agendas": agendas,
+        "registration_types": registration_types,
+        "registration_logs": logs_page_obj,
     }
     return render(request, "portal/events/event_detail.html", context)
 
@@ -1352,59 +1375,208 @@ def self_register(request, pk):
 
     event = get_object_or_404(Event, pk=pk, status='published')
 
+    # Helper function to get client IP
+    def get_client_ip(request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+    # Log page visit
+    from src.api.models import RegistrationLog
+    RegistrationLog.objects.create(
+        event=event,
+        action='page_visit',
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+    )
+
     # Check if event is still accepting registrations
     available_spots = event.max_attendees - event.registrations.filter(status="confirmed").count()
 
     if request.method == "POST":
+        from src.api.forms import SelfRegistrationForm
+        from src.api.models import EventRegistrationType
+
+        form = SelfRegistrationForm(request.POST, event=event)
+
         if available_spots <= 0:
             messages.error(request, "Sorry, this event is full.")
-            return redirect('portal:self_register', pk=pk)
+            return redirect('self_register', pk=pk)
 
-        # Get user info from form
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        email = request.POST.get('email')
-        phone = request.POST.get('phone', '')
+        if form.is_valid():
+            # Get form data
+            first_name = form.cleaned_data['first_name']
+            last_name = form.cleaned_data['last_name']
+            email = form.cleaned_data['email']
+            phone_number = form.cleaned_data['phone_number']
+            designation = form.cleaned_data.get('designation', '')
+            affiliations = form.cleaned_data.get('affiliations', '')
+            address = form.cleaned_data.get('address', '')
+            country = form.cleaned_data.get('country', '')
+            registration_type_id = form.cleaned_data.get('registration_type')
+            workshop_ids = form.cleaned_data.get('workshops', [])
 
-        if not all([first_name, last_name, email]):
-            messages.error(request, "Please fill in all required fields.")
-            return render(request, "portal/events/self_register.html", {"event": event, "available_spots": available_spots})
+            # Log form started
+            RegistrationLog.objects.create(
+                event=event,
+                action='form_started',
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                phone_number=phone_number,
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            )
 
-        # Create or get user
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={
-                'username': email,
-                'first_name': first_name,
-                'last_name': last_name,
-            }
-        )
+            # Create or get user
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    'username': email,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'phone_number': phone_number,
+                    'designation': designation,
+                    'affiliations': affiliations,
+                    'address': address,
+                    'country': country,
+                }
+            )
 
-        # Check if already registered
-        if Registration.objects.filter(event=event, user=user).exists():
-            messages.warning(request, "You are already registered for this event.")
-            return render(request, "portal/events/self_register.html", {"event": event, "available_spots": available_spots})
+            # Update user info if not created (user already exists)
+            if not created:
+                user.first_name = first_name
+                user.last_name = last_name
+                user.phone_number = phone_number
+                if designation:
+                    user.designation = designation
+                if affiliations:
+                    user.affiliations = affiliations
+                if address:
+                    user.address = address
+                if country:
+                    user.country = country
+                user.save()
 
-        # Create registration
-        Registration.objects.create(
-            event=event,
-            user=user,
-            status="confirmed"
-        )
+            # Check if already registered
+            if Registration.objects.filter(event=event, user=user).exists():
+                messages.warning(request, "You are already registered for this event.")
+                return render(request, "portal/events/self_register.html", {
+                    "event": event,
+                    "form": form,
+                    "available_spots": available_spots
+                })
 
-        messages.success(request, f"Successfully registered for {event.title}!")
-        return render(request, "portal/events/registration_success.html", {"event": event, "user": user})
+            # Get registration type if provided
+            registration_type = None
+            if registration_type_id:
+                try:
+                    registration_type = EventRegistrationType.objects.get(id=registration_type_id, event=event)
+                except EventRegistrationType.DoesNotExist:
+                    pass
+
+            # Create registration
+            registration = Registration.objects.create(
+                event=event,
+                user=user,
+                status="confirmed",
+                registration_type=registration_type,
+                designation=designation,
+                affiliations=affiliations,
+                address=address,
+                country=country,
+                phone_number=phone_number,
+            )
+
+            # Add selected workshops
+            if workshop_ids:
+                workshops = Session.objects.filter(
+                    id__in=workshop_ids,
+                    agenda__event=event,
+                    session_type='workshop'
+                )
+                registration.selected_workshops.set(workshops)
+
+            # Log successful registration (free event)
+            RegistrationLog.objects.create(
+                event=event,
+                user=user,
+                registration=registration,
+                action='registration_completed',
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                phone_number=phone_number,
+                registration_type=registration_type,
+                payment_method='none',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+                notes='Free registration completed successfully'
+            )
+
+            messages.success(request, f"Successfully registered for {event.title}!")
+            return render(request, "portal/events/registration_success.html", {
+                "event": event,
+                "user": user,
+                "registration": registration
+            })
+        else:
+            # Form has errors
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        # GET request - create empty form
+        from src.api.forms import SelfRegistrationForm
+        form = SelfRegistrationForm(event=event)
 
     # Get active APK for download button
-    from src.api.models import AppDownload
+    from src.api.models import AppDownload, EventRegistrationType
     active_apk = AppDownload.objects.filter(is_active=True).first()
+
+    # Get workshop sessions with fees for JavaScript cost calculation
+    workshop_sessions = Session.objects.filter(
+        agenda__event=event,
+        session_type='workshop'
+    ).values('id', 'title', 'is_paid_session', 'session_fee', 'start_time', 'end_time', 'location')
+
+    # Convert Decimal to float and time to string for JSON serialization
+    workshop_sessions_list = []
+    for ws in workshop_sessions:
+        ws_dict = dict(ws)
+        if ws_dict['session_fee'] is not None:
+            ws_dict['session_fee'] = float(ws_dict['session_fee'])
+        # Convert time fields to strings
+        if ws_dict['start_time']:
+            ws_dict['start_time'] = ws_dict['start_time'].strftime('%H:%M')
+        if ws_dict['end_time']:
+            ws_dict['end_time'] = ws_dict['end_time'].strftime('%H:%M')
+        workshop_sessions_list.append(ws_dict)
+
+    # Get registration types with fees for JavaScript cost calculation
+    registration_types = EventRegistrationType.objects.filter(
+        event=event,
+        is_active=True
+    ).values('id', 'name', 'is_paid', 'amount').order_by('order')
+
+    # Convert Decimal to float for JSON serialization
+    registration_types_list = []
+    for rt in registration_types:
+        rt_dict = dict(rt)
+        if rt_dict['amount'] is not None:
+            rt_dict['amount'] = float(rt_dict['amount'])
+        registration_types_list.append(rt_dict)
 
     context = {
         "event": event,
+        "form": form,
         "available_spots": available_spots,
         "app": active_apk,
+        "workshop_sessions_json": json.dumps(workshop_sessions_list),
+        "registration_types_json": json.dumps(registration_types_list),
     }
     return render(request, "portal/events/self_register.html", context)
 
@@ -2157,3 +2329,292 @@ def entry_pass_view(request, event_pk, registration_pk):
         'attendee': registration.user,
     }
     return render(request, 'portal/events/entry_pass.html', context)
+
+# ===============================
+# REGISTRATION TYPE API ENDPOINTS
+# ===============================
+
+@login_required(login_url="/accounts/login/")
+def registration_type_detail(request, pk):
+    """API endpoint to get, update, or delete a single registration type"""
+    from src.api.models import EventRegistrationType
+
+    try:
+        reg_type = EventRegistrationType.objects.get(pk=pk)
+
+        # Check permission - only event organizer can access
+        if reg_type.event.organizer != request.user:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
+        if request.method == 'GET':
+            # Get registration type details
+            data = {
+                'id': reg_type.id,
+                'name': reg_type.name,
+                'description': reg_type.description,
+                'is_paid': reg_type.is_paid,
+                'amount': float(reg_type.amount),
+                'payment_methods': reg_type.payment_methods,
+                'is_active': reg_type.is_active,
+                'order': reg_type.order,
+            }
+            return JsonResponse(data)
+
+        elif request.method == 'PUT':
+            # Update registration type
+            try:
+                data = json.loads(request.body)
+
+                # Update fields
+                reg_type.name = data.get('name', reg_type.name)
+                reg_type.description = data.get('description', reg_type.description)
+                reg_type.is_paid = data.get('is_paid', reg_type.is_paid)
+                reg_type.amount = data.get('amount', reg_type.amount)
+                reg_type.payment_methods = data.get('payment_methods', reg_type.payment_methods)
+                reg_type.is_active = data.get('is_active', reg_type.is_active)
+                reg_type.order = data.get('order', reg_type.order)
+
+                reg_type.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': f"Registration type '{reg_type.name}' updated successfully!"
+                })
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
+
+        elif request.method == 'DELETE':
+            # Delete registration type
+            try:
+                name = reg_type.name
+                reg_type.delete()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': f"Registration type '{name}' deleted successfully!"
+                })
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=400)
+
+        else:
+            return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    except EventRegistrationType.DoesNotExist:
+        return JsonResponse({'error': 'Registration type not found'}, status=404)
+
+
+@login_required(login_url="/accounts/login/")
+def registration_type_create(request):
+    """Create a new registration type"""
+    from src.api.models import EventRegistrationType
+
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method.')
+        return redirect('portal:dashboard')
+
+    try:
+        # Get event and check permission
+        event_id = request.POST.get('event')
+        event = get_object_or_404(Event, pk=event_id)
+
+        if event.organizer != request.user:
+            messages.error(request, 'Permission denied.')
+            return redirect('portal:dashboard')
+
+        # Get payment methods from checkboxes
+        payment_methods = request.POST.getlist('payment_methods')
+
+        # Handle is_paid checkbox
+        is_paid = request.POST.get('is_paid') == 'on'
+
+        # Handle is_active checkbox
+        is_active = request.POST.get('is_active', 'on') == 'on'
+
+        # Create registration type
+        reg_type = EventRegistrationType.objects.create(
+            event=event,
+            name=request.POST.get('name'),
+            description=request.POST.get('description', ''),
+            is_paid=is_paid,
+            amount=float(request.POST.get('amount', 0)) if is_paid else 0,
+            payment_methods=payment_methods if is_paid else [],
+            is_active=is_active,
+            order=int(request.POST.get('order', 1)),
+        )
+
+        messages.success(request, f"Registration type '{reg_type.name}' created successfully!")
+        return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-settings')
+
+    except Exception as e:
+        messages.error(request, f'Error creating registration type: {str(e)}')
+        return redirect('portal:dashboard')
+
+
+@login_required(login_url="/accounts/login/")
+def registration_type_edit(request, event_pk, reg_type_pk):
+    """Edit an existing registration type"""
+    from src.api.models import EventRegistrationType
+
+    event = get_object_or_404(Event, pk=event_pk, organizer=request.user)
+    reg_type = get_object_or_404(EventRegistrationType, pk=reg_type_pk, event=event)
+
+    if request.method == 'POST':
+        try:
+            # Get payment methods from checkboxes
+            payment_methods = request.POST.getlist('payment_methods')
+
+            # Handle is_paid checkbox
+            is_paid = request.POST.get('is_paid') == 'on'
+
+            # Handle is_active checkbox
+            is_active = request.POST.get('is_active', 'on') == 'on'
+
+            # Update registration type
+            reg_type.name = request.POST.get('name')
+            reg_type.description = request.POST.get('description', '')
+            reg_type.is_paid = is_paid
+            reg_type.amount = float(request.POST.get('amount', 0)) if is_paid else 0
+            reg_type.payment_methods = payment_methods if is_paid else []
+            reg_type.is_active = is_active
+            reg_type.order = int(request.POST.get('order', 1))
+            reg_type.save()
+
+            messages.success(request, f"Registration type '{reg_type.name}' updated successfully!")
+            return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-settings')
+
+        except Exception as e:
+            messages.error(request, f'Error updating registration type: {str(e)}')
+            return redirect('portal:event_detail', pk=event.pk)
+
+    return redirect('portal:event_detail', pk=event.pk)
+
+
+@login_required(login_url="/accounts/login/")
+def registration_type_delete(request, event_pk, reg_type_pk):
+    """Delete a registration type"""
+    from src.api.models import EventRegistrationType
+
+    event = get_object_or_404(Event, pk=event_pk, organizer=request.user)
+    reg_type = get_object_or_404(EventRegistrationType, pk=reg_type_pk, event=event)
+
+    if request.method == 'POST':
+        try:
+            name = reg_type.name
+            reg_type.delete()
+            messages.success(request, f"Registration type '{name}' deleted successfully!")
+            return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-settings')
+
+        except Exception as e:
+            messages.error(request, f'Error deleting registration type: {str(e)}')
+            return redirect('portal:event_detail', pk=event.pk)
+
+    return redirect('portal:event_detail', pk=event.pk)
+
+
+# ===============================
+# BANK PAYMENT MANAGEMENT VIEWS
+# ===============================
+
+@login_required(login_url="/accounts/login/")
+def update_bank_details(request, pk):
+    """Update bank details for an event"""
+    event = get_object_or_404(Event, pk=pk, organizer=request.user)
+
+    if request.method == 'POST':
+        bank_details = request.POST.get('bank_details', '')
+        event.bank_details = bank_details
+        event.save()
+
+        messages.success(request, 'Bank details updated successfully!')
+        return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-settings')
+
+    return redirect('portal:event_detail', pk=event.pk)
+
+
+@login_required(login_url="/accounts/login/")
+def approve_bank_receipt(request, event_pk, receipt_pk):
+    """Approve a bank payment receipt"""
+    from src.api.models import BankPaymentReceipt
+
+    event = get_object_or_404(Event, pk=event_pk, organizer=request.user)
+    receipt = get_object_or_404(BankPaymentReceipt, pk=receipt_pk, event=event)
+
+    if request.method == 'POST':
+        receipt.approve(request.user)
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Receipt approved! Registration for {receipt.user.get_full_name()} is now confirmed.'
+        })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required(login_url="/accounts/login/")
+def reject_bank_receipt(request, event_pk, receipt_pk):
+    """Reject a bank payment receipt"""
+    from src.api.models import BankPaymentReceipt
+
+    event = get_object_or_404(Event, pk=event_pk, organizer=request.user)
+    receipt = get_object_or_404(BankPaymentReceipt, pk=receipt_pk, event=event)
+
+    if request.method == 'POST':
+        rejection_reason = request.POST.get('rejection_reason', '')
+
+        if not rejection_reason:
+            messages.error(request, 'Please provide a rejection reason.')
+            return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-settings')
+
+        receipt.reject(request.user, rejection_reason)
+
+        messages.success(request, f'Receipt rejected. User has been notified.')
+        return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-settings')
+
+    return redirect('portal:event_detail', pk=event.pk)
+
+
+@login_required(login_url="/accounts/login/")
+def delete_bank_receipt(request, event_pk, receipt_pk):
+    """Delete a bank payment receipt"""
+    from src.api.models import BankPaymentReceipt
+
+    event = get_object_or_404(Event, pk=event_pk, organizer=request.user)
+    receipt = get_object_or_404(BankPaymentReceipt, pk=receipt_pk, event=event)
+
+    if request.method == 'POST':
+        receipt.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Receipt deleted successfully.'
+        })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required(login_url="/accounts/login/")
+def registration_logs(request, pk):
+    """View registration logs for an event with pagination"""
+    from src.api.models import RegistrationLog
+    from django.core.paginator import Paginator
+
+    event = get_object_or_404(Event, pk=pk, organizer=request.user)
+
+    # Get all logs for this event, ordered by latest first
+    logs = RegistrationLog.objects.filter(event=event).select_related(
+        'user', 'registration', 'registration_type'
+    ).order_by('-timestamp')
+
+    # Pagination - 50 logs per page
+    paginator = Paginator(logs, 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'event': event,
+        'logs': page_obj,
+        'page_obj': page_obj,
+        'total_logs': logs.count(),
+    }
+
+    return render(request, 'portal/events/registration_logs.html', context)

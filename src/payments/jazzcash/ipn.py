@@ -137,6 +137,41 @@ class IPNHandler:
                         transaction.registration.payment_date = timezone.now()
                         transaction.registration.save()
                         logger.info(f"Registration {transaction.registration.id} marked as paid")
+
+                        # Log successful payment
+                        from src.api.models import RegistrationLog
+                        RegistrationLog.objects.create(
+                            event=transaction.event,
+                            user=transaction.user,
+                            registration=transaction.registration,
+                            action='payment_success',
+                            email=transaction.user.email,
+                            first_name=transaction.user.first_name,
+                            last_name=transaction.user.last_name,
+                            phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                            registration_type=transaction.registration.registration_type,
+                            payment_method=transaction.payment_method,
+                            payment_amount=transaction.amount,
+                            transaction_reference=transaction.txn_ref_no,
+                            notes=f'Payment successful via IPN. Response: {response_message}'
+                        )
+
+                        # Log registration completed
+                        RegistrationLog.objects.create(
+                            event=transaction.event,
+                            user=transaction.user,
+                            registration=transaction.registration,
+                            action='registration_completed',
+                            email=transaction.user.email,
+                            first_name=transaction.user.first_name,
+                            last_name=transaction.user.last_name,
+                            phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                            registration_type=transaction.registration.registration_type,
+                            payment_method=transaction.payment_method,
+                            payment_amount=transaction.amount,
+                            transaction_reference=transaction.txn_ref_no,
+                            notes=f'Registration completed successfully with payment confirmation'
+                        )
                     else:
                         # Create new registration after successful payment
                         from src.api.models import Registration
@@ -181,6 +216,42 @@ class IPNHandler:
             if transaction.status != 'failed':
                 transaction.mark_failed(ipn_data)
                 logger.info(f"Transaction {transaction.txn_ref_no} marked as failed via IPN")
+
+                # Log failed payment
+                if transaction.event and transaction.registration:
+                    from src.api.models import RegistrationLog
+                    RegistrationLog.objects.create(
+                        event=transaction.event,
+                        user=transaction.user,
+                        registration=transaction.registration,
+                        action='payment_failed',
+                        email=transaction.user.email,
+                        first_name=transaction.user.first_name,
+                        last_name=transaction.user.last_name,
+                        phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                        registration_type=transaction.registration.registration_type if transaction.registration else None,
+                        payment_method=transaction.payment_method,
+                        payment_amount=transaction.amount,
+                        transaction_reference=transaction.txn_ref_no,
+                        notes=f'Payment failed via IPN. Response: {response_message} (Code: {response_code})'
+                    )
+
+                    # Log registration failed
+                    RegistrationLog.objects.create(
+                        event=transaction.event,
+                        user=transaction.user,
+                        registration=transaction.registration,
+                        action='registration_failed',
+                        email=transaction.user.email,
+                        first_name=transaction.user.first_name,
+                        last_name=transaction.user.last_name,
+                        phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                        registration_type=transaction.registration.registration_type if transaction.registration else None,
+                        payment_method=transaction.payment_method,
+                        payment_amount=transaction.amount,
+                        transaction_reference=transaction.txn_ref_no,
+                        notes=f'Registration failed due to payment failure'
+                    )
 
         else:
             transaction.save()

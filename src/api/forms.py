@@ -240,21 +240,119 @@ class LoginForm(AuthenticationForm):
 
 class SelfRegistrationForm(forms.Form):
     first_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        max_length=150,
+        label='First Name',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your first name'
+        })
     )
     last_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        max_length=150,
+        label='Last Name',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your last name'
+        })
     )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'class': 'form-control'})
+        label='Email Address',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'your.email@example.com'
+        })
     )
-    phone = forms.CharField(
+    phone_number = forms.CharField(
         max_length=20,
-        required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        label='Phone Number',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '+1 (555) 123-4567'
+        })
     )
+    designation = forms.CharField(
+        max_length=200,
+        required=False,
+        label='Designation',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., Professor, Software Engineer, Student'
+        })
+    )
+    affiliations = forms.CharField(
+        max_length=300,
+        required=False,
+        label='Affiliation / Organization',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Your university, company, or organization'
+        })
+    )
+    address = forms.CharField(
+        required=False,
+        label='Address',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Your mailing address'
+        })
+    )
+    country = forms.CharField(
+        max_length=100,
+        required=False,
+        label='Country',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., Pakistan, United States, United Kingdom'
+        })
+    )
+    registration_type = forms.ChoiceField(
+        label='Registration Type',
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        required=False
+    )
+    workshops = forms.MultipleChoiceField(
+        label='Select Workshop(s)',
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
+        }),
+        required=False
+    )
+
+    def __init__(self, *args, **kwargs):
+        event = kwargs.pop('event', None)
+        super().__init__(*args, **kwargs)
+
+        # Dynamically set registration type choices
+        if event:
+            from .models import EventRegistrationType
+            reg_types = EventRegistrationType.objects.filter(event=event, is_active=True).order_by('order')
+            if reg_types.exists():
+                self.fields['registration_type'].choices = [('', '--- Select Registration Type ---')] + [
+                    (str(rt.id), f"{rt.name} - PKR {rt.amount}" if rt.is_paid and rt.amount > 0 else rt.name)
+                    for rt in reg_types
+                ]
+                self.fields['registration_type'].required = True
+            else:
+                # Hide registration type if no types defined
+                self.fields['registration_type'].widget = forms.HiddenInput()
+
+            # Set workshop choices from event's workshop sessions
+            workshop_sessions = Session.objects.filter(
+                agenda__event=event,
+                session_type='workshop'
+            ).order_by('agenda__order', 'start_time')
+
+            if workshop_sessions.exists():
+                self.fields['workshops'].choices = [
+                    (str(ws.id), f"{ws.title} ({ws.start_time.strftime('%I:%M %p')} - {ws.location or 'TBD'})")
+                    for ws in workshop_sessions
+                ]
+            else:
+                # Hide workshops field if no workshops available
+                self.fields['workshops'].widget = forms.HiddenInput()
 
     def clean_email(self):
         email = self.cleaned_data['email']

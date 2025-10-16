@@ -107,10 +107,90 @@ class StatusInquiryClient:
                     transaction.mark_completed(response_data)
                     logger.info(f"Transaction {txn_ref_no} marked as completed via inquiry")
 
+                    # Update registration status
+                    if transaction.event and transaction.registration:
+                        from django.utils import timezone
+                        transaction.registration.status = 'confirmed'
+                        transaction.registration.payment_status = 'paid'
+                        transaction.registration.payment_amount = transaction.amount
+                        transaction.registration.payment_date = timezone.now()
+                        transaction.registration.save()
+
+                        # Log successful payment
+                        from src.api.models import RegistrationLog
+                        RegistrationLog.objects.create(
+                            event=transaction.event,
+                            user=transaction.user,
+                            registration=transaction.registration,
+                            action='payment_success',
+                            email=transaction.user.email,
+                            first_name=transaction.user.first_name,
+                            last_name=transaction.user.last_name,
+                            phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                            registration_type=transaction.registration.registration_type,
+                            payment_method=transaction.payment_method,
+                            payment_amount=transaction.amount,
+                            transaction_reference=transaction.txn_ref_no,
+                            notes=f'Payment successful via status inquiry. Response: {response_data.get("pp_PaymentResponseMessage", "")}'
+                        )
+
+                        # Log registration completed
+                        RegistrationLog.objects.create(
+                            event=transaction.event,
+                            user=transaction.user,
+                            registration=transaction.registration,
+                            action='registration_completed',
+                            email=transaction.user.email,
+                            first_name=transaction.user.first_name,
+                            last_name=transaction.user.last_name,
+                            phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                            registration_type=transaction.registration.registration_type,
+                            payment_method=transaction.payment_method,
+                            payment_amount=transaction.amount,
+                            transaction_reference=transaction.txn_ref_no,
+                            notes=f'Registration completed successfully with payment confirmation (via inquiry)'
+                        )
+
             elif payment_response_code in ['199', '999']:
                 if transaction.status != 'failed':
                     transaction.mark_failed(response_data)
                     logger.info(f"Transaction {txn_ref_no} marked as failed via inquiry")
+
+                    # Log failed payment
+                    if transaction.event and transaction.registration:
+                        from src.api.models import RegistrationLog
+                        RegistrationLog.objects.create(
+                            event=transaction.event,
+                            user=transaction.user,
+                            registration=transaction.registration,
+                            action='payment_failed',
+                            email=transaction.user.email,
+                            first_name=transaction.user.first_name,
+                            last_name=transaction.user.last_name,
+                            phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                            registration_type=transaction.registration.registration_type if transaction.registration else None,
+                            payment_method=transaction.payment_method,
+                            payment_amount=transaction.amount,
+                            transaction_reference=transaction.txn_ref_no,
+                            notes=f'Payment failed via status inquiry. Response: {response_data.get("pp_PaymentResponseMessage", "")} (Code: {payment_response_code})'
+                        )
+
+                        # Log registration failed
+                        RegistrationLog.objects.create(
+                            event=transaction.event,
+                            user=transaction.user,
+                            registration=transaction.registration,
+                            action='registration_failed',
+                            email=transaction.user.email,
+                            first_name=transaction.user.first_name,
+                            last_name=transaction.user.last_name,
+                            phone_number=transaction.user.phone_number if hasattr(transaction.user, 'phone_number') else '',
+                            registration_type=transaction.registration.registration_type if transaction.registration else None,
+                            payment_method=transaction.payment_method,
+                            payment_amount=transaction.amount,
+                            transaction_reference=transaction.txn_ref_no,
+                            notes=f'Registration failed due to payment failure (via inquiry)'
+                        )
 
             return True, response_data, "Inquiry successful"
 

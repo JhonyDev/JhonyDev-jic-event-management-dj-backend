@@ -9,6 +9,7 @@
     <link href="{% static 'tabler/dist/css/tabler-flags.css' %}" rel="stylesheet"/>
     <link href="{% static 'tabler/dist/css/tabler-payments.css' %}" rel="stylesheet"/>
     <link href="{% static 'tabler/dist/css/tabler-vendors.css' %}" rel="stylesheet"/>
+    <link href="{% static 'tabler/libs/tom-select/dist/css/tom-select.bootstrap5.min.css' %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -41,7 +42,7 @@
         }
 
         .registration-container {
-            max-width: 480px;
+            max-width: 900px;
             margin: -3rem auto 3rem;
             position: relative;
             z-index: 2;
@@ -63,7 +64,7 @@
         }
 
         .card-body {
-            padding: 1.5rem 2rem 2rem;
+            padding: 2rem 3rem;
         }
 
         .event-details {
@@ -105,6 +106,26 @@
             color: #6b7280;
         }
 
+        .form-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .form-section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section-title svg {
+            margin-right: 0.75rem;
+            color: #667eea;
+        }
+
         .form-group {
             margin-bottom: 1.5rem;
         }
@@ -114,9 +135,10 @@
             color: #374151;
             margin-bottom: 0.5rem;
             font-size: 0.875rem;
+            display: block;
         }
 
-        .form-control {
+        .form-control, .form-select {
             border: 2px solid #e5e7eb;
             border-radius: 12px;
             padding: 0.875rem 1rem;
@@ -125,10 +147,45 @@
             background: #fafbfc;
         }
 
-        .form-control:focus {
+        .form-control:focus, .form-select:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             background: white;
+        }
+
+        .form-hint {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .workshop-checkbox {
+            background: #f8f9ff;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .workshop-checkbox:hover {
+            background: #eff1ff;
+            border-color: #667eea;
+        }
+
+        .workshop-checkbox input[type="checkbox"] {
+            margin-right: 0.75rem;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .workshop-checkbox label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #374151;
+            font-size: 0.875rem;
         }
 
         .btn-register {
@@ -190,6 +247,161 @@
             font-weight: bold;
         }
 
+        /* Event Image Styles */
+        .event-image-container {
+            width: 100%;
+            overflow: hidden;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Tom Select Styles */
+        .ts-wrapper {
+            width: 100%;
+        }
+
+        .ts-dropdown {
+            background: white !important;
+            border: 2px solid #e5e7eb !important;
+            border-radius: 12px !important;
+        }
+
+        .ts-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            background: #fafbfc;
+            min-height: 46px;
+        }
+
+        .ts-control:focus, .ts-control.focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .ts-dropdown .option {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .ts-dropdown .option:hover {
+            background: #f8f9ff;
+        }
+
+        /* Workshop Item Styles */
+        .workshop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            padding: 0.5rem 0;
+        }
+
+        .workshop-info {
+            flex: 1;
+        }
+
+        .workshop-title {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .workshop-details {
+            font-size: 0.75rem;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.25rem;
+        }
+
+        .workshop-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .workshop-detail-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        .workshop-badge {
+            flex-shrink: 0;
+            margin-left: 0.5rem;
+            align-self: center;
+        }
+
+        /* Cost Display Styles */
+        .cost-summary {
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f2ff 100%);
+            border: 2px solid #667eea;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .cost-summary-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .cost-summary-title svg {
+            margin-right: 0.75rem;
+            color: #667eea;
+        }
+
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+        }
+
+        .cost-item:last-child {
+            border-bottom: none;
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+            border-top: 2px solid #667eea;
+        }
+
+        .cost-item-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .cost-item-amount {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .cost-total {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .cost-total-label {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
         .messages .alert {
             border-radius: 12px;
             border: none;
@@ -207,22 +419,32 @@
             color: #dc2626;
         }
 
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+        }
+
         .alert-info {
             background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
             color: #1d4ed8;
         }
 
-        @media (max-width: 576px) {
+        @media (max-width: 768px) {
             .event-header {
                 padding: 2rem 0 4rem;
             }
 
             .registration-container {
                 margin: -2rem 1rem 2rem;
+                max-width: 100%;
             }
 
-            .card-body, .card-header {
+            .card-body {
                 padding: 1.5rem;
+            }
+
+            .form-section-title {
+                font-size: 1rem;
             }
         }
     </style>
@@ -238,8 +460,8 @@
     <div class="container">
         <div class="registration-container">
             <div class="card registration-card">
-                <div class="card-header">
-                    <h3 class="card-title mb-2 h4">
+                <div class="card-header d-flex" style="justify-content:space-between">
+                    <h3 class="card-title mb-2 h4 d-flex align-items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-md me-2 text-primary" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                             <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/>
@@ -251,43 +473,58 @@
                     <p class="text-muted mb-0 small">Complete the form below to secure your spot</p>
                 </div>
                 <div class="card-body">
+                    <!-- Event Image -->
+                    {% if event.image %}
+                    <div class="event-image-container">
+                        <img src="{{ event.image.url }}" alt="{{ event.title }}" class="event-image">
+                    </div>
+                    {% endif %}
+
                     <!-- Event Details -->
                     <div class="event-details">
-                        <div class="detail-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <rect x="4" y="5" width="16" height="16" rx="2"/>
-                                <line x1="16" y1="3" x2="16" y2="7"/>
-                                <line x1="8" y1="3" x2="8" y2="7"/>
-                                <line x1="4" y1="11" x2="20" y2="11"/>
-                            </svg>
-                            <div class="detail-content">
-                                <h6>{{ event.date|date:"l, F j, Y" }}</h6>
-                                <p>{{ event.date|date:"g:i A" }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <rect x="4" y="5" width="16" height="16" rx="2"/>
+                                        <line x1="16" y1="3" x2="16" y2="7"/>
+                                        <line x1="8" y1="3" x2="8" y2="7"/>
+                                        <line x1="4" y1="11" x2="20" y2="11"/>
+                                    </svg>
+                                    <div class="detail-content">
+                                        <h6>{{ event.date|date:"l, F j, Y" }}</h6>
+                                        <p>{{ event.date|date:"g:i A" }}</p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="detail-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <circle cx="12" cy="11" r="3"/>
-                                <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/>
-                            </svg>
-                            <div class="detail-content">
-                                <h6>{{ event.location }}</h6>
-                                <p>Event venue</p>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="detail-icon" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <circle cx="12" cy="11" r="3"/>
+                                        <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/>
+                                    </svg>
+                                    <div class="detail-content">
+                                        <h6>{{ event.location }}</h6>
+                                        <p>Event venue</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Availability Status -->
                     {% if available_spots > 0 %}
-                    <div class="availability-badge">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="availability-icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                            <circle cx="12" cy="12" r="9"/>
-                            <path d="M9 12l2 2l4 -4"/>
-                        </svg>
-                        {{ available_spots }} spots remaining out of {{ event.max_attendees }}
+                    <div class="text-center">
+                        <div class="availability-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="availability-icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <circle cx="12" cy="12" r="9"/>
+                                <path d="M9 12l2 2l4 -4"/>
+                            </svg>
+                            {{ available_spots }} spots remaining out of {{ event.max_attendees }}
+                        </div>
                     </div>
                     {% endif %}
 
@@ -307,36 +544,202 @@
                         <!-- Registration Form -->
                         <form method="post">
                             {% csrf_token %}
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label required">First Name</label>
-                                        <input type="text" class="form-control" name="first_name" placeholder="Enter your first name" required>
+
+                            <!-- Personal Information Section -->
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                                    </svg>
+                                    Personal Information
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label required">{{ form.first_name.label }}</label>
+                                            {{ form.first_name }}
+                                            {% if form.first_name.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label required">{{ form.last_name.label }}</label>
+                                            {{ form.last_name }}
+                                            {% if form.last_name.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label required">Last Name</label>
-                                        <input type="text" class="form-control" name="last_name" placeholder="Enter your last name" required>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label required">{{ form.email.label }}</label>
+                                            {{ form.email }}
+                                            <small class="form-hint text-muted">We'll use this to send you event updates and confirmations</small>
+                                            {% if form.email.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label required">{{ form.phone_number.label }}</label>
+                                            {{ form.phone_number }}
+                                            {% if form.phone_number.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.phone_number.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label required">Email Address</label>
-                                <input type="email" class="form-control" name="email" placeholder="your.email@example.com" required>
-                                <small class="form-hint text-muted">We'll use this to send you event updates and confirmations</small>
+
+                            <!-- Professional Information Section -->
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <rect x="3" y="7" width="18" height="13" rx="2"/>
+                                        <path d="M8 7v-2a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v2"/>
+                                        <line x1="12" y1="12" x2="12" y2="12.01"/>
+                                        <path d="M3 13a20 20 0 0 0 18 0"/>
+                                    </svg>
+                                    Professional Information
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">{{ form.designation.label }}</label>
+                                            {{ form.designation }}
+                                            {% if form.designation.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.designation.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">{{ form.affiliations.label }}</label>
+                                            {{ form.affiliations }}
+                                            {% if form.affiliations.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.affiliations.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">{{ form.country.label }}</label>
+                                            {{ form.country }}
+                                            {% if form.country.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.country.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">{{ form.address.label }}</label>
+                                            {{ form.address }}
+                                            {% if form.address.errors %}
+                                                <div class="invalid-feedback d-block">{{ form.address.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">Phone Number (Optional)</label>
-                                <input type="tel" class="form-control" name="phone" placeholder="+1 (555) 123-4567">
+
+                            <!-- Registration Type Section -->
+                            {% if form.registration_type.field.widget.input_type != 'hidden' %}
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+                                        <rect x="9" y="3" width="6" height="4" rx="2"/>
+                                        <line x1="9" y1="12" x2="9.01" y2="12"/>
+                                        <line x1="13" y1="12" x2="15" y2="12"/>
+                                        <line x1="9" y1="16" x2="9.01" y2="16"/>
+                                        <line x1="13" y1="16" x2="15" y2="16"/>
+                                    </svg>
+                                    Registration Type
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label{% if form.registration_type.field.required %} required{% endif %}">{{ form.registration_type.label }}</label>
+                                    {{ form.registration_type }}
+                                    {% if form.registration_type.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.registration_type.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-register text-white">
+                            {% endif %}
+
+                            <!-- Workshop Selection Section -->
+                            {% if form.workshops.field.widget.input_type != 'hidden' and form.workshops.field.choices %}
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <rect x="3" y="5" width="18" height="14" rx="2"/>
+                                        <polyline points="3 7 12 13 21 7"/>
+                                    </svg>
+                                    Workshop Selection
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">{{ form.workshops.label }}</label>
+                                    <small class="form-hint text-muted d-block mb-3">Select the workshop sessions you'd like to attend</small>
+                                    <select id="workshopsSelect" name="workshops" multiple>
+                                        {% for value, text in form.workshops.field.choices %}
+                                        <option value="{{ value }}">{{ text }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.workshops.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.workshops.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Cost Summary Section -->
+                            <div class="cost-summary" id="costSummary" style="display: none;">
+                                <div class="cost-summary-title">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/>
+                                        <path d="M20 12v4h-4a2 2 0 0 1 0 -4h4"/>
+                                    </svg>
+                                    Registration Cost
+                                </div>
+                                <div id="costBreakdown">
+                                    <div class="cost-item" id="eventFeeCost" style="display: none;">
+                                        <span class="cost-item-label">Event Registration Fee</span>
+                                        <span class="cost-item-amount" id="eventFeeAmount">PKR 0</span>
+                                    </div>
+                                    <div class="cost-item" id="registrationTypeCost" style="display: none;">
+                                        <span class="cost-item-label" id="registrationTypeLabel">Registration Type</span>
+                                        <span class="cost-item-amount" id="registrationTypeAmount">PKR 0</span>
+                                    </div>
+                                    <div class="cost-item" id="workshopsCost" style="display: none;">
+                                        <span class="cost-item-label" id="workshopsLabel">Workshops (0)</span>
+                                        <span class="cost-item-amount" id="workshopsAmount">PKR 0</span>
+                                    </div>
+                                    <div class="cost-item">
+                                        <span class="cost-total-label">Total Amount</span>
+                                        <span class="cost-total" id="totalAmount">PKR 0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-register text-white" id="submitBtn">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                     <path d="M9 12l2 2l4 -4"/>
                                     <path d="M21 12c0 4.97 -4.03 9 -9 9s-9 -4.03 -9 -9s4.03 -9 9 -9s9 4.03 9 9z"/>
                                 </svg>
-                                Confirm Registration
+                                <span id="submitBtnText">Confirm Registration</span>
                             </button>
                         </form>
                     {% else %}
@@ -394,6 +797,1085 @@
         </div>
     </div>
 
+    <!-- Payment Method Selection Modal -->
+    <div class="modal modal-blur fade" id="paymentMethodModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0 d-flex flex-column align-items-center">
+                    <img src="{% static 'images/jazzcash-logo.png' %}" alt="JazzCash" style="height: 60px; margin-bottom: 1rem;">
+                    <h5 class="modal-title">Select Payment Method</h5>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Total Amount: <strong class="text-primary" id="modalTotalAmount">PKR 0</strong></p>
+                    <p class="text-muted small mb-4">Please select your preferred payment method to complete your registration.</p>
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-outline-primary w-100 payment-method-btn" data-method="mwallet" style="padding: 1rem;">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <rect x="7" y="4" width="10" height="16" rx="1"/>
+                                        <line x1="11" y1="5" x2="13" y2="5"/>
+                                        <line x1="12" y1="17" x2="12" y2="17.01"/>
+                                    </svg>
+                                    <span class="fw-bold">JazzCash Mobile Wallet</span>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-12">
+                            <button type="button" class="btn btn-outline-primary w-100 payment-method-btn" data-method="card" style="padding: 1rem;">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <rect x="3" y="5" width="18" height="14" rx="3"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                        <line x1="7" y1="15" x2="7.01" y2="15"/>
+                                        <line x1="11" y1="15" x2="13" y2="15"/>
+                                    </svg>
+                                    <span class="fw-bold">Debit / Credit Card</span>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-12">
+                            <button type="button" class="btn btn-outline-primary w-100 payment-method-btn" data-method="bank" style="padding: 1rem;">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <line x1="3" y1="21" x2="21" y2="21"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                        <polyline points="5 6 12 3 19 6"/>
+                                        <line x1="4" y1="10" x2="4" y2="21"/>
+                                        <line x1="20" y1="10" x2="20" y2="21"/>
+                                        <line x1="8" y1="14" x2="8" y2="17"/>
+                                        <line x1="12" y1="14" x2="12" y2="17"/>
+                                        <line x1="16" y1="14" x2="16" y2="17"/>
+                                    </svg>
+                                    <span class="fw-bold">Offline Bank Transfer</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MWallet Payment Modal -->
+    <div class="modal modal-blur fade" id="mwalletModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form id="mwalletForm">
+                    <div class="modal-header border-0 pb-0 d-flex flex-column align-items-center">
+                        <img src="{% static 'images/jazzcash-logo.png' %}" alt="JazzCash" style="height: 60px; margin-bottom: 1rem;">
+                        <h5 class="modal-title">JazzCash Mobile Wallet</h5>
+                        <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Amount to Pay: <strong class="text-primary" id="mwalletAmount">PKR 0</strong></p>
+
+                        <div class="mb-3">
+                            <label class="form-label required">Mobile Number</label>
+                            <input type="text" class="form-control" id="mwalletMobile" placeholder="03XXXXXXXXX" required>
+                            <small class="form-hint">Enter your JazzCash mobile wallet number</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label required">CNIC (Last 6 Digits)</label>
+                            <input type="text" class="form-control" id="mwalletCnic" placeholder="XXXXXX" maxlength="6" required>
+                            <small class="form-hint">Enter last 6 digits of your CNIC</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Proceed to Payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Transfer Payment Modal -->
+    <div class="modal modal-blur fade" id="bankTransferModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <form id="bankTransferForm" enctype="multipart/form-data">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title">Offline Bank Transfer</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">Amount to Pay: <strong class="text-primary" id="bankTransferAmount">PKR 0</strong></p>
+
+                        <!-- Bank Details Display -->
+                        <div class="alert alert-info mb-4" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: none;">
+                            <h6 class="mb-2 fw-bold" style="color: #1e40af;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="16" x2="12" y2="12"/>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                </svg>
+                                Bank Account Details:
+                            </h6>
+                            <div id="bankDetailsContent" style="color: #1e3a8a; font-size: 0.875rem;">
+                                {% if event.bank_details %}
+                                    {{ event.bank_details|safe }}
+                                {% else %}
+                                    <p>Bank details not available. Please contact the organizer.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label required">Payment Date</label>
+                            <input type="date" class="form-control" id="bankPaymentDate" required>
+                            <small class="form-hint">Date when you made the payment</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label required">Payment Receipt/Screenshot</label>
+                            <input type="file" class="form-control" id="bankReceiptFile" accept="image/*" required>
+                            <small class="form-hint">Upload a screenshot or photo of your payment receipt (JPG, PNG)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Additional Notes (Optional)</label>
+                            <textarea class="form-control" id="bankTransferNotes" rows="3" placeholder="Any additional information about the payment..."></textarea>
+                        </div>
+
+                        <div class="alert alert-warning" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: none;">
+                            <p class="mb-0 small" style="color: #92400e;">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M12 9v2m0 4v.01"/>
+                                    <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75"/>
+                                </svg>
+                                <strong>Important:</strong> Your registration will be marked as "Pending Approval" until the organizer verifies your payment receipt.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Registration</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden form for card payment submission -->
+    <form id="cardPaymentForm" method="POST" style="display: none;">
+    </form>
+
     <script src="{% static 'tabler/dist/js/tabler.min.js' %}"></script>
+    <script src="{% static 'tabler/libs/tom-select/dist/js/tom-select.popular.min.js' %}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Parse workshop and registration type data from Django context
+            const workshopSessions = JSON.parse('{{ workshop_sessions_json|safe }}');
+            const registrationTypes = JSON.parse('{{ registration_types_json|safe }}');
+            const eventIsPaid = {{ event.is_paid_event|yesno:"true,false" }};
+            const eventFee = parseFloat('{{ event.registration_fee|default:"0" }}');
+
+            // Initialize Tom-Select for workshops dropdown
+            let workshopsSelect = null;
+            const workshopsElement = document.getElementById('workshopsSelect');
+
+            if (workshopsElement) {
+                workshopsSelect = new TomSelect('#workshopsSelect', {
+                    plugins: ['remove_button'],
+                    maxOptions: null,
+                    closeAfterSelect: false,
+                    placeholder: 'Select workshops you\'d like to attend',
+                    render: {
+                        option: function(data, escape) {
+                            const workshop = workshopSessions.find(w => w.id == data.value);
+                            if (!workshop) {
+                                return `<div>${escape(data.text)}</div>`;
+                            }
+
+                            // Build time string
+                            let timeStr = '';
+                            if (workshop.start_time && workshop.end_time) {
+                                timeStr = `${workshop.start_time} - ${workshop.end_time}`;
+                            }
+
+                            // Build venue string
+                            let venueStr = workshop.location || 'TBA';
+
+                            // Build price badge
+                            let priceBadge = '';
+                            if (workshop.is_paid_session) {
+                                priceBadge = `<span class="badge bg-primary text-white workshop-badge">PKR ${parseFloat(workshop.session_fee).toLocaleString()}</span>`;
+                            } else {
+                                priceBadge = `<span class="badge bg-success text-white workshop-badge">Free</span>`;
+                            }
+
+                            return `
+                                <div class="workshop-item">
+                                    <div class="workshop-info">
+                                        <div class="workshop-title">${escape(data.text)}</div>
+                                        <div class="workshop-details">
+                                            ${timeStr ? `
+                                            <div class="workshop-detail-item">
+                                                <svg class="workshop-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <circle cx="12" cy="12" r="10"/>
+                                                    <polyline points="12 6 12 12 16 14"/>
+                                                </svg>
+                                                <span>${timeStr}</span>
+                                            </div>
+                                            ` : ''}
+                                            <div class="workshop-detail-item">
+                                                <svg class="workshop-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                                    <circle cx="12" cy="10" r="3"/>
+                                                </svg>
+                                                <span>${venueStr}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${priceBadge}
+                                </div>
+                            `;
+                        },
+                        item: function(data, escape) {
+                            const workshop = workshopSessions.find(w => w.id == data.value);
+                            let priceTag = '';
+                            if (workshop && workshop.is_paid_session) {
+                                priceTag = `<span class="badge bg-primary text-white ms-1">PKR ${parseFloat(workshop.session_fee).toLocaleString()}</span>`;
+                            }
+                            return `<div>${escape(data.text)} ${priceTag}</div>`;
+                        }
+                    },
+                    onChange: function() {
+                        calculateCost();
+                    }
+                });
+            }
+
+            // Attach event listener to registration type dropdown
+            const registrationTypeSelect = document.getElementById('id_registration_type');
+            if (registrationTypeSelect) {
+                registrationTypeSelect.addEventListener('change', calculateCost);
+            }
+
+            // Cost calculation function
+            function calculateCost() {
+                let totalCost = 0;
+                let hasAnyCost = false;
+
+                // 1. Calculate event registration fee
+                const eventFeeCostDiv = document.getElementById('eventFeeCost');
+                const eventFeeAmountSpan = document.getElementById('eventFeeAmount');
+
+                if (eventIsPaid && eventFee > 0) {
+                    totalCost += eventFee;
+                    eventFeeAmountSpan.textContent = `PKR ${eventFee.toLocaleString()}`;
+                    eventFeeCostDiv.style.display = 'flex';
+                    hasAnyCost = true;
+                } else {
+                    eventFeeCostDiv.style.display = 'none';
+                }
+
+                // 2. Calculate registration type fee
+                const registrationTypeCostDiv = document.getElementById('registrationTypeCost');
+                const registrationTypeLabelSpan = document.getElementById('registrationTypeLabel');
+                const registrationTypeAmountSpan = document.getElementById('registrationTypeAmount');
+
+                if (registrationTypeSelect && registrationTypeSelect.value) {
+                    const selectedTypeId = parseInt(registrationTypeSelect.value);
+                    const selectedType = registrationTypes.find(rt => rt.id === selectedTypeId);
+
+                    if (selectedType && selectedType.is_paid && selectedType.amount > 0) {
+                        const typeAmount = parseFloat(selectedType.amount);
+                        totalCost += typeAmount;
+                        registrationTypeLabelSpan.textContent = selectedType.name;
+                        registrationTypeAmountSpan.textContent = `PKR ${typeAmount.toLocaleString()}`;
+                        registrationTypeCostDiv.style.display = 'flex';
+                        hasAnyCost = true;
+                    } else {
+                        registrationTypeCostDiv.style.display = 'none';
+                    }
+                } else {
+                    registrationTypeCostDiv.style.display = 'none';
+                }
+
+                // 3. Calculate workshop fees
+                const workshopsCostDiv = document.getElementById('workshopsCost');
+                const workshopsLabelSpan = document.getElementById('workshopsLabel');
+                const workshopsAmountSpan = document.getElementById('workshopsAmount');
+
+                if (workshopsSelect) {
+                    const selectedWorkshopIds = workshopsSelect.getValue();
+                    let workshopTotal = 0;
+                    let workshopCount = 0;
+
+                    selectedWorkshopIds.forEach(workshopId => {
+                        const workshop = workshopSessions.find(w => w.id == workshopId);
+                        if (workshop && workshop.is_paid_session) {
+                            workshopTotal += parseFloat(workshop.session_fee);
+                            workshopCount++;
+                        } else if (workshop) {
+                            workshopCount++;
+                        }
+                    });
+
+                    if (workshopTotal > 0) {
+                        totalCost += workshopTotal;
+                        workshopsLabelSpan.textContent = `Workshops (${workshopCount})`;
+                        workshopsAmountSpan.textContent = `PKR ${workshopTotal.toLocaleString()}`;
+                        workshopsCostDiv.style.display = 'flex';
+                        hasAnyCost = true;
+                    } else {
+                        workshopsCostDiv.style.display = 'none';
+                    }
+                }
+
+                // 4. Update total and show/hide cost summary
+                const costSummaryDiv = document.getElementById('costSummary');
+                const totalAmountSpan = document.getElementById('totalAmount');
+                const submitBtnText = document.getElementById('submitBtnText');
+
+                if (hasAnyCost) {
+                    totalAmountSpan.textContent = `PKR ${totalCost.toLocaleString()}`;
+                    costSummaryDiv.style.display = 'block';
+                    // Update submit button text to show amount
+                    submitBtnText.textContent = `Pay PKR ${totalCost.toLocaleString()} to Confirm Registration`;
+                } else {
+                    costSummaryDiv.style.display = 'none';
+                    // No payment required
+                    submitBtnText.textContent = 'Confirm Registration';
+                }
+            }
+
+            // Initial cost calculation on page load
+            calculateCost();
+
+            // Payment Flow Implementation
+            let registrationData = null;
+            let totalPaymentAmount = 0;
+            const registrationForm = document.querySelector('form');
+
+            // Get modal elements
+            const paymentMethodModalEl = document.getElementById('paymentMethodModal');
+            const mwalletModalEl = document.getElementById('mwalletModal');
+            const bankTransferModalEl = document.getElementById('bankTransferModal');
+
+            // Initialize modals on page load
+            let paymentMethodModal = null;
+            let mwalletModal = null;
+            let bankTransferModal = null;
+
+            // Wait for Bootstrap to be available - with retry logic
+            function initializeModals() {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    try {
+                        paymentMethodModal = new bootstrap.Modal(paymentMethodModalEl);
+                        mwalletModal = new bootstrap.Modal(mwalletModalEl);
+                        bankTransferModal = new bootstrap.Modal(bankTransferModalEl);
+                        console.log('Bootstrap modals initialized successfully');
+                        return true;
+                    } catch (error) {
+                        console.error('Error initializing modals:', error);
+                        return false;
+                    }
+                }
+                console.log('Bootstrap not yet available, retrying...');
+                return false;
+            }
+
+            // Try to initialize with retries
+            let initAttempts = 0;
+            const maxAttempts = 10;
+
+            function tryInitialize() {
+                initAttempts++;
+                if (initializeModals()) {
+                    return; // Success!
+                }
+                if (initAttempts < maxAttempts) {
+                    setTimeout(tryInitialize, 200); // Retry every 200ms
+                } else {
+                    console.error('Failed to initialize Bootstrap modals after', maxAttempts, 'attempts');
+                }
+            }
+
+            tryInitialize();
+
+            // Manual close button handlers (fallback for when Bootstrap isn't loaded)
+            function setupManualCloseHandlers() {
+                // Close buttons for payment method modal
+                const paymentMethodCloseBtn = paymentMethodModalEl.querySelector('.btn-close');
+                const paymentMethodCancelBtn = paymentMethodModalEl.querySelector('.modal-footer .btn');
+
+                if (paymentMethodCloseBtn) {
+                    paymentMethodCloseBtn.addEventListener('click', function() {
+                        if (paymentMethodModal) {
+                            paymentMethodModal.hide();
+                        } else {
+                            paymentMethodModalEl.classList.remove('show');
+                            paymentMethodModalEl.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const backdrop = document.getElementById('paymentModalBackdrop');
+                            if (backdrop) backdrop.remove();
+                        }
+                    });
+                }
+
+                if (paymentMethodCancelBtn) {
+                    paymentMethodCancelBtn.addEventListener('click', function() {
+                        if (paymentMethodModal) {
+                            paymentMethodModal.hide();
+                        } else {
+                            paymentMethodModalEl.classList.remove('show');
+                            paymentMethodModalEl.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const backdrop = document.getElementById('paymentModalBackdrop');
+                            if (backdrop) backdrop.remove();
+                        }
+                    });
+                }
+
+                // Close buttons for mwallet modal
+                const mwalletCloseBtn = mwalletModalEl.querySelector('.btn-close');
+                const mwalletCancelBtn = mwalletModalEl.querySelector('.modal-footer .btn[type="button"]');
+
+                if (mwalletCloseBtn) {
+                    mwalletCloseBtn.addEventListener('click', function() {
+                        if (mwalletModal) {
+                            mwalletModal.hide();
+                        } else {
+                            mwalletModalEl.classList.remove('show');
+                            mwalletModalEl.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const backdrop = document.getElementById('mwalletModalBackdrop');
+                            if (backdrop) backdrop.remove();
+                        }
+                    });
+                }
+
+                if (mwalletCancelBtn) {
+                    mwalletCancelBtn.addEventListener('click', function() {
+                        if (mwalletModal) {
+                            mwalletModal.hide();
+                        } else {
+                            mwalletModalEl.classList.remove('show');
+                            mwalletModalEl.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const backdrop = document.getElementById('mwalletModalBackdrop');
+                            if (backdrop) backdrop.remove();
+                        }
+                    });
+                }
+            }
+
+            // Setup manual close handlers
+            setupManualCloseHandlers();
+
+            // Intercept form submission
+            registrationForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Calculate if payment is required
+                let totalCost = 0;
+                let hasAnyCost = false;
+
+                // Check event fee
+                if (eventIsPaid && eventFee > 0) {
+                    totalCost += eventFee;
+                    hasAnyCost = true;
+                }
+
+                // Check registration type fee
+                if (registrationTypeSelect && registrationTypeSelect.value) {
+                    const selectedTypeId = parseInt(registrationTypeSelect.value);
+                    const selectedType = registrationTypes.find(rt => rt.id === selectedTypeId);
+                    if (selectedType && selectedType.is_paid && selectedType.amount > 0) {
+                        totalCost += parseFloat(selectedType.amount);
+                        hasAnyCost = true;
+                    }
+                }
+
+                // Check workshop fees
+                if (workshopsSelect) {
+                    const selectedWorkshopIds = workshopsSelect.getValue();
+                    selectedWorkshopIds.forEach(workshopId => {
+                        const workshop = workshopSessions.find(w => w.id == workshopId);
+                        if (workshop && workshop.is_paid_session) {
+                            totalCost += parseFloat(workshop.session_fee);
+                            hasAnyCost = true;
+                        }
+                    });
+                }
+
+                // If payment is required, show payment modal
+                if (hasAnyCost && totalCost > 0) {
+                    totalPaymentAmount = totalCost;
+                    document.getElementById('modalTotalAmount').textContent = `PKR ${totalCost.toLocaleString()}`;
+                    document.getElementById('mwalletAmount').textContent = `PKR ${totalCost.toLocaleString()}`;
+
+                    // Store form data
+                    registrationData = new FormData(registrationForm);
+
+                    // Show payment method selection modal
+                    if (paymentMethodModal) {
+                        paymentMethodModal.show();
+                    } else {
+                        console.error('Payment modal not initialized, trying fallback');
+                        // Fallback: manually show modal
+                        paymentMethodModalEl.classList.add('show');
+                        paymentMethodModalEl.style.display = 'block';
+                        document.body.classList.add('modal-open');
+
+                        // Create backdrop
+                        const backdrop = document.createElement('div');
+                        backdrop.className = 'modal-backdrop fade show';
+                        backdrop.id = 'paymentModalBackdrop';
+                        document.body.appendChild(backdrop);
+                    }
+                } else {
+                    // No payment required, submit form directly
+                    registrationForm.submit();
+                }
+            });
+
+            // Handle payment method selection
+            document.querySelectorAll('.payment-method-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const method = this.getAttribute('data-method');
+
+                    // Hide payment method modal
+                    if (paymentMethodModal) {
+                        paymentMethodModal.hide();
+                    } else {
+                        // Manual hide
+                        paymentMethodModalEl.classList.remove('show');
+                        paymentMethodModalEl.style.display = 'none';
+                        document.body.classList.remove('modal-open');
+                        const backdrop = document.getElementById('paymentModalBackdrop');
+                        if (backdrop) backdrop.remove();
+                    }
+
+                    // Small delay to allow first modal to close
+                    setTimeout(function() {
+                        if (method === 'mwallet') {
+                            // Show MWallet modal
+                            if (mwalletModal) {
+                                mwalletModal.show();
+                            } else {
+                                // Manual show
+                                mwalletModalEl.classList.add('show');
+                                mwalletModalEl.style.display = 'block';
+                                document.body.classList.add('modal-open');
+
+                                const backdrop = document.createElement('div');
+                                backdrop.className = 'modal-backdrop fade show';
+                                backdrop.id = 'mwalletModalBackdrop';
+                                document.body.appendChild(backdrop);
+                            }
+                        } else if (method === 'card') {
+                            // Process card payment directly
+                            processCardPayment();
+                        } else if (method === 'bank') {
+                            // Show Bank Transfer modal
+                            document.getElementById('bankTransferAmount').textContent = `PKR ${totalPaymentAmount.toLocaleString()}`;
+                            if (bankTransferModal) {
+                                bankTransferModal.show();
+                            } else {
+                                // Manual show
+                                bankTransferModalEl.classList.add('show');
+                                bankTransferModalEl.style.display = 'block';
+                                document.body.classList.add('modal-open');
+
+                                const backdrop = document.createElement('div');
+                                backdrop.className = 'modal-backdrop fade show';
+                                backdrop.id = 'bankTransferModalBackdrop';
+                                document.body.appendChild(backdrop);
+                            }
+                        }
+                    }, 300);
+                });
+            });
+
+            // Handle MWallet form submission
+            document.getElementById('mwalletForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                processMWalletPayment();
+            });
+
+            // Handle Bank Transfer form submission
+            document.getElementById('bankTransferForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                processBankTransferPayment();
+            });
+
+            // Process MWallet Payment
+            function processMWalletPayment() {
+                const mobileNumber = document.getElementById('mwalletMobile').value;
+                const cnic = document.getElementById('mwalletCnic').value;
+
+                // Validate inputs
+                if (!mobileNumber || !cnic) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+
+                // Show loading state
+                const submitBtn = document.querySelector('#mwalletForm button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+                // Prepare payment data
+                const paymentData = {
+                    amount: totalPaymentAmount,
+                    mobile_number: mobileNumber,
+                    cnic: cnic,
+                    event_id: {{ event.id }},
+                    registration_data: Object.fromEntries(registrationData.entries())
+                };
+
+                // Send payment request to backend
+                fetch('/portal/register/{{ event.id }}/payment/mwallet/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': registrationData.get('csrfmiddlewaretoken')
+                    },
+                    body: JSON.stringify(paymentData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Store transaction reference number
+                        const txnRefNo = data.txn_ref_no;
+
+                        // Hide MWallet modal
+                        if (mwalletModal) {
+                            mwalletModal.hide();
+                        } else {
+                            mwalletModalEl.classList.remove('show');
+                            mwalletModalEl.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const backdrop = document.getElementById('mwalletModalBackdrop');
+                            if (backdrop) backdrop.remove();
+                        }
+
+                        // Payment initiated successfully - show alert and start polling
+                        alert('Payment initiated! Please check your mobile phone for JazzCash prompt.');
+
+                        // Update button state
+                        document.getElementById('submitBtnText').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Waiting for payment...';
+
+                        // Start polling for payment status (reuse the same polling function as Card payment)
+                        startPaymentStatusPolling(txnRefNo, null);
+
+                    } else {
+                        // Payment failed
+                        alert('Payment failed: ' + (data.error || 'Unknown error'));
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing your payment');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            }
+
+            // Process Card Payment
+            function processCardPayment() {
+                console.log('=== INITIATING CARD PAYMENT ===');
+                console.log('Total Payment Amount:', totalPaymentAmount);
+
+                // Show loading state
+                document.getElementById('submitBtnText').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Preparing payment...';
+                document.getElementById('submitBtn').disabled = true;
+
+                // Prepare payment data
+                const paymentData = {
+                    amount: totalPaymentAmount,
+                    event_id: {{ event.id }},
+                    registration_data: Object.fromEntries(registrationData.entries())
+                };
+
+                console.log('Payment Data:', paymentData);
+                console.log('Registration Data Fields:', Object.keys(paymentData.registration_data));
+
+                // Send payment request to backend
+                console.log('Sending request to:', '/portal/register/{{ event.id }}/payment/card/');
+                fetch('/portal/register/{{ event.id }}/payment/card/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': registrationData.get('csrfmiddlewaretoken')
+                    },
+                    body: JSON.stringify(paymentData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.form_data) {
+                        // Store transaction reference number
+                        const txnRefNo = data.form_data.txn_ref_no || data.txn_ref_no;
+                        console.log('Transaction Reference:', txnRefNo);
+
+                        // Create form with payment data
+                        const form = document.getElementById('cardPaymentForm');
+                        form.action = data.form_data.action;
+                        form.method = data.form_data.method;
+                        form.target = 'jazzcash_payment_window'; // Open in new window
+                        form.innerHTML = '';
+
+                        // Add all fields
+                        for (const [key, value] of Object.entries(data.form_data.fields)) {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = key;
+                            input.value = value;
+                            form.appendChild(input);
+                        }
+
+                        // Open payment window
+                        const paymentWindow = window.open('', 'jazzcash_payment_window', 'width=800,height=600,scrollbars=yes,resizable=yes');
+
+                        if (!paymentWindow) {
+                            alert('Please allow popups for this site to process payment');
+                            document.getElementById('submitBtnText').textContent = 'Confirm Registration';
+                            document.getElementById('submitBtn').disabled = false;
+                            return;
+                        }
+
+                        // Show "Waiting for payment" message
+                        document.getElementById('submitBtnText').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Waiting for payment...';
+
+                        // Submit form to new window
+                        document.body.appendChild(form);
+                        form.submit();
+
+                        // Start polling for payment status
+                        startPaymentStatusPolling(txnRefNo, paymentWindow);
+
+                    } else {
+                        // Payment failed
+                        alert('Payment initialization failed: ' + (data.error || 'Unknown error'));
+                        document.getElementById('submitBtnText').textContent = 'Confirm Registration';
+                        document.getElementById('submitBtn').disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing your payment');
+                    document.getElementById('submitBtnText').textContent = 'Confirm Registration';
+                    document.getElementById('submitBtn').disabled = false;
+                });
+            }
+
+            // Poll payment status
+            let pollingInterval = null;
+            let pollingAttempts = 0;
+            const MAX_POLLING_ATTEMPTS = 300; // 5 minutes (300 seconds)
+            let windowClosedAlertShown = false;
+
+            function startPaymentStatusPolling(txnRefNo, paymentWindow) {
+                console.log('Starting payment status polling for:', txnRefNo);
+
+                pollingAttempts = 0;
+                windowClosedAlertShown = false;
+
+                // Give the window time to load before starting to poll
+                setTimeout(function() {
+                    pollingInterval = setInterval(function() {
+                        pollingAttempts++;
+
+                        // Check if payment window is closed (but don't alert immediately)
+                        try {
+                            if (paymentWindow && paymentWindow.closed && !windowClosedAlertShown && pollingAttempts > 3) {
+                                console.log('Payment window closed by user');
+                                windowClosedAlertShown = true;
+                                // Don't stop polling yet - payment might still be processing
+                                document.getElementById('submitBtnText').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Checking payment status...';
+                            }
+                        } catch (e) {
+                            // Ignore cross-origin errors
+                        }
+
+                        // Stop polling after max attempts (5 minutes)
+                        if (pollingAttempts > MAX_POLLING_ATTEMPTS) {
+                            console.log('Max polling attempts reached');
+                            stopPaymentStatusPolling();
+                            try {
+                                if (paymentWindow && !paymentWindow.closed) {
+                                    paymentWindow.close();
+                                }
+                            } catch (e) {
+                                // Ignore
+                            }
+                            alert('Payment timeout. Please try again or contact support if payment was deducted.');
+                            document.getElementById('submitBtnText').textContent = 'Confirm Registration';
+                            document.getElementById('submitBtn').disabled = false;
+                            return;
+                        }
+
+                        // Check payment status
+                        fetch('/portal/register/{{ event.id }}/payment/status/check/' + txnRefNo + '/', {
+                            method: 'GET',
+                            headers: {
+                                'X-CSRFToken': registrationData.get('csrfmiddlewaretoken')
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Payment status check (attempt ' + pollingAttempts + '):', data);
+
+                            if (data.status === 'completed') {
+                                // Payment successful!
+                                console.log('✅ Payment successful!');
+                                stopPaymentStatusPolling();
+
+                                // Close payment window
+                                try {
+                                    if (paymentWindow && !paymentWindow.closed) {
+                                        paymentWindow.close();
+                                    }
+                                } catch (e) {
+                                    // Ignore
+                                }
+
+                                // Show success modal instead of submitting form
+                                showSuccessModal(txnRefNo);
+
+                            } else if (data.status === 'failed') {
+                                // Payment failed
+                                console.log('❌ Payment failed');
+                                stopPaymentStatusPolling();
+
+                                // Close payment window
+                                try {
+                                    if (paymentWindow && !paymentWindow.closed) {
+                                        paymentWindow.close();
+                                    }
+                                } catch (e) {
+                                    // Ignore
+                                }
+
+                                alert('Payment failed: ' + (data.message || 'Payment was declined'));
+                                document.getElementById('submitBtnText').textContent = 'Confirm Registration';
+                                document.getElementById('submitBtn').disabled = false;
+                            }
+                            // Otherwise, keep polling (status is 'pending')
+                        })
+                        .catch(error => {
+                            console.error('Error checking payment status:', error);
+                            // Continue polling on error (might be network issue)
+                        });
+
+                    }, 1000); // Poll every 1 second
+                }, 2000); // Wait 2 seconds before starting to poll
+            }
+
+            function stopPaymentStatusPolling() {
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+            }
+
+            // Show success modal
+            function showSuccessModal(txnRefNo) {
+                // Log the payment success view
+                fetch('/portal/register/{{ event.id }}/log/payment-success/' + txnRefNo + '/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': registrationData.get('csrfmiddlewaretoken')
+                    }
+                }).catch(error => console.error('Error logging payment success:', error));
+
+                // Hide the form
+                document.querySelector('.registration-card').style.display = 'none';
+
+                // Create and show success message
+                const container = document.querySelector('.registration-container');
+                const successHTML = `
+                    <div class="card registration-card">
+                        <div class="card-body text-center py-5">
+                            <div class="mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-success">
+                                    <circle cx="12" cy="12" r="10" style="fill: #d1fae5;"/>
+                                    <path d="M9 12l2 2 4-4" stroke="#10b981" stroke-width="3"/>
+                                </svg>
+                            </div>
+                            <h2 class="mb-3" style="color: #10b981; font-weight: bold;">Payment Successful!</h2>
+                            <h4 class="mb-4" style="color: #059669;">You have successfully registered for {{ event.title }}</h4>
+                            <p class="text-muted mb-4">
+                                Your payment has been processed and your registration is confirmed.<br>
+                                Transaction Reference: <strong>${txnRefNo}</strong>
+                            </p>
+                            <div class="alert alert-info" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: none; padding: 1rem 1.5rem;">
+                                <p class="mb-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                    You will receive a confirmation email shortly with your event details.
+                                </p>
+                            </div>
+                            <div class="mt-4">
+                                <a href="/portal/events/{{ event.id }}/" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 0.875rem 2rem; font-weight: 600;">
+                                    View Event Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = successHTML;
+
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // Process Bank Transfer Payment
+            function processBankTransferPayment() {
+                const paymentDate = document.getElementById('bankPaymentDate').value;
+                const receiptFile = document.getElementById('bankReceiptFile').files[0];
+                const notes = document.getElementById('bankTransferNotes').value;
+
+                // Validate inputs
+                if (!paymentDate || !receiptFile) {
+                    alert('Please fill in all required fields and upload a receipt');
+                    return;
+                }
+
+                // Show loading state
+                const submitBtn = document.querySelector('#bankTransferForm button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+                // Prepare FormData with file upload
+                const formData = new FormData();
+                formData.append('amount', totalPaymentAmount);
+                formData.append('payment_date', paymentDate);
+                formData.append('receipt_image', receiptFile);
+                formData.append('notes', notes);
+
+                // Add registration data
+                for (const [key, value] of registrationData.entries()) {
+                    if (key !== 'csrfmiddlewaretoken') {
+                        formData.append(`registration_data[${key}]`, value);
+                    }
+                }
+
+                // Send bank transfer request to backend
+                fetch('/portal/register/{{ event.id }}/payment/bank/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': registrationData.get('csrfmiddlewaretoken')
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Hide modal
+                        if (bankTransferModal) {
+                            bankTransferModal.hide();
+                        } else {
+                            bankTransferModalEl.classList.remove('show');
+                            bankTransferModalEl.style.display = 'none';
+                            document.body.classList.remove('modal-open');
+                            const backdrop = document.getElementById('bankTransferModalBackdrop');
+                            if (backdrop) backdrop.remove();
+                        }
+
+                        // Show success message
+                        showBankTransferSuccessModal();
+                    } else {
+                        // Show error
+                        alert('Submission failed: ' + (data.error || 'Unknown error'));
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while submitting your registration');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                });
+            }
+
+            // Show bank transfer success modal
+            function showBankTransferSuccessModal() {
+                // Hide the form
+                document.querySelector('.registration-card').style.display = 'none';
+
+                // Create and show success message
+                const container = document.querySelector('.registration-container');
+                const successHTML = `
+                    <div class="card registration-card">
+                        <div class="card-body text-center py-5">
+                            <div class="mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-warning">
+                                    <circle cx="12" cy="12" r="10" style="fill: #fef3c7;"/>
+                                    <path d="M12 8v4M12 16h.01" stroke="#f59e0b" stroke-width="3"/>
+                                </svg>
+                            </div>
+                            <h2 class="mb-3" style="color: #f59e0b; font-weight: bold;">Registration Submitted!</h2>
+                            <h4 class="mb-4" style="color: #d97706;">Your registration is pending approval</h4>
+                            <div class="alert alert-warning mb-4" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: none; padding: 1.5rem;">
+                                <p class="mb-2" style="color: #92400e;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                    <strong>Status: Pending Organizer Approval</strong>
+                                </p>
+                                <p class="mb-0 small" style="color: #92400e;">
+                                    Your payment receipt has been submitted successfully. The event organizer will review your payment and approve your registration. You will receive an email notification once your registration is confirmed.
+                                </p>
+                            </div>
+                            <div class="alert alert-info" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: none; padding: 1rem 1.5rem;">
+                                <p class="mb-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <line x1="12" y1="16" x2="12" y2="12"/>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                    </svg>
+                                    If you have any questions, please contact the event organizer.
+                                </p>
+                            </div>
+                            <div class="mt-4">
+                                <a href="/portal/events/{{ event.id }}/" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 0.875rem 2rem; font-weight: 600;">
+                                    View Event Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = successHTML;
+
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+    </script>
 </body>
 </html>

@@ -4,6 +4,30 @@ from django.utils import timezone
 from decimal import Decimal
 
 
+class EventRegistrationType(models.Model):
+    """Registration types specific to each event"""
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='registration_types')
+    name = models.CharField(max_length=100, help_text='e.g., Student, Professional, Academic, Industry')
+    description = models.TextField(blank=True, help_text='Brief description of this registration type')
+
+    # Payment fields
+    is_paid = models.BooleanField(default=False, help_text='Does this registration type require payment?')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Registration fee for this type in PKR')
+    payment_methods = models.JSONField(default=list, blank=True, help_text='Allowed payment methods: ["mwallet", "card"]')
+
+    # Status and ordering
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['event', 'order', 'name']
+        unique_together = ['event', 'name']
+
+    def __str__(self):
+        return f"{self.event.title} - {self.name}"
+
+
 class Event(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
@@ -32,6 +56,7 @@ class Event(models.Model):
     is_paid_event = models.BooleanField(default=False, help_text='Does this event require payment?')
     registration_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Registration fee in PKR')
     payment_methods = models.JSONField(default=list, blank=True, help_text='Allowed payment methods: ["mwallet", "card"]')
+    bank_details = models.TextField(blank=True, help_text='Bank details for manual bank transfers')
 
     class Meta:
         ordering = ['-date']
@@ -121,6 +146,15 @@ class Registration(models.Model):
         default='pending'
 
     )
+
+    # Registration Details - stored at registration time
+    registration_type = models.ForeignKey('EventRegistrationType', on_delete=models.SET_NULL, null=True, blank=True, related_name='registrations')
+    designation = models.CharField(max_length=200, blank=True, help_text='Job title or designation')
+    affiliations = models.CharField(max_length=300, blank=True, help_text='Organization or institution')
+    address = models.TextField(blank=True, help_text='Mailing address')
+    country = models.CharField(max_length=100, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    selected_workshops = models.ManyToManyField('Session', blank=True, related_name='workshop_registrations', limit_choices_to={'session_type': 'workshop'})
 
     # Payment fields
     payment_status = models.CharField(
@@ -719,5 +753,164 @@ class AppDownload(models.Model):
         # If this is being set as active, deactivate all others
         if self.is_active:
             AppDownload.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
-        
+
         super().save(*args, **kwargs)
+
+
+class BankPaymentReceipt(models.Model):
+    """Bank payment receipts uploaded by users for manual verification"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='bank_receipts')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bank_receipts')
+    registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name='bank_receipts', null=True, blank=True)
+    registration_type = models.ForeignKey(EventRegistrationType, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Receipt details
+    receipt_image = models.ImageField(upload_to='bank_receipts/', help_text='Upload payment receipt/screenshot')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, help_text='Amount paid')
+    transaction_id = models.CharField(max_length=200, blank=True, help_text='Transaction/Reference ID from bank')
+    payment_date = models.DateField(help_text='Date of payment')
+    notes = models.TextField(blank=True, help_text='Additional notes from user')
+
+    # Status and review
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_receipts'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, help_text='Reason for rejection')
+
+    # Timestamps
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+        verbose_name = 'Bank Payment Receipt'
+        verbose_name_plural = 'Bank Payment Receipts'
+
+    def __str__(self):
+        return f"{self.user.email} - {self.event.title} - {self.status}"
+
+    def approve(self, reviewer):
+        """Approve receipt and confirm registration"""
+        self.status = 'approved'
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.save()
+
+        # Update registration status if exists
+        if self.registration:
+            self.registration.status = 'confirmed'
+            self.registration.payment_status = 'paid'
+            self.registration.payment_amount = self.amount
+            self.registration.payment_date = timezone.now()
+            self.registration.save()
+
+    def reject(self, reviewer, reason):
+        """Reject receipt"""
+        self.status = 'rejected'
+        self.reviewed_by = reviewer
+        self.reviewed_at = timezone.now()
+        self.rejection_reason = reason
+        self.save()
+
+
+class RegistrationLog(models.Model):
+    """Comprehensive logging for self-registration activities"""
+    ACTION_CHOICES = [
+        ('page_visit', 'Page Visited'),
+        ('form_started', 'Form Started'),
+        ('payment_method_selected', 'Payment Method Selected'),
+        ('payment_initiated', 'Payment Initiated'),
+        ('payment_success', 'Payment Successful'),
+        ('payment_success_viewed', 'Payment Success Page Viewed'),
+        ('payment_failed', 'Payment Failed'),
+        ('registration_completed', 'Registration Completed'),
+        ('registration_failed', 'Registration Failed'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('mwallet', 'JazzCash Mobile Wallet'),
+        ('card', 'Debit/Credit Card'),
+        ('bank', 'Offline Bank Transfer'),
+        ('none', 'No Payment Required'),
+    ]
+
+    # Core fields
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='registration_logs')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='registration_logs')
+    registration = models.ForeignKey(Registration, on_delete=models.SET_NULL, null=True, blank=True, related_name='logs')
+
+    # Log details
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    # User information (captured at time of action)
+    email = models.EmailField(blank=True)
+    first_name = models.CharField(max_length=150, blank=True)
+    last_name = models.CharField(max_length=150, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+
+    # Payment details
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True)
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    transaction_reference = models.CharField(max_length=200, blank=True, help_text='JazzCash transaction reference or bank receipt ID')
+
+    # Registration type
+    registration_type = models.ForeignKey(EventRegistrationType, on_delete=models.SET_NULL, null=True, blank=True)
+
+    # Technical details
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, help_text='Browser/device information')
+
+    # Additional context
+    notes = models.TextField(blank=True, help_text='Additional details or error messages')
+    metadata = models.JSONField(default=dict, blank=True, help_text='Additional metadata as JSON')
+
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'Registration Log'
+        verbose_name_plural = 'Registration Logs'
+        indexes = [
+            models.Index(fields=['-timestamp']),
+            models.Index(fields=['event', '-timestamp']),
+            models.Index(fields=['email']),
+        ]
+
+    def __str__(self):
+        return f"{self.event.title} - {self.action} - {self.email or 'Anonymous'} - {self.timestamp}"
+
+    def get_action_badge_class(self):
+        """Return Bootstrap badge class based on action"""
+        badge_classes = {
+            'page_visit': 'bg-info',
+            'form_started': 'bg-primary',
+            'payment_method_selected': 'bg-warning',
+            'payment_initiated': 'bg-warning',
+            'payment_success': 'bg-success',
+            'payment_success_viewed': 'bg-success',
+            'payment_failed': 'bg-danger',
+            'registration_completed': 'bg-success',
+            'registration_failed': 'bg-danger',
+        }
+        return badge_classes.get(self.action, 'bg-secondary')
+
+    def get_payment_method_display_name(self):
+        """Return friendly payment method name"""
+        method_names = {
+            'mwallet': 'JazzCash Mobile Wallet',
+            'card': 'Debit/Credit Card',
+            'bank': 'Offline Bank Transfer',
+            'none': 'No Payment Required',
+        }
+        return method_names.get(self.payment_method, 'Unknown')

@@ -1,0 +1,155 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Logs - {{ event.title }}</title>
+    <link href="{% static 'tabler/dist/css/tabler.min.css' %}" rel="stylesheet"/>
+</head>
+<body>
+    <div class="container-fluid p-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="mb-1">Registration Logs</h3>
+                <p class="text-muted mb-0">Total: {{ total_logs }} log{{ total_logs|pluralize }}</p>
+            </div>
+        </div>
+
+        {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th style="width: 150px;">Timestamp</th>
+                        <th style="width: 120px;">Action</th>
+                        <th>User Details</th>
+                        <th>Registration Type</th>
+                        <th>Payment</th>
+                        <th style="width: 120px;">IP Address</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="text-nowrap">
+                            <small>{{ log.timestamp|date:"Y-m-d H:i:s" }}</small>
+                        </td>
+                        <td>
+                            <span class="badge {{ log.get_action_badge_class }} text-white">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if log.email %}
+                                <div><strong>{{ log.first_name }} {{ log.last_name }}</strong></div>
+                                <div class="text-muted small">{{ log.email }}</div>
+                                {% if log.phone_number %}
+                                <div class="text-muted small">{{ log.phone_number }}</div>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Anonymous</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.registration_type %}
+                                <span class="badge bg-azure-lt">{{ log.registration_type.name }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.payment_method %}
+                                <div>
+                                    <span class="badge bg-purple-lt">{{ log.get_payment_method_display_name }}</span>
+                                </div>
+                                {% if log.payment_amount %}
+                                <div class="text-muted small">PKR {{ log.payment_amount }}</div>
+                                {% endif %}
+                                {% if log.transaction_reference %}
+                                <div class="text-muted small" style="font-family: monospace;">{{ log.transaction_reference }}</div>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.ip_address %}
+                                <small class="text-muted" style="font-family: monospace;">{{ log.ip_address }}</small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.notes %}
+                                <small class="text-muted">{{ log.notes|truncatewords:10 }}</small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                </li>
+                {% endif %}
+            </ul>
+            <p class="text-center text-muted small">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </p>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty">
+            <div class="empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0" />
+                    <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0" />
+                    <line x1="3" y1="6" x2="3" y2="19" />
+                    <line x1="12" y1="6" x2="12" y2="19" />
+                    <line x1="21" y1="6" x2="21" y2="19" />
+                </svg>
+            </div>
+            <p class="empty-title">No registration logs yet</p>
+            <p class="empty-subtitle text-muted">
+                Logs will appear here when users visit the self-registration page and complete registrations.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="{% static 'tabler/dist/js/tabler.min.js' %}"></script>
+</body>
+</html>
