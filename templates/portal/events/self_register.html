@@ -878,6 +878,26 @@
                     <div class="modal-body">
                         <p class="mb-3">Amount to Pay: <strong class="text-primary" id="mwalletAmount">PKR 0</strong></p>
 
+                        <!-- Important Note with Image -->
+                        <div class="alert alert-warning mb-4" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 12px;">
+                            <div class="d-flex align-items-center mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #f59e0b; flex-shrink: 0;">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M12 9v2m0 4v.01"/>
+                                    <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75"/>
+                                </svg>
+                                <strong style="color: #92400e; font-size: 1rem;">IMPORTANT NOTE</strong>
+                            </div>
+                            <p class="mb-2" style="color: #92400e; font-size: 0.875rem;">
+                                When you receive the JazzCash payment request on your phone, please enter your <strong>MPIN (Mobile Wallet PIN)</strong>, NOT your CNIC. See example below:
+                            </p>
+                            <div style="text-align: center; margin-top: 1rem;">
+                                <img src="https://fhcc2025.com/wp-content/uploads/2025/09/Jazzcash-MPIN-Popup-2.png"
+                                     alt="JazzCash MPIN Example"
+                                     style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label required">Mobile Number</label>
                             <input type="text" class="form-control" id="mwalletMobile" placeholder="03XXXXXXXXX" required>
