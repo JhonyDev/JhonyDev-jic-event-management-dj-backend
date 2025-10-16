@@ -1433,12 +1433,21 @@
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
 
                 // Prepare payment data
+                // Get workshops as array if multiple selected
+                const workshopsData = workshopsSelect ? workshopsSelect.getValue() : [];
+                const regData = Object.fromEntries(registrationData.entries());
+
+                // Override workshops field with array from Tom-Select
+                if (workshopsData && workshopsData.length > 0) {
+                    regData.workshops = workshopsData; // This will be an array
+                }
+
                 const paymentData = {
                     amount: totalPaymentAmount,
                     mobile_number: mobileNumber,
                     cnic: cnic,
                     event_id: {{ event.id }},
-                    registration_data: Object.fromEntries(registrationData.entries())
+                    registration_data: regData
                 };
 
                 // Send payment request to backend
@@ -1501,10 +1510,19 @@
                 document.getElementById('submitBtn').disabled = true;
 
                 // Prepare payment data
+                // Get workshops as array if multiple selected
+                const workshopsData = workshopsSelect ? workshopsSelect.getValue() : [];
+                const regData = Object.fromEntries(registrationData.entries());
+
+                // Override workshops field with array from Tom-Select
+                if (workshopsData && workshopsData.length > 0) {
+                    regData.workshops = workshopsData; // This will be an array
+                }
+
                 const paymentData = {
                     amount: totalPaymentAmount,
                     event_id: {{ event.id }},
-                    registration_data: Object.fromEntries(registrationData.entries())
+                    registration_data: regData
                 };
 
                 console.log('Payment Data:', paymentData);
