@@ -7,7 +7,7 @@ from .models import (
     Event, EventRegistrationType, Agenda, Registration, Speaker, Session,
     Exhibitor, ExhibitionArea,
     SessionBookmark, Notification, Sponsor, SupportingMaterial, Announcement,
-    AppContent, FAQ, ContactInfo, QuickAction, AppDownload
+    AppContent, FAQ, ContactInfo, QuickAction, AppDownload, RegistrationLog
 )
 
 
@@ -1179,3 +1179,167 @@ class AppDownloadAdmin(admin.ModelAdmin):
             return format_html('<span style="color: green;">✓ Active</span>')
         return format_html('<span style="color: gray;">Inactive</span>')
     is_active_badge.short_description = 'Status'
+
+
+@admin.register(RegistrationLog)
+class RegistrationLogAdmin(admin.ModelAdmin):
+    list_display = [
+        'log_id',
+        'action_badge',
+        'event_link',
+        'user_info',
+        'payment_info',
+        'timestamp'
+    ]
+    list_filter = [
+        'action',
+        'payment_method',
+        'event',
+        'timestamp'
+    ]
+    search_fields = [
+        'email',
+        'first_name',
+        'last_name',
+        'phone_number',
+        'transaction_reference',
+        'event__title',
+        'user__email',
+        'user__username'
+    ]
+    date_hierarchy = 'timestamp'
+    ordering = ['-timestamp']
+    readonly_fields = [
+        'event',
+        'user',
+        'registration',
+        'action',
+        'timestamp',
+        'email',
+        'first_name',
+        'last_name',
+        'phone_number',
+        'payment_method',
+        'payment_amount',
+        'transaction_reference',
+        'registration_type',
+        'ip_address',
+        'user_agent',
+        'notes',
+        'metadata'
+    ]
+
+    fieldsets = (
+        ('Log Information', {
+            'fields': ('action', 'timestamp', 'event', 'registration')
+        }),
+        ('User Information', {
+            'fields': ('user', 'email', 'first_name', 'last_name', 'phone_number')
+        }),
+        ('Payment Details', {
+            'fields': ('payment_method', 'payment_amount', 'transaction_reference', 'registration_type'),
+            'classes': ('collapse',)
+        }),
+        ('Technical Details', {
+            'fields': ('ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+        ('Additional Information', {
+            'fields': ('notes', 'metadata'),
+            'classes': ('collapse',)
+        })
+    )
+
+    def has_add_permission(self, request):
+        # Prevent manual creation of logs
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        # Allow deletion for cleanup
+        return True
+
+    def log_id(self, obj):
+        return f"LOG-{obj.id:06d}"
+    log_id.short_description = 'Log ID'
+
+    def action_badge(self, obj):
+        colors = {
+            'page_visit': '#6c757d',
+            'form_started': '#17a2b8',
+            'payment_method_selected': '#007bff',
+            'payment_initiated': '#ffc107',
+            'payment_success': '#28a745',
+            'payment_success_viewed': '#20c997',
+            'payment_failed': '#dc3545',
+            'registration_completed': '#28a745',
+            'registration_failed': '#dc3545'
+        }
+        color = colors.get(obj.action, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px; font-size: 11px; white-space: nowrap;">{}</span>',
+            color, obj.get_action_display()
+        )
+    action_badge.short_description = 'Action'
+
+    def event_link(self, obj):
+        if obj.event:
+            url = reverse('admin:api_event_change', args=[obj.event.id])
+            return format_html('<a href="{}">{}</a>', url, obj.event.title[:40])
+        return '-'
+    event_link.short_description = 'Event'
+
+    def user_info(self, obj):
+        if obj.user:
+            return format_html('{}<br><small>{}</small>', obj.user.get_full_name() or obj.user.username, obj.user.email)
+        elif obj.email:
+            name = f"{obj.first_name} {obj.last_name}".strip() or 'Guest'
+            return format_html('{}<br><small>{}</small>', name, obj.email)
+        return '-'
+    user_info.short_description = 'User'
+
+    def payment_info(self, obj):
+        if obj.payment_method and obj.payment_method != 'none':
+            method_display = obj.get_payment_method_display()
+            amount_display = f"PKR {obj.payment_amount:,.2f}" if obj.payment_amount else '-'
+            return format_html(
+                '<strong>{}</strong><br><small>{}</small>',
+                method_display, amount_display
+            )
+        return '-'
+    payment_info.short_description = 'Payment'
+
+    actions = ['export_logs_csv']
+
+    def export_logs_csv(self, request, queryset):
+        import csv
+        from django.http import HttpResponse
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="registration_logs.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'Log ID', 'Timestamp', 'Action', 'Event', 'Email', 'First Name', 'Last Name',
+            'Phone', 'Payment Method', 'Payment Amount', 'Transaction Reference',
+            'IP Address', 'Notes'
+        ])
+
+        for log in queryset:
+            writer.writerow([
+                f"LOG-{log.id:06d}",
+                log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                log.get_action_display(),
+                log.event.title if log.event else '',
+                log.email,
+                log.first_name,
+                log.last_name,
+                log.phone_number,
+                log.get_payment_method_display() if log.payment_method else '',
+                log.payment_amount if log.payment_amount else '',
+                log.transaction_reference,
+                log.ip_address,
+                log.notes
+            ])
+
+        return response
+    export_logs_csv.short_description = "Export selected logs to CSV"
