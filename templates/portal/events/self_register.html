@@ -1026,7 +1026,7 @@
                             return `
                                 <div class="workshop-item">
                                     <div class="workshop-info">
-                                        <div class="workshop-title">${escape(data.text)}</div>
+                                        <div class="workshop-title">${escape(workshop.title)}</div>
                                         <div class="workshop-details">
                                             ${timeStr ? `
                                             <div class="workshop-detail-item">
@@ -1052,11 +1052,9 @@
                         },
                         item: function(data, escape) {
                             const workshop = workshopSessions.find(w => w.id == data.value);
-                            let priceTag = '';
-                            if (workshop && workshop.is_paid_session) {
-                                priceTag = `<span class="badge bg-primary text-white ms-1">PKR ${parseFloat(workshop.session_fee).toLocaleString()}</span>`;
-                            }
-                            return `<div>${escape(data.text)} ${priceTag}</div>`;
+                            // Only show the title, not the venue and time
+                            const title = workshop ? workshop.title : data.text;
+                            return `<div>${escape(title)}</div>`;
                         }
                     },
                     onChange: function() {
