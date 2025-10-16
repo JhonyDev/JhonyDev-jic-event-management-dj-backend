@@ -177,6 +177,11 @@ class Registration(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"
 
+    @property
+    def registration_id(self):
+        """Return formatted registration ID"""
+        return f"REG-{self.id:05d}"
+
 
 class Speaker(models.Model):
     name = models.CharField(max_length=200)
