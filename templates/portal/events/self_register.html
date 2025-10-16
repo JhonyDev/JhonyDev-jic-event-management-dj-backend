@@ -514,20 +514,6 @@
                         </div>
                     </div>
 
-                    <!-- Availability Status -->
-                    {% if available_spots > 0 %}
-                    <div class="text-center">
-                        <div class="availability-badge">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="availability-icon" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                <circle cx="12" cy="12" r="9"/>
-                                <path d="M9 12l2 2l4 -4"/>
-                            </svg>
-                            {{ available_spots }} spots remaining out of {{ event.max_attendees }}
-                        </div>
-                    </div>
-                    {% endif %}
-
                     <!-- Messages -->
                     {% if messages %}
                         <div class="messages">
