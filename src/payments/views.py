@@ -533,6 +533,9 @@ def ipn_listener_view(request):
     IPN Listener endpoint for JazzCash
 
     POST /api/payments/jazzcash/ipn/
+
+    Note: Always returns 200 with success acknowledgement as per JazzCash requirements.
+    The acknowledgement confirms receipt of IPN, not internal processing success.
     """
     print("ipn received")
     try:
@@ -544,18 +547,55 @@ def ipn_listener_view(request):
         handler = IPNHandler()
         success, response_data, message = handler.process_ipn(ipn_data)
 
-        logger.info(f"IPN response: {response_data}")
-        print(f"IPN response: {response_data}")
+        logger.info(f"IPN processing result - Success: {success}, Message: {message}")
+        logger.info(f"IPN acknowledgement response being sent to JazzCash: {response_data}")
+        print(f"\n{'='*80}")
+        print(f"📤 SENDING IPN ACKNOWLEDGEMENT TO JAZZCASH")
+        print(f"{'='*80}")
+        print(f"Processing Success: {success}")
+        print(f"Processing Message: {message}")
+        print(f"Response Data:")
+        for key, value in response_data.items():
+            print(f"   {key}: {value}")
+        print(f"{'='*80}\n")
 
-        return JsonResponse(response_data, status=200 if success else 400)
+        # Always return 200 with acknowledgement as per JazzCash requirements
+        return JsonResponse(response_data, status=200)
 
     except Exception as e:
         logger.error(f"IPN error: {str(e)}", exc_info=True)
-        return JsonResponse({
-            'pp_ResponseCode': '999',
-            'pp_ResponseMessage': 'IPN processing failed',
-            'pp_SecureHash': ''
-        }, status=500)
+        # Even on exception, return success acknowledgement
+        # Generate acknowledgement using IPNHandler
+        try:
+            handler = IPNHandler()
+            ack_response = handler._generate_acknowledgement_response()
+            logger.info(f"IPN acknowledgement response (after exception) being sent to JazzCash: {ack_response}")
+            print(f"\n{'='*80}")
+            print(f"📤 SENDING IPN ACKNOWLEDGEMENT TO JAZZCASH (AFTER EXCEPTION)")
+            print(f"{'='*80}")
+            print(f"Exception occurred: {str(e)}")
+            print(f"Response Data:")
+            for key, value in ack_response.items():
+                print(f"   {key}: {value}")
+            print(f"{'='*80}\n")
+            return JsonResponse(ack_response, status=200)
+        except Exception as inner_e:
+            logger.error(f"Error generating acknowledgement: {str(inner_e)}")
+            # Fallback to basic acknowledgement without hash
+            fallback_response = {
+                'pp_ResponseCode': '000',
+                'pp_ResponseMessage': 'Success',
+                'pp_SecureHash': ''
+            }
+            logger.info(f"IPN fallback acknowledgement response being sent to JazzCash: {fallback_response}")
+            print(f"\n{'='*80}")
+            print(f"📤 SENDING IPN FALLBACK ACKNOWLEDGEMENT TO JAZZCASH")
+            print(f"{'='*80}")
+            print(f"Response Data:")
+            for key, value in fallback_response.items():
+                print(f"   {key}: {value}")
+            print(f"{'='*80}\n")
+            return JsonResponse(fallback_response, status=200)
 
 
 class StatusInquiryView(APIView):

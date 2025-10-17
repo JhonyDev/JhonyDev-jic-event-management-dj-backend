@@ -46,7 +46,8 @@ class IPNHandler:
 
             if not txn_ref_no:
                 logger.error("IPN missing transaction reference")
-                return False, self._generate_error_response(), "Missing transaction reference"
+                # Still return success acknowledgement to JazzCash
+                return False, self._generate_acknowledgement_response(), "Missing transaction reference"
 
             # Get transaction
             try:
@@ -56,7 +57,8 @@ class IPNHandler:
                 # Still log the IPN
                 self._log_ipn(None, txn_ref_no, txn_type, response_code, response_message,
                              ipn_data, secure_hash_received, '', False)
-                return False, self._generate_error_response(), "Transaction not found"
+                # Still return success acknowledgement to JazzCash
+                return False, self._generate_acknowledgement_response(), "Transaction not found"
 
             # Verify secure hash
             ipn_for_verification = {k: v for k, v in ipn_data.items() if k != 'pp_SecureHash'}
@@ -81,7 +83,8 @@ class IPNHandler:
                 logger.error(f"IPN hash verification failed for {txn_ref_no}")
                 logger.error(f"Received:   {secure_hash_received}")
                 logger.error(f"Calculated: {secure_hash_calculated}")
-                return False, self._generate_error_response(), "Security verification failed"
+                # Still return success acknowledgement to JazzCash
+                return False, self._generate_acknowledgement_response(), "Security verification failed"
 
             # Update transaction based on IPN
             self._update_transaction(transaction, ipn_data, response_code)
@@ -91,19 +94,14 @@ class IPNHandler:
             ipn_log.processed_at = timezone.now()
             ipn_log.save()
 
-            # Return success response
-            success_response = {
-                'pp_ResponseCode': '000',
-                'pp_ResponseMessage': 'IPN received successfully',
-                'pp_SecureHash': ''
-            }
-
+            # Return success acknowledgement
             logger.info(f"IPN processed successfully for {txn_ref_no}")
-            return True, success_response, "IPN processed successfully"
+            return True, self._generate_acknowledgement_response(), "IPN processed successfully"
 
         except Exception as e:
             logger.error(f"IPN processing error: {str(e)}", exc_info=True)
-            return False, self._generate_error_response(), f"Error: {str(e)}"
+            # Still return success acknowledgement to JazzCash
+            return False, self._generate_acknowledgement_response(), f"Error: {str(e)}"
 
     def _update_transaction(self, transaction, ipn_data, response_code):
         """
@@ -365,15 +363,31 @@ class IPNHandler:
 
         return ipn_log
 
-    def _generate_error_response(self):
+    def _generate_acknowledgement_response(self):
         """
-        Generate error response for JazzCash
+        Generate acknowledgement response for JazzCash IPN
+
+        According to JazzCash requirements, IPN must always return success acknowledgement
+        to confirm receipt, regardless of internal processing status.
 
         Returns:
-            dict: Error response
+            dict: Acknowledgement response
         """
+        ack_data = {
+            'pp_ResponseCode': '000',
+            'pp_ResponseMessage': 'Success',
+        }
+
+        # Generate secure hash for acknowledgement
+        try:
+            from .hmac_utils import generate_secure_hash
+            ack_secure_hash = generate_secure_hash(ack_data, self.config.integrity_salt, include_empty=False)
+        except Exception as e:
+            logger.error(f"Error generating acknowledgement hash: {str(e)}")
+            ack_secure_hash = ''
+
         return {
-            'pp_ResponseCode': '999',
-            'pp_ResponseMessage': 'IPN processing failed',
-            'pp_SecureHash': ''
+            'pp_ResponseCode': '000',
+            'pp_ResponseMessage': 'Success',
+            'pp_SecureHash': ack_secure_hash
         }
