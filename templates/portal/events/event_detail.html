@@ -2657,9 +2657,74 @@
   }
 
 
+  // Receipt management functions
+  function approveReceipt(receiptId) {
+    if (!confirm('Are you sure you want to approve this receipt?')) {
+      return;
+    }
+
+    const eventPk = {{ event.pk }};
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(`/portal/events/${eventPk}/receipts/${receiptId}/approve/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken,
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showMessage(data.message, 'success');
+          // Reload the page to reflect changes
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          showMessage(data.error || 'Error approving receipt', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error approving receipt', 'error');
+      });
+  }
+
+  function deleteReceipt(receiptId) {
+    const eventPk = {{ event.pk }};
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    fetch(`/portal/events/${eventPk}/receipts/${receiptId}/delete/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken,
+      }
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showMessage(data.message || 'Receipt deleted successfully', 'success');
+          // Reload the page to reflect changes
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          showMessage(data.error || 'Error deleting receipt', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error deleting receipt', 'error');
+      });
+  }
+
   // Make functions available globally
   window.moveAgenda = moveAgenda;
   window.moveSession = moveSession;
+  window.approveReceipt = approveReceipt;
+  window.deleteReceipt = deleteReceipt;
 </script>
 
 <!-- Speaker Management Modal -->
