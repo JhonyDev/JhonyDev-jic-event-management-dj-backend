@@ -320,6 +320,85 @@ def attendees(request):
 
 
 @login_required(login_url="/accounts/login/")
+def export_attendees_csv(request):
+    """Export attendees to CSV with selected fields"""
+    import csv
+    from django.http import HttpResponse
+    from django.db.models import Q
+
+    # Get all events organized by the current user
+    user_events = Event.objects.filter(organizer=request.user)
+
+    # Start with all registrations for user's events
+    attendees = Registration.objects.filter(
+        event__in=user_events,
+        status='confirmed'
+    ).select_related('user', 'event', 'registration_type').prefetch_related('selected_workshops')
+
+    # Apply filters - check both GET (from URL) and POST (from modal)
+    event_filter = request.POST.get('event_filter') or request.GET.get('event')
+    if event_filter:
+        attendees = attendees.filter(event_id=event_filter)
+
+    search_query = request.GET.get('search')
+    if search_query:
+        attendees = attendees.filter(
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query)
+        )
+
+    # Get selected fields from POST request
+    selected_fields = request.POST.getlist('fields')
+
+    # Define all available fields with their labels and how to get the value
+    available_fields = {
+        'registration_id': ('Registration ID', lambda a: a.registration_id),
+        'first_name': ('First Name', lambda a: a.user.first_name),
+        'last_name': ('Last Name', lambda a: a.user.last_name),
+        'full_name': ('Full Name', lambda a: a.user.get_full_name()),
+        'email': ('Email', lambda a: a.user.email),
+        'phone_number': ('Phone Number', lambda a: a.phone_number or a.user.phone_number or ''),
+        'designation': ('Designation', lambda a: a.designation or a.user.designation or ''),
+        'affiliations': ('Affiliation/Organization', lambda a: a.affiliations or a.user.affiliations or ''),
+        'address': ('Address', lambda a: a.address or a.user.address or ''),
+        'country': ('Country', lambda a: a.country or a.user.country or ''),
+        'event': ('Event', lambda a: a.event.title),
+        'event_date': ('Event Date', lambda a: a.event.date.strftime('%Y-%m-%d %H:%M') if a.event.date else ''),
+        'registration_type': ('Registration Type', lambda a: a.registration_type.name if a.registration_type else ''),
+        'registration_fee': ('Registration Fee', lambda a: str(a.registration_type.amount) if a.registration_type and a.registration_type.is_paid else '0'),
+        'workshops': ('Selected Workshops', lambda a: ', '.join([ws.title for ws in a.selected_workshops.all()])),
+        'registered_at': ('Registration Date', lambda a: a.registered_at.strftime('%Y-%m-%d %H:%M')),
+        'payment_status': ('Payment Status', lambda a: a.get_payment_status_display()),
+        'payment_amount': ('Payment Amount', lambda a: str(a.payment_amount) if a.payment_amount else ''),
+    }
+
+    # If no fields selected, use default fields
+    if not selected_fields:
+        selected_fields = ['full_name', 'email', 'phone_number', 'event', 'registered_at']
+
+    # Filter to only include valid selected fields
+    selected_fields = [f for f in selected_fields if f in available_fields]
+
+    # Create the HttpResponse object with CSV header
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="attendees_export.csv"'
+
+    writer = csv.writer(response)
+
+    # Write header row
+    header = [available_fields[field][0] for field in selected_fields]
+    writer.writerow(header)
+
+    # Write data rows
+    for attendee in attendees:
+        row = [available_fields[field][1](attendee) for field in selected_fields]
+        writer.writerow(row)
+
+    return response
+
+
+@login_required(login_url="/accounts/login/")
 def register_for_event(request, pk):
     """Register for an event"""
     event = get_object_or_404(Event, pk=pk)

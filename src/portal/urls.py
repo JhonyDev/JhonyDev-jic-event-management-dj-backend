@@ -38,6 +38,7 @@ urlpatterns = [
 
     # Attendees
     path('attendees/', views.attendees, name='attendees'),
+    path('attendees/export-csv/', views.export_attendees_csv, name='export_attendees_csv'),
 
     # Speaker Management
     path('events/<int:event_pk>/speakers/', views.speaker_list, name='speaker_list'),

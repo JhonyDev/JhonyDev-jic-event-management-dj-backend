@@ -429,6 +429,23 @@
             color: #1d4ed8;
         }
 
+        /* Validation styles */
+        .invalid-feedback {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            font-weight: 500;
+        }
+
+        .is-invalid {
+            border-color: #dc2626 !important;
+        }
+
+        .is-invalid:focus {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+        }
+
         @media (max-width: 768px) {
             .event-header {
                 padding: 2rem 0 4rem;
@@ -549,6 +566,7 @@
                                             {% if form.first_name.errors %}
                                                 <div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>
                                             {% endif %}
+                                            <div id="firstNameError" class="invalid-feedback" style="display: none;"></div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -558,6 +576,7 @@
                                             {% if form.last_name.errors %}
                                                 <div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>
                                             {% endif %}
+                                            <div id="lastNameError" class="invalid-feedback" style="display: none;"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -570,6 +589,7 @@
                                             {% if form.email.errors %}
                                                 <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
                                             {% endif %}
+                                            <div id="emailError" class="invalid-feedback" style="display: none;"></div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -579,6 +599,7 @@
                                             {% if form.phone_number.errors %}
                                                 <div class="invalid-feedback d-block">{{ form.phone_number.errors.0 }}</div>
                                             {% endif %}
+                                            <div id="phoneError" class="invalid-feedback" style="display: none;"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -659,6 +680,7 @@
                                     {% if form.registration_type.errors %}
                                         <div class="invalid-feedback d-block">{{ form.registration_type.errors.0 }}</div>
                                     {% endif %}
+                                    <div id="registrationTypeError" class="invalid-feedback" style="display: none;"></div>
                                 </div>
                             </div>
                             {% endif %}
@@ -675,9 +697,9 @@
                                     Workshop Selection
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">{{ form.workshops.label }}</label>
-                                    <small class="form-hint text-muted d-block mb-3">Select the workshop sessions you'd like to attend</small>
-                                    <select id="workshopsSelect" name="workshops" multiple>
+                                    <label class="form-label required">{{ form.workshops.label }}</label>
+                                    <small class="form-hint text-muted d-block mb-3">Select one workshop session you'd like to attend</small>
+                                    <select id="workshopsSelect" name="workshops" multiple required>
                                         {% for value, text in form.workshops.field.choices %}
                                         <option value="{{ value }}">{{ text }}</option>
                                         {% endfor %}
@@ -685,6 +707,7 @@
                                     {% if form.workshops.errors %}
                                         <div class="invalid-feedback d-block">{{ form.workshops.errors.0 }}</div>
                                     {% endif %}
+                                    <div id="workshopsError" class="invalid-feedback" style="display: none;"></div>
                                 </div>
                             </div>
                             {% endif %}
@@ -989,6 +1012,166 @@
             const eventIsPaid = {{ event.is_paid_event|yesno:"true,false" }};
             const eventFee = parseFloat('{{ event.registration_fee|default:"0" }}');
 
+            // Client-side validation for first name
+            const firstNameInput = document.getElementById('id_first_name');
+            const firstNameError = document.getElementById('firstNameError');
+
+            if (firstNameInput) {
+                firstNameInput.addEventListener('blur', function() {
+                    const value = this.value.trim();
+
+                    if (value === '') {
+                        this.classList.add('is-invalid');
+                        firstNameError.textContent = 'First name is required.';
+                        firstNameError.style.display = 'block';
+                    } else {
+                        this.classList.remove('is-invalid');
+                        firstNameError.style.display = 'none';
+                    }
+                });
+
+                firstNameInput.addEventListener('input', function() {
+                    if (this.value.trim() !== '') {
+                        this.classList.remove('is-invalid');
+                        firstNameError.style.display = 'none';
+                    }
+                });
+            }
+
+            // Client-side validation for last name
+            const lastNameInput = document.getElementById('id_last_name');
+            const lastNameError = document.getElementById('lastNameError');
+
+            if (lastNameInput) {
+                lastNameInput.addEventListener('blur', function() {
+                    const value = this.value.trim();
+
+                    if (value === '') {
+                        this.classList.add('is-invalid');
+                        lastNameError.textContent = 'Last name is required.';
+                        lastNameError.style.display = 'block';
+                    } else {
+                        this.classList.remove('is-invalid');
+                        lastNameError.style.display = 'none';
+                    }
+                });
+
+                lastNameInput.addEventListener('input', function() {
+                    if (this.value.trim() !== '') {
+                        this.classList.remove('is-invalid');
+                        lastNameError.style.display = 'none';
+                    }
+                });
+            }
+
+            // Client-side validation for phone number
+            const phoneInput = document.getElementById('id_phone_number');
+            const phoneError = document.getElementById('phoneError');
+
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function() {
+                    const phoneValue = this.value.trim();
+
+                    // Remove any existing error styling
+                    this.classList.remove('is-invalid');
+                    phoneError.style.display = 'none';
+
+                    if (phoneValue === '') {
+                        return; // Don't validate empty field until form submission
+                    }
+
+                    // Check if phone number is exactly 11 digits
+                    if (phoneValue.length !== 11) {
+                        this.classList.add('is-invalid');
+                        phoneError.textContent = 'Phone number must be exactly 11 digits.';
+                        phoneError.style.display = 'block';
+                        return;
+                    }
+
+                    // Check if it starts with '03'
+                    if (!phoneValue.startsWith('03')) {
+                        this.classList.add('is-invalid');
+                        phoneError.textContent = 'Phone number must start with 03.';
+                        phoneError.style.display = 'block';
+                        return;
+                    }
+
+                    // Check if all characters are digits
+                    if (!/^\d+$/.test(phoneValue)) {
+                        this.classList.add('is-invalid');
+                        phoneError.textContent = 'Phone number must contain only digits.';
+                        phoneError.style.display = 'block';
+                        return;
+                    }
+
+                    // If all validations pass, remove error
+                    this.classList.remove('is-invalid');
+                    phoneError.style.display = 'none';
+                });
+
+                // Validate on blur
+                phoneInput.addEventListener('blur', function() {
+                    const phoneValue = this.value.trim();
+
+                    if (phoneValue === '') {
+                        this.classList.add('is-invalid');
+                        phoneError.textContent = 'Phone number is required.';
+                        phoneError.style.display = 'block';
+                        return;
+                    }
+
+                    // Trigger input validation
+                    this.dispatchEvent(new Event('input'));
+                });
+            }
+
+            // Client-side validation for email
+            const emailInput = document.getElementById('id_email');
+            const emailError = document.getElementById('emailError');
+
+            if (emailInput) {
+                emailInput.addEventListener('input', function() {
+                    const emailValue = this.value.trim();
+
+                    // Remove any existing error styling
+                    this.classList.remove('is-invalid');
+                    emailError.style.display = 'none';
+
+                    if (emailValue === '') {
+                        return; // Don't validate empty field until form submission
+                    }
+
+                    // Simple email validation regex
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                    if (!emailRegex.test(emailValue)) {
+                        this.classList.add('is-invalid');
+                        emailError.textContent = 'Please enter a valid email address.';
+                        emailError.style.display = 'block';
+                        return;
+                    }
+
+                    // If validation passes, remove error
+                    this.classList.remove('is-invalid');
+                    emailError.style.display = 'none';
+                });
+
+                // Validate on blur
+                emailInput.addEventListener('blur', function() {
+                    const emailValue = this.value.trim();
+
+                    if (emailValue === '') {
+                        this.classList.add('is-invalid');
+                        emailError.textContent = 'Email is required.';
+                        emailError.style.display = 'block';
+                        return;
+                    }
+
+                    // Trigger input validation
+                    this.dispatchEvent(new Event('input'));
+                });
+            }
+
             // Initialize Tom-Select for workshops dropdown
             let workshopsSelect = null;
             const workshopsElement = document.getElementById('workshopsSelect');
@@ -996,9 +1179,10 @@
             if (workshopsElement) {
                 workshopsSelect = new TomSelect('#workshopsSelect', {
                     plugins: ['remove_button'],
+                    maxItems: 1,
                     maxOptions: null,
-                    closeAfterSelect: false,
-                    placeholder: 'Select workshops you\'d like to attend',
+                    closeAfterSelect: true,
+                    placeholder: 'Select one workshop you\'d like to attend',
                     render: {
                         option: function(data, escape) {
                             const workshop = workshopSessions.find(w => w.id == data.value);
@@ -1065,8 +1249,66 @@
 
             // Attach event listener to registration type dropdown
             const registrationTypeSelect = document.getElementById('id_registration_type');
+            const registrationTypeError = document.getElementById('registrationTypeError');
+
             if (registrationTypeSelect) {
-                registrationTypeSelect.addEventListener('change', calculateCost);
+                registrationTypeSelect.addEventListener('change', function() {
+                    calculateCost();
+
+                    // Validate registration type
+                    if (this.value === '' || this.value === null) {
+                        this.classList.add('is-invalid');
+                        if (registrationTypeError) {
+                            registrationTypeError.textContent = 'Please select a registration type.';
+                            registrationTypeError.style.display = 'block';
+                        }
+                    } else {
+                        this.classList.remove('is-invalid');
+                        if (registrationTypeError) {
+                            registrationTypeError.style.display = 'none';
+                        }
+                    }
+                });
+
+                // Validate on blur
+                registrationTypeSelect.addEventListener('blur', function() {
+                    if (this.value === '' || this.value === null) {
+                        this.classList.add('is-invalid');
+                        if (registrationTypeError) {
+                            registrationTypeError.textContent = 'Registration type is required.';
+                            registrationTypeError.style.display = 'block';
+                        }
+                    }
+                });
+            }
+
+            // Workshop validation
+            const workshopsError = document.getElementById('workshopsError');
+            if (workshopsSelect) {
+                // Add validation on change
+                workshopsSelect.on('change', function() {
+                    const selectedItems = workshopsSelect.getValue();
+
+                    if (!selectedItems || selectedItems.length === 0) {
+                        // Find the TomSelect control element
+                        const tsControl = document.querySelector('.ts-control');
+                        if (tsControl) {
+                            tsControl.style.borderColor = '#dc2626';
+                        }
+                        if (workshopsError) {
+                            workshopsError.textContent = 'Please select a workshop.';
+                            workshopsError.style.display = 'block';
+                        }
+                    } else {
+                        const tsControl = document.querySelector('.ts-control');
+                        if (tsControl) {
+                            tsControl.style.borderColor = '';
+                        }
+                        if (workshopsError) {
+                            workshopsError.style.display = 'none';
+                        }
+                    }
+                });
             }
 
             // Cost calculation function
@@ -1285,6 +1527,118 @@
             // Intercept form submission
             registrationForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+
+                // Validate all required fields before proceeding
+                let isValid = true;
+                let firstInvalidField = null;
+
+                // Validate first name
+                if (firstNameInput && firstNameInput.value.trim() === '') {
+                    firstNameInput.classList.add('is-invalid');
+                    firstNameError.textContent = 'First name is required.';
+                    firstNameError.style.display = 'block';
+                    isValid = false;
+                    if (!firstInvalidField) firstInvalidField = firstNameInput;
+                }
+
+                // Validate last name
+                if (lastNameInput && lastNameInput.value.trim() === '') {
+                    lastNameInput.classList.add('is-invalid');
+                    lastNameError.textContent = 'Last name is required.';
+                    lastNameError.style.display = 'block';
+                    isValid = false;
+                    if (!firstInvalidField) firstInvalidField = lastNameInput;
+                }
+
+                // Validate email
+                if (emailInput) {
+                    const emailValue = emailInput.value.trim();
+                    if (emailValue === '') {
+                        emailInput.classList.add('is-invalid');
+                        emailError.textContent = 'Email is required.';
+                        emailError.style.display = 'block';
+                        isValid = false;
+                        if (!firstInvalidField) firstInvalidField = emailInput;
+                    } else {
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        if (!emailRegex.test(emailValue)) {
+                            emailInput.classList.add('is-invalid');
+                            emailError.textContent = 'Please enter a valid email address.';
+                            emailError.style.display = 'block';
+                            isValid = false;
+                            if (!firstInvalidField) firstInvalidField = emailInput;
+                        }
+                    }
+                }
+
+                // Validate phone number
+                if (phoneInput) {
+                    const phoneValue = phoneInput.value.trim();
+                    if (phoneValue === '') {
+                        phoneInput.classList.add('is-invalid');
+                        phoneError.textContent = 'Phone number is required.';
+                        phoneError.style.display = 'block';
+                        isValid = false;
+                        if (!firstInvalidField) firstInvalidField = phoneInput;
+                    } else if (phoneValue.length !== 11) {
+                        phoneInput.classList.add('is-invalid');
+                        phoneError.textContent = 'Phone number must be exactly 11 digits.';
+                        phoneError.style.display = 'block';
+                        isValid = false;
+                        if (!firstInvalidField) firstInvalidField = phoneInput;
+                    } else if (!phoneValue.startsWith('03')) {
+                        phoneInput.classList.add('is-invalid');
+                        phoneError.textContent = 'Phone number must start with 03.';
+                        phoneError.style.display = 'block';
+                        isValid = false;
+                        if (!firstInvalidField) firstInvalidField = phoneInput;
+                    } else if (!/^\d+$/.test(phoneValue)) {
+                        phoneInput.classList.add('is-invalid');
+                        phoneError.textContent = 'Phone number must contain only digits.';
+                        phoneError.style.display = 'block';
+                        isValid = false;
+                        if (!firstInvalidField) firstInvalidField = phoneInput;
+                    }
+                }
+
+                // Validate registration type (if visible and required)
+                if (registrationTypeSelect && registrationTypeSelect.offsetParent !== null) {
+                    if (registrationTypeSelect.value === '' || registrationTypeSelect.value === null) {
+                        registrationTypeSelect.classList.add('is-invalid');
+                        if (registrationTypeError) {
+                            registrationTypeError.textContent = 'Registration type is required.';
+                            registrationTypeError.style.display = 'block';
+                        }
+                        isValid = false;
+                        if (!firstInvalidField) firstInvalidField = registrationTypeSelect;
+                    }
+                }
+
+                // Validate workshops (if visible and required)
+                if (workshopsSelect && workshopsElement && workshopsElement.offsetParent !== null) {
+                    const selectedItems = workshopsSelect.getValue();
+                    if (!selectedItems || selectedItems.length === 0) {
+                        const tsControl = document.querySelector('.ts-control');
+                        if (tsControl) {
+                            tsControl.style.borderColor = '#dc2626';
+                        }
+                        if (workshopsError) {
+                            workshopsError.textContent = 'Please select a workshop.';
+                            workshopsError.style.display = 'block';
+                        }
+                        isValid = false;
+                        if (!firstInvalidField) firstInvalidField = workshopsElement;
+                    }
+                }
+
+                // If validation fails, scroll to first invalid field and stop
+                if (!isValid) {
+                    if (firstInvalidField) {
+                        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => firstInvalidField.focus(), 500);
+                    }
+                    return false;
+                }
 
                 // Calculate if payment is required
                 let totalCost = 0;
@@ -1756,11 +2110,6 @@
                                     You will receive a confirmation email shortly with your event details.
                                 </p>
                             </div>
-                            <div class="mt-4">
-                                <a href="/portal/events/{{ event.id }}/" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 0.875rem 2rem; font-weight: 600;">
-                                    View Event Details
-                                </a>
-                            </div>
                         </div>
                     </div>
                 `;
@@ -1860,7 +2209,7 @@
                             </div>
                             <h2 class="mb-3" style="color: #f59e0b; font-weight: bold;">Registration Submitted!</h2>
                             <h4 class="mb-4" style="color: #d97706;">Your registration is pending approval</h4>
-                            <div class="alert alert-warning mb-4" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: none; padding: 1.5rem;">
+                            <div class="alert alert-warning mb-4" style="display: flex; flex-direction: column; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: none; padding: 1.5rem;">
                                 <p class="mb-2" style="color: #92400e;">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle;">
                                         <circle cx="12" cy="12" r="10"/>
@@ -1882,11 +2231,6 @@
                                     </svg>
                                     If you have any questions, please contact the event organizer.
                                 </p>
-                            </div>
-                            <div class="mt-4">
-                                <a href="/portal/events/{{ event.id }}/" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 0.875rem 2rem; font-weight: 600;">
-                                    View Event Details
-                                </a>
                             </div>
                         </div>
                     </div>

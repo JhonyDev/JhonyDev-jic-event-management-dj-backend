@@ -265,9 +265,12 @@ class SelfRegistrationForm(forms.Form):
     phone_number = forms.CharField(
         max_length=20,
         label='Phone Number',
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': '+1 (555) 123-4567'
+            'placeholder': '03xxxxxxxxx',
+            'pattern': '03[0-9]{9}',
+            'title': 'Phone number must be 11 digits starting with 03'
         })
     )
     designation = forms.CharField(
@@ -318,7 +321,7 @@ class SelfRegistrationForm(forms.Form):
         widget=forms.CheckboxSelectMultiple(attrs={
             'class': 'form-check-input'
         }),
-        required=False
+        required=True
     )
 
     def __init__(self, *args, **kwargs):
@@ -358,6 +361,23 @@ class SelfRegistrationForm(forms.Form):
         email = self.cleaned_data['email']
         # Add any email validation logic here
         return email
+
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data.get('phone_number', '').strip()
+
+        # Check if phone number is 11 digits
+        if len(phone_number) != 11:
+            raise forms.ValidationError('Phone number must be exactly 11 digits.')
+
+        # Check if it starts with '03'
+        if not phone_number.startswith('03'):
+            raise forms.ValidationError('Phone number must start with 03.')
+
+        # Check if all characters are digits
+        if not phone_number.isdigit():
+            raise forms.ValidationError('Phone number must contain only digits.')
+
+        return phone_number
 
 
 class AgendaTopicForm(forms.ModelForm):
