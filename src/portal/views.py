@@ -2533,12 +2533,27 @@ def update_bank_details(request, pk):
 def approve_bank_receipt(request, event_pk, receipt_pk):
     """Approve a bank payment receipt"""
     from src.api.models import BankPaymentReceipt
+    from src.api.email_utils import send_registration_approval_email
 
     event = get_object_or_404(Event, pk=event_pk, organizer=request.user)
     receipt = get_object_or_404(BankPaymentReceipt, pk=receipt_pk, event=event)
 
     if request.method == 'POST':
         receipt.approve(request.user)
+
+        # Send approval email to the user
+        if receipt.registration:
+            try:
+                send_registration_approval_email(
+                    user=receipt.user,
+                    event=event,
+                    registration=receipt.registration
+                )
+            except Exception as e:
+                # Log the error but don't fail the approval process
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to send approval email to {receipt.user.email}: {str(e)}")
 
         return JsonResponse({
             'success': True,

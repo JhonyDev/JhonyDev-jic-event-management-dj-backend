@@ -1,0 +1,38 @@
+REGISTRATION APPROVED - {{ event.title }}
+================================================================================
+
+Dear {{ user.first_name }} {{ user.last_name }},
+
+Great news! Your registration for {{ event.title }} has been approved by the event organizers.
+
+YOUR REGISTRATION IS NOW CONFIRMED!
+
+REGISTRATION DETAILS:
+---------------------
+Registration ID: {{ registration.registration_id }}
+Status: CONFIRMED
+
+EVENT DETAILS:
+--------------
+Event: {{ event.title }}
+Date: {{ event.date|date:"F d, Y" }}{% if event.end_date %} - {{ event.end_date|date:"F d, Y" }}{% endif %}
+Location: {{ event.location }}
+{% if event.venue_details %}Venue Details: {{ event.venue_details }}{% endif %}
+{% if registration.registration_type %}Registration Type: {{ registration.registration_type.name }}{% endif %}
+
+WHAT'S NEXT:
+------------
+- You will receive additional event details closer to the event date
+- Keep your registration ID handy for check-in at the event
+- Watch your email for any updates or important announcements
+
+We're excited to have you join us at the event!
+
+If you have any questions or need assistance, please don't hesitate to contact the event organizers.
+
+Best regards,
+{{ event.title }} Team
+
+---
+This is an automated message. Please do not reply to this email.
+If you have questions, please contact the event organizers directly.

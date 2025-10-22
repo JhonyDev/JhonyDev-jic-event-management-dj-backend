@@ -137,6 +137,50 @@ This is an automated message. Please do not reply to this email.
         return False, f"Failed to send email: {str(e)}"
 
 
+def send_registration_approval_email(user, event, registration):
+    """
+    Send an email when a user's registration is approved by the event organizer.
+
+    Args:
+        user: The User object who registered
+        event: The Event object
+        registration: The Registration object
+
+    Returns:
+        tuple: (success: bool, message: str)
+    """
+    try:
+        context = {
+            'user': user,
+            'event': event,
+            'registration': registration,
+        }
+
+        subject = f"Registration Approved - {event.title}"
+        html_content = render_to_string('emails/registration_approval.html', context)
+        text_content = render_to_string('emails/registration_approval.txt', context)
+
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to_email = user.email
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=from_email,
+            to=[to_email],
+        )
+
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+
+        logger.info(f"Registration approval email sent to {to_email} for event {event.title}")
+        return True, f"Email sent successfully to {to_email}"
+
+    except Exception as e:
+        logger.error(f"Failed to send registration approval email to {user.email}: {str(e)}", exc_info=True)
+        return False, f"Failed to send email: {str(e)}"
+
+
 def test_email_configuration():
     """
     Test the email configuration by sending a test email.
