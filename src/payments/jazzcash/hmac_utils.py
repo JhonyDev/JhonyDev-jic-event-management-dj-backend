@@ -50,18 +50,27 @@ def generate_secure_hash(data_dict, integrity_salt, include_empty=False):
 
     # Step 1: Filter fields starting with 'pp_' or 'ppmpf_' (case-insensitive)
     filtered_data = {}
+    excluded_fields = []  # Track excluded fields for debugging
     for key, value in data_dict.items():
         # Check if key starts with 'pp_' (case-insensitive)
         if key.lower().startswith('pp'):
             # Convert value to string
             if value is None or str(value).lower() == 'none':
                 # Skip None values
+                excluded_fields.append(f"{key}=None")
                 continue
             str_value = str(value).strip() if value is not None else ''
+
+            # JazzCash sometimes sends 'null' as a string - exclude it from hash
+            # Based on testing, JazzCash doesn't include fields with 'null' string value in their hash
+            if str_value.lower() == 'null':
+                excluded_fields.append(f"{key}='null'")
+                continue
 
             # For REQUEST: exclude empty strings (except for required fields)
             # For RESPONSE: include all fields including empty strings
             if not include_empty and str_value == '':
+                excluded_fields.append(f"{key}=''")
                 continue
 
             filtered_data[key] = str_value
@@ -78,6 +87,8 @@ def generate_secure_hash(data_dict, integrity_salt, include_empty=False):
 
     mode = "including empty fields" if include_empty else "excluding empty fields"
     print(f"  Filtered data ({mode}): {filtered_data}")
+    if excluded_fields:
+        print(f"  Excluded fields: {excluded_fields}")
     print(f"  Sorted keys for hash ({len(sorted_keys)} fields): {sorted_keys}")
 
     # Step 3: Extract values in sorted order

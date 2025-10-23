@@ -66,6 +66,9 @@ class JazzCashTransaction(models.Model):
     total_refunded_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_refundable = models.BooleanField(default=True)
 
+    # Security tracking
+    hash_verification_warning = models.BooleanField(default=False, help_text="True if payment succeeded but hash verification failed")
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'JazzCash Transaction'
