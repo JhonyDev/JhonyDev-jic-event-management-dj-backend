@@ -345,7 +345,8 @@ class SelfRegistrationForm(forms.Form):
             # Set workshop choices from event's workshop sessions
             workshop_sessions = Session.objects.filter(
                 agenda__event=event,
-                session_type='workshop'
+                session_type='workshop',
+                allow_registration=True
             ).order_by('agenda__order', 'start_time')
 
             if workshop_sessions.exists():
