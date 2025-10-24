@@ -29,4 +29,7 @@ urlpatterns = [
     # Operations
     path('jazzcash/status-inquiry/', views.StatusInquiryView.as_view(), name='status_inquiry'),
     path('jazzcash/refund/', views.RefundView.as_view(), name='refund'),
+
+    # Bank Transfer
+    path('bank-transfer/', views.BankTransferPaymentView.as_view(), name='bank_transfer'),
 ]

@@ -15,6 +15,7 @@ router.register(r'app-content', views.AppContentViewSet, basename='appcontent')
 router.register(r'announcements', views.AnnouncementViewSet, basename='announcement')
 router.register(r'quick-actions', views.QuickActionViewSet, basename='quickaction')
 router.register(r'supporting-materials', views.SupportingMaterialViewSet, basename='supportingmaterial')
+router.register(r'event-registration', views.EventRegistrationView, basename='eventregistration')
 
 urlpatterns = [
     # API routes

@@ -757,3 +757,228 @@ class RefundHistoryView(generics.ListAPIView):
             user=self.request.user
         )
         return transaction.refunds.all()
+
+
+class BankTransferPaymentView(APIView):
+    """
+    Submit bank transfer payment with receipt
+
+    POST /api/payments/bank-transfer/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            print("\n" + "="*80)
+            print("🔷 BANK TRANSFER PAYMENT REQUEST RECEIVED")
+            print("="*80)
+            print(f"User: {request.user.username} (ID: {request.user.id})")
+            print(f"Request Data: {request.data}")
+            print("="*80 + "\n")
+
+            # Get form data
+            payment_type = request.data.get('type', 'event_registration')
+            amount = request.data.get('amount')
+            payment_date = request.data.get('payment_date')
+            notes = request.data.get('notes', '')
+            receipt = request.FILES.get('receipt')
+
+            # Validate required fields
+            if not amount:
+                return Response({
+                    'success': False,
+                    'error': 'Amount is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not payment_date:
+                return Response({
+                    'success': False,
+                    'error': 'Payment date is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not receipt:
+                return Response({
+                    'success': False,
+                    'error': 'Receipt image is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Convert amount to Decimal
+            from decimal import Decimal, InvalidOperation
+            try:
+                amount = Decimal(str(amount))
+            except (ValueError, TypeError, InvalidOperation) as e:
+                return Response({
+                    'success': False,
+                    'error': f'Invalid amount: {str(e)}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Parse payment date
+            from datetime import datetime
+            try:
+                payment_date_obj = datetime.strptime(payment_date, '%Y-%m-%d').date()
+            except ValueError as e:
+                return Response({
+                    'success': False,
+                    'error': f'Invalid date format. Use YYYY-MM-DD: {str(e)}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Handle different payment types
+            if payment_type == 'event_registration':
+                registration_id = request.data.get('registration_id')
+                if not registration_id:
+                    return Response({
+                        'success': False,
+                        'error': 'Registration ID is required'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # Get registration
+                registration = get_object_or_404(Registration, id=registration_id, user=request.user)
+                event = registration.event
+                registration_type = registration.registration_type
+
+            elif payment_type == 'event':
+                event_id = request.data.get('event_id')
+                if not event_id:
+                    return Response({
+                        'success': False,
+                        'error': 'Event ID is required'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # Get event
+                event = get_object_or_404(Event, id=event_id)
+
+                # Check if already registered
+                registration = Registration.objects.filter(
+                    event=event,
+                    user=request.user
+                ).first()
+
+                # Create registration if doesn't exist
+                if not registration:
+                    registration = Registration.objects.create(
+                        event=event,
+                        user=request.user,
+                        status='pending',
+                        payment_status='pending'
+                    )
+
+                registration_type = registration.registration_type
+
+            elif payment_type == 'session':
+                session_id = request.data.get('session_id')
+                if not session_id:
+                    return Response({
+                        'success': False,
+                        'error': 'Session ID is required'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # Get session
+                session = get_object_or_404(Session, id=session_id)
+                event = session.get_event()
+
+                if not event:
+                    return Response({
+                        'success': False,
+                        'error': 'Session is not associated with any event'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # Check if already registered for session
+                session_registration = SessionRegistration.objects.filter(
+                    session=session,
+                    user=request.user
+                ).first()
+
+                # Create session registration if doesn't exist
+                if not session_registration:
+                    session_registration = SessionRegistration.objects.create(
+                        session=session,
+                        user=request.user,
+                        status='pending',
+                        payment_status='pending'
+                    )
+
+                # Get or create event registration (required for BankPaymentReceipt)
+                registration = Registration.objects.filter(
+                    event=event,
+                    user=request.user
+                ).first()
+
+                if not registration:
+                    registration = Registration.objects.create(
+                        event=event,
+                        user=request.user,
+                        status='pending',
+                        payment_status='pending'
+                    )
+
+                registration_type = None
+            else:
+                return Response({
+                    'success': False,
+                    'error': f'Invalid payment type: {payment_type}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create bank payment receipt
+            from src.api.models import BankPaymentReceipt
+
+            bank_receipt = BankPaymentReceipt.objects.create(
+                event=event,
+                user=request.user,
+                registration=registration,
+                registration_type=registration_type,
+                receipt_image=receipt,
+                amount=amount,
+                transaction_id='',  # User doesn't provide this
+                payment_date=payment_date_obj,
+                notes=notes,
+                status='pending'
+            )
+
+            # Update registration status
+            registration.status = 'pending'
+            registration.payment_status = 'pending'
+            registration.save()
+
+            # Log the submission
+            from src.api.models import RegistrationLog
+
+            RegistrationLog.objects.create(
+                event=event,
+                user=request.user,
+                registration=registration,
+                action='payment_initiated',
+                email=request.user.email,
+                first_name=request.user.first_name,
+                last_name=request.user.last_name,
+                phone_number=getattr(request.user, 'phone_number', ''),
+                registration_type=registration_type,
+                payment_method='bank',
+                payment_amount=amount,
+                transaction_reference=f'bank_receipt_{bank_receipt.id}',
+                ip_address=self._get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+                notes=f'Bank transfer receipt uploaded (Receipt ID: {bank_receipt.id}). Pending organizer approval.'
+            )
+
+            return Response({
+                'success': True,
+                'message': 'Registration submitted successfully! Your payment will be verified by the organizer.',
+                'receipt_id': bank_receipt.id,
+                'status': 'pending'
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            logger.error(f"Bank transfer payment error: {str(e)}", exc_info=True)
+            return Response({
+                'success': False,
+                'error': f'Submission error: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _get_client_ip(self, request):
+        """Helper function to get client IP address"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip

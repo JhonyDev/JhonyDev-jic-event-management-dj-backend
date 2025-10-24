@@ -1013,3 +1013,115 @@ class SupportingMaterialViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(event_id=event_id)
 
         return queryset.order_by('created_at')
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class EventRegistrationView(viewsets.ViewSet):
+    """
+    API endpoint for event registration from React Native app
+
+    POST /api/event-registration/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        """Create event registration (without payment)"""
+        try:
+            print("\n" + "="*80)
+            print("🔷 EVENT REGISTRATION REQUEST RECEIVED")
+            print("="*80)
+            print(f"User: {request.user.username} (ID: {request.user.id})")
+            print(f"Request Data: {request.data}")
+            print("="*80 + "\n")
+
+            # Get event
+            event_id = request.data.get('event_id')
+            if not event_id:
+                return Response({
+                    'error': 'Event ID is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                event = Event.objects.get(id=event_id)
+            except Event.DoesNotExist:
+                return Response({
+                    'error': 'Event not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            # Check if already registered
+            existing_registration = Registration.objects.filter(
+                event=event,
+                user=request.user
+            ).first()
+
+            if existing_registration:
+                # Return existing registration
+                return Response({
+                    'success': True,
+                    'registration_id': existing_registration.id,
+                    'message': 'Already registered for this event',
+                    'status': existing_registration.status
+                }, status=status.HTTP_200_OK)
+
+            # Get registration type if provided
+            registration_type = None
+            registration_type_id = request.data.get('registration_type_id')
+            if registration_type_id:
+                try:
+                    from .models import EventRegistrationType
+                    registration_type = EventRegistrationType.objects.get(
+                        id=registration_type_id,
+                        event=event
+                    )
+                except EventRegistrationType.DoesNotExist:
+                    return Response({
+                        'error': 'Invalid registration type'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create registration (pending until payment)
+            registration = Registration.objects.create(
+                event=event,
+                user=request.user,
+                status='pending',  # Will be confirmed after payment
+                payment_status='pending',
+                registration_type=registration_type,
+                designation=request.data.get('designation', ''),
+                affiliations=request.data.get('affiliations', ''),
+                address=request.data.get('address', ''),
+                country=request.data.get('country', ''),
+                phone_number=request.data.get('phone_number', ''),
+            )
+
+            # Handle workshop selection (single workshop)
+            selected_workshop = request.data.get('selected_workshop')
+            if selected_workshop:
+                try:
+                    workshop = Session.objects.get(
+                        id=selected_workshop,
+                        agenda__event=event,
+                        session_type='workshop'
+                    )
+                    registration.selected_workshops.add(workshop)
+                except Session.DoesNotExist:
+                    pass  # Ignore invalid workshop
+
+            print(f"✅ Registration created: ID {registration.id}")
+
+            return Response({
+                'success': True,
+                'registration_id': registration.id,
+                'message': 'Registration created successfully',
+                'status': 'pending'
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            print(f"\n❌ EXCEPTION OCCURRED!")
+            print(f"Exception type: {type(e).__name__}")
+            print(f"Exception message: {str(e)}")
+            import traceback
+            print(f"Traceback:")
+            print(traceback.format_exc())
+
+            return Response({
+                'error': f'Registration failed: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
