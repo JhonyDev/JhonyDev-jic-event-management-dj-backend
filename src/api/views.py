@@ -1122,7 +1122,7 @@ class EventRegistrationView(viewsets.ViewSet):
                     }, status=status.HTTP_400_BAD_REQUEST)
 
             # Validate: For paid events, registration must go through payment first
-            if event.is_paid_event and event.registration_fee > 0:
+            if event.is_paid_event:
                 # Create registration with HOLD status - will expire in 5 minutes if payment not completed
                 from django.utils import timezone
                 from datetime import timedelta
