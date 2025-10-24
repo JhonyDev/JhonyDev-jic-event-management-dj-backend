@@ -1182,3 +1182,198 @@ class EventRegistrationView(viewsets.ViewSet):
             return Response({
                 'error': f'Registration failed: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], url_path='with-bank-transfer')
+    def with_bank_transfer(self, request):
+        """
+        Create event registration WITH bank transfer payment atomically
+        This ensures registration is only created when payment receipt is provided
+
+        POST /api/event-registration/with-bank-transfer/
+        """
+        try:
+            print("\n" + "="*80)
+            print("🔷 EVENT REGISTRATION WITH BANK TRANSFER REQUEST")
+            print("="*80)
+            print(f"User: {request.user.username} (ID: {request.user.id})")
+            print(f"Request Data Keys: {list(request.data.keys())}")
+            print("="*80 + "\n")
+
+            from decimal import Decimal, InvalidOperation
+            from datetime import datetime
+            from django.db import transaction
+            from api.models import BankPaymentReceipt, EventRegistrationType
+
+            # Extract registration data
+            event_id = request.data.get('event')
+            registration_type_id = request.data.get('registration_type')
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            email = request.data.get('email')
+            phone = request.data.get('phone')
+            company = request.data.get('company', '')
+            designation = request.data.get('designation', '')
+            dietary_preferences = request.data.get('dietary_preferences', '')
+            special_requirements = request.data.get('special_requirements', '')
+
+            # Extract payment data
+            payment_method = request.data.get('payment_method')
+            payment_date = request.data.get('payment_date')
+            amount = request.data.get('amount')
+            notes = request.data.get('notes', '')
+            receipt = request.FILES.get('receipt')
+
+            # Extract workshops (they come as workshops[0], workshops[1], etc.)
+            workshops = []
+            i = 0
+            while True:
+                workshop_id = request.data.get(f'workshops[{i}]')
+                if workshop_id is None:
+                    break
+                workshops.append(workshop_id)
+                i += 1
+
+            # Validate required registration fields
+            if not event_id:
+                return Response({
+                    'success': False,
+                    'error': 'Event ID is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not first_name or not last_name or not email or not phone:
+                return Response({
+                    'success': False,
+                    'error': 'First name, last name, email, and phone are required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate payment fields
+            if payment_method != 'bank_transfer':
+                return Response({
+                    'success': False,
+                    'error': 'This endpoint only handles bank transfer payments'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not payment_date or not amount or not receipt:
+                return Response({
+                    'success': False,
+                    'error': 'Payment date, amount, and receipt are required for bank transfer'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate event exists
+            try:
+                event = Event.objects.get(id=event_id)
+            except Event.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'error': 'Event not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            # Check if already registered
+            existing_registration = Registration.objects.filter(
+                event=event,
+                user=request.user
+            ).first()
+
+            if existing_registration:
+                return Response({
+                    'success': True,
+                    'registration_id': existing_registration.id,
+                    'message': 'Already registered for this event',
+                    'status': existing_registration.status
+                }, status=status.HTTP_200_OK)
+
+            # Get registration type if provided
+            registration_type = None
+            if registration_type_id:
+                try:
+                    registration_type = EventRegistrationType.objects.get(
+                        id=registration_type_id,
+                        event=event
+                    )
+                except EventRegistrationType.DoesNotExist:
+                    return Response({
+                        'success': False,
+                        'error': 'Invalid registration type'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Parse and validate amount
+            try:
+                amount_decimal = Decimal(str(amount))
+            except (ValueError, TypeError, InvalidOperation) as e:
+                return Response({
+                    'success': False,
+                    'error': f'Invalid amount: {str(e)}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Parse payment date
+            try:
+                payment_date_obj = datetime.strptime(payment_date, '%Y-%m-%d').date()
+            except ValueError as e:
+                return Response({
+                    'success': False,
+                    'error': f'Invalid date format. Use YYYY-MM-DD: {str(e)}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Create registration and payment record atomically
+            with transaction.atomic():
+                # Create registration with pending status
+                registration = Registration.objects.create(
+                    event=event,
+                    user=request.user,
+                    status='pending',  # Will be confirmed after admin verifies payment
+                    payment_status='pending',  # Will be marked paid after verification
+                    registration_type=registration_type,
+                    designation=designation,
+                    affiliations=company,
+                    phone_number=phone,
+                )
+
+                # Add workshops if any
+                if workshops:
+                    from api.models import Session
+                    for workshop_id in workshops:
+                        try:
+                            workshop = Session.objects.get(
+                                id=workshop_id,
+                                agenda__event=event,
+                                session_type='workshop'
+                            )
+                            registration.selected_workshops.add(workshop)
+                        except Session.DoesNotExist:
+                            pass  # Ignore invalid workshops
+
+                # Create bank payment receipt
+                bank_receipt = BankPaymentReceipt.objects.create(
+                    registration=registration,
+                    registration_type=registration_type,
+                    amount=amount_decimal,
+                    payment_date=payment_date_obj,
+                    receipt_image=receipt,
+                    notes=notes,
+                    status='pending',  # Admin needs to verify
+                    verified_by=None  # Will be set when admin verifies
+                )
+
+                print(f"✅ Registration created: ID {registration.id}")
+                print(f"✅ Bank receipt created: ID {bank_receipt.id}")
+
+            return Response({
+                'success': True,
+                'registration_id': registration.id,
+                'payment_receipt_id': bank_receipt.id,
+                'message': 'Registration and payment submitted successfully. Awaiting verification.',
+                'status': 'pending'
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            print(f"\n❌ EXCEPTION OCCURRED!")
+            print(f"Exception type: {type(e).__name__}")
+            print(f"Exception message: {str(e)}")
+            import traceback
+            print(f"Traceback:")
+            print(traceback.format_exc())
+
+            return Response({
+                'success': False,
+                'error': f'Registration failed: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
