@@ -99,7 +99,7 @@ class EventSerializer(serializers.ModelSerializer):
             'organizer', 'created_at', 'updated_at', 'max_attendees',
             'image', 'registrations_count', 'is_registered', 'status',
             'allow_signup_without_qr', 'is_paid_event', 'registration_fee',
-            'payment_methods'
+            'payment_methods', 'bank_details'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'organizer']
 
