@@ -265,6 +265,7 @@ class LiveStreamURL(models.Model):
         ('instagram', 'Instagram'),
         ('tiktok', 'TikTok'),
         ('twitter', 'Twitter (X)'),
+        ('zoom', 'Zoom'),
         ('other', 'Other'),
     ]
 

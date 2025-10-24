@@ -950,7 +950,7 @@ class BankTransferPaymentView(APIView):
                 email=request.user.email,
                 first_name=request.user.first_name,
                 last_name=request.user.last_name,
-                phone_number=getattr(request.user, 'phone_number', ''),
+                phone_number=registration.phone_number or 'N/A',
                 registration_type=registration_type,
                 payment_method='bank',
                 payment_amount=amount,

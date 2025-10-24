@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
     Event, Registration, Announcement, AppContent, FAQ, ContactInfo,
-    Agenda, Session, Speaker, SupportingMaterial, QuickAction
+    Agenda, Session, Speaker, SupportingMaterial, QuickAction, LiveStreamURL
 )
 
 User = get_user_model()
@@ -91,13 +91,14 @@ class EventSerializer(serializers.ModelSerializer):
     organizer = UserSerializer(read_only=True)
     registrations_count = serializers.SerializerMethodField()
     is_registered = serializers.SerializerMethodField()
+    registration_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
         fields = [
             'id', 'title', 'description', 'date', 'location',
             'organizer', 'created_at', 'updated_at', 'max_attendees',
-            'image', 'registrations_count', 'is_registered', 'status',
+            'image', 'registrations_count', 'is_registered', 'registration_status', 'status',
             'allow_signup_without_qr', 'is_paid_event', 'registration_fee',
             'payment_methods', 'bank_details'
         ]
@@ -111,6 +112,15 @@ class EventSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.registrations.filter(user=request.user).exists()
         return False
+
+    def get_registration_status(self, obj):
+        """Get user's registration status for this event (pending, confirmed, or None)"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            registration = obj.registrations.filter(user=request.user).first()
+            if registration:
+                return registration.status
+        return None
 
 
 class EventCreateSerializer(serializers.ModelSerializer):
@@ -176,8 +186,15 @@ class SpeakerSerializer(serializers.ModelSerializer):
         ]
 
 
+class LiveStreamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LiveStreamURL
+        fields = ['id', 'stream_url', 'platform']
+
+
 class SessionSerializer(serializers.ModelSerializer):
     speakers = SpeakerSerializer(many=True, read_only=True)
+    live_stream_urls = LiveStreamSerializer(many=True, read_only=True)
     start_time_formatted = serializers.SerializerMethodField()
     end_time_formatted = serializers.SerializerMethodField()
     duration = serializers.SerializerMethodField()
@@ -191,7 +208,8 @@ class SessionSerializer(serializers.ModelSerializer):
             'start_time', 'end_time', 'start_time_formatted', 'end_time_formatted',
             'duration', 'location', 'max_attendees', 'materials_url', 'order',
             'allow_registration', 'slots_available', 'is_paid_session',
-            'session_fee', 'payment_methods', 'is_registered', 'registrations_count'
+            'session_fee', 'payment_methods', 'is_registered', 'registrations_count',
+            'live_stream_urls'
         ]
 
     def get_is_registered(self, obj):

@@ -435,7 +435,8 @@ class EventViewSet(viewsets.ModelViewSet):
 
         # Get all agendas for this event with their sessions
         agendas = Agenda.objects.filter(event=event).prefetch_related(
-            'sessions__speakers'
+            'sessions__speakers',
+            'sessions__live_stream_urls'
         ).order_by('order', 'date')
 
         # Format agendas with their sessions
@@ -474,6 +475,15 @@ class EventViewSet(viewsets.ModelViewSet):
                 has_attachments = session.supporting_materials.filter(is_public=True).exists()
                 attachment_count = session.supporting_materials.filter(is_public=True).count()
 
+                # Get live stream URLs
+                live_streams_list = []
+                for stream in session.live_stream_urls.all():
+                    live_streams_list.append({
+                        'id': stream.id,
+                        'stream_url': stream.stream_url,
+                        'platform': stream.platform
+                    })
+
                 session_data = {
                     'id': session.id,
                     'time': session.start_time.strftime('%I:%M %p') if session.start_time else 'TBD',
@@ -495,7 +505,9 @@ class EventViewSet(viewsets.ModelViewSet):
                     'payment_methods': session.payment_methods or [],
                     # Attachment fields
                     'has_attachments': has_attachments,
-                    'attachment_count': attachment_count
+                    'attachment_count': attachment_count,
+                    # Live stream URLs
+                    'live_stream_urls': live_streams_list
                 }
                 session_list.append(session_data)
 
@@ -1105,19 +1117,37 @@ class EventRegistrationView(viewsets.ViewSet):
                         'error': 'Invalid registration type'
                     }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Create registration (pending until payment)
-            registration = Registration.objects.create(
-                event=event,
-                user=request.user,
-                status='pending',  # Will be confirmed after payment
-                payment_status='pending',
-                registration_type=registration_type,
-                designation=request.data.get('designation', ''),
-                affiliations=request.data.get('affiliations', ''),
-                address=request.data.get('address', ''),
-                country=request.data.get('country', ''),
-                phone_number=request.data.get('phone_number', ''),
-            )
+            # Validate: For paid events, registration must go through payment first
+            if event.is_paid_event and event.registration_fee > 0:
+                # Create registration with pending status - MUST be confirmed via payment
+                registration = Registration.objects.create(
+                    event=event,
+                    user=request.user,
+                    status='pending',  # Will ONLY be confirmed after successful payment verification
+                    payment_status='pending',  # Will ONLY be 'paid' after payment callback
+                    registration_type=registration_type,
+                    designation=request.data.get('designation', ''),
+                    affiliations=request.data.get('affiliations', ''),
+                    address=request.data.get('address', ''),
+                    country=request.data.get('country', ''),
+                    phone_number=request.data.get('phone_number', ''),
+                )
+                print(f"✅ Registration created with PENDING status - requires payment verification")
+            else:
+                # Free event - can be confirmed immediately
+                registration = Registration.objects.create(
+                    event=event,
+                    user=request.user,
+                    status='confirmed',
+                    payment_status='free',
+                    registration_type=registration_type,
+                    designation=request.data.get('designation', ''),
+                    affiliations=request.data.get('affiliations', ''),
+                    address=request.data.get('address', ''),
+                    country=request.data.get('country', ''),
+                    phone_number=request.data.get('phone_number', ''),
+                )
+                print(f"✅ Registration confirmed immediately - free event")
 
             # Handle workshop selection (single workshop)
             selected_workshop = request.data.get('selected_workshop')
