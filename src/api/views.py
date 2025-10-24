@@ -144,6 +144,54 @@ class EventViewSet(viewsets.ModelViewSet):
             'event_title': event.title
         })
 
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='registration-types')
+    def registration_types(self, request, pk=None):
+        """Get registration types for this event"""
+        event = self.get_object()
+        from .models import EventRegistrationType
+
+        reg_types = EventRegistrationType.objects.filter(
+            event=event,
+            is_active=True
+        ).order_by('order', 'name')
+
+        data = [{
+            'id': rt.id,
+            'name': rt.name,
+            'description': rt.description,
+            'is_paid': rt.is_paid,
+            'amount': str(rt.amount) if rt.is_paid else '0',
+            'payment_methods': rt.payment_methods,
+        } for rt in reg_types]
+
+        return Response(data)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated], url_path='workshops')
+    def workshops(self, request, pk=None):
+        """Get workshops/sessions for this event that allow registration"""
+        event = self.get_object()
+
+        # Get sessions that allow registration and are marked as workshops
+        workshops = Session.objects.filter(
+            agenda__event=event,
+            allow_registration=True
+        ).select_related('agenda').order_by('agenda__order', 'start_time')
+
+        data = [{
+            'id': session.id,
+            'title': session.title,
+            'description': session.description,
+            'is_paid': session.is_paid_session,
+            'fee': str(session.session_fee) if session.is_paid_session else '0',
+            'start_time': session.start_time,
+            'end_time': session.end_time,
+            'location': session.location,
+            'slots_available': session.slots_available,
+            'slots_taken': SessionRegistration.objects.filter(session=session).count() if session.slots_available else None,
+        } for session in workshops]
+
+        return Response(data)
+
     @action(detail=True, methods=['post'])
     def check_in(self, request, pk=None):
         """Handle attendee check-in from React Native app for Entry Pass"""
