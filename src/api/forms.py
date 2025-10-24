@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.db import models
 from datetime import timedelta
 from .models import (
-    Event, Agenda, AgendaTopic, AgendaCoordinator, Speaker, Session,
+    Event, Agenda, AgendaTopic, AgendaCoordinator, Speaker, Session, LiveStreamURL,
     Exhibitor, ExhibitionArea, Registration, VenueMap, Sponsor, SupportingMaterial
 )
 
@@ -197,6 +197,27 @@ class SessionForm(forms.ModelForm):
         return instance
 
 
+class LiveStreamURLForm(forms.ModelForm):
+    class Meta:
+        model = LiveStreamURL
+        fields = ['stream_url', 'platform']
+        widgets = {
+            'stream_url': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://youtube.com/watch?v=...'
+            }),
+            'platform': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+        labels = {
+            'stream_url': 'Live Stream URL',
+            'platform': 'Platform',
+        }
+        help_texts = {
+            'stream_url': 'Enter the full URL of the live stream',
+            'platform': 'Select the streaming platform',
+        }
 
 
 class ExhibitorForm(forms.ModelForm):

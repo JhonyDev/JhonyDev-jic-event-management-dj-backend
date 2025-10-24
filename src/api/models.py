@@ -257,6 +257,40 @@ class Session(models.Model):
 
 
 
+class LiveStreamURL(models.Model):
+    """Live stream URLs for sessions"""
+    PLATFORM_CHOICES = [
+        ('youtube', 'YouTube'),
+        ('facebook', 'Facebook'),
+        ('instagram', 'Instagram'),
+        ('tiktok', 'TikTok'),
+        ('twitter', 'Twitter (X)'),
+        ('other', 'Other'),
+    ]
+
+    session = models.ForeignKey(
+        Session,
+        on_delete=models.CASCADE,
+        related_name='live_stream_urls'
+    )
+    stream_url = models.URLField(max_length=500, help_text='Live stream URL')
+    platform = models.CharField(
+        max_length=20,
+        choices=PLATFORM_CHOICES,
+        default='other',
+        help_text='Streaming platform'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['platform', 'created_at']
+        verbose_name = 'Live Stream URL'
+        verbose_name_plural = 'Live Stream URLs'
+
+    def __str__(self):
+        return f"{self.get_platform_display()} - {self.session.title}"
+
+
 class Exhibitor(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='exhibitors')
     company_name = models.CharField(max_length=200)

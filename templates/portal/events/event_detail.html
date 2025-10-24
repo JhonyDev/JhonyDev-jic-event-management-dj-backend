@@ -2779,6 +2779,66 @@
   </div>
 </div>
 
+<!-- Live Stream URL Management Modal -->
+<div class="modal modal-blur fade" id="liveStreamModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          Manage Live Streams: <span id="liveStreamModalSessionTitle"></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="currentLiveStreamSessionId">
+
+        <form id="liveStreamForm">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label required">Platform</label>
+            <select name="platform" id="platformSelect" class="form-select" required>
+              <option value="">Select Platform</option>
+              <option value="youtube">YouTube</option>
+              <option value="facebook">Facebook</option>
+              <option value="instagram">Instagram</option>
+              <option value="tiktok">TikTok</option>
+              <option value="twitter">Twitter (X)</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Stream URL</label>
+            <input type="url"
+                   name="stream_url"
+                   id="streamUrlInput"
+                   class="form-control"
+                   placeholder="https://youtube.com/watch?v=..."
+                   required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Live Stream URL
+          </button>
+        </form>
+
+        <hr class="my-3">
+
+        <!-- Current Live Streams List -->
+        <div id="currentLiveStreams">
+          <h6 class="mb-2">Current Live Streams</h6>
+          <div id="liveStreamsList" class="list-group">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Sponsor Management Modal -->
 <div class="modal fade" id="sponsorsModal" tabindex="-1" aria-labelledby="sponsorsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -3278,6 +3338,185 @@
     window.loadSpeakersForSession = loadSpeakersForSession;
     window.saveSpeakerAssignments = saveSpeakerAssignments;
   });
+
+  // ===============================
+  // LIVE STREAM MANAGEMENT FUNCTIONS
+  // ===============================
+
+  let currentLiveStreamSessionId = null;
+
+  // Open live stream modal
+  function openLiveStreamModal(sessionId, sessionTitle) {
+    currentLiveStreamSessionId = sessionId;
+    document.getElementById('liveStreamModalSessionTitle').textContent = sessionTitle;
+    document.getElementById('currentLiveStreamSessionId').value = sessionId;
+    loadLiveStreams(sessionId);
+    const modalElement = document.getElementById('liveStreamModal');
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+  }
+
+  // Load existing live streams
+  async function loadLiveStreams(sessionId) {
+    try {
+      const response = await fetch(`/portal/api/session/${sessionId}/livestreams/`);
+      const data = await response.json();
+
+      const listContainer = document.getElementById('liveStreamsList');
+
+      if (!data.stream_urls || data.stream_urls.length === 0) {
+        listContainer.innerHTML = '<p class="text-muted small mb-0">No live streams added yet.</p>';
+        return;
+      }
+
+      listContainer.innerHTML = data.stream_urls.map(stream => `
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+          <div class="flex-fill">
+            <span class="badge bg-${getPlatformColor(stream.platform)}-lt me-2">
+              ${stream.platform_display}
+            </span>
+            <a href="${stream.stream_url}" target="_blank" class="text-truncate d-inline-block" style="max-width: 250px;" title="${stream.stream_url}">
+              ${stream.stream_url}
+            </a>
+          </div>
+          <button type="button"
+                  class="btn btn-sm btn-ghost-danger"
+                  onclick="deleteLiveStream(${stream.id})"
+                  title="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+      `).join('');
+    } catch (error) {
+      console.error('Error loading live streams:', error);
+      showMessage('Error loading live streams', 'danger');
+    }
+  }
+
+  // Add new live stream
+  document.addEventListener('DOMContentLoaded', function() {
+    const liveStreamForm = document.getElementById('liveStreamForm');
+    if (liveStreamForm) {
+      liveStreamForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+          platform: document.getElementById('platformSelect').value,
+          stream_url: document.getElementById('streamUrlInput').value
+        };
+
+        try {
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+          const response = await fetch(`/portal/api/session/${currentLiveStreamSessionId}/livestreams/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(formData)
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showMessage('Live stream URL added successfully', 'success');
+            document.getElementById('liveStreamForm').reset();
+
+            // Close the modal
+            const modalElement = document.getElementById('liveStreamModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+              modal.hide();
+            }
+
+            // Switch to agenda tab
+            const agendaTab = document.querySelector('a[href="#tab-agenda"]');
+            if (agendaTab) {
+              const tab = new bootstrap.Tab(agendaTab);
+              tab.show();
+            }
+
+            // Refresh the agenda partial to show new stream
+            loadAgendaPartial({{ event.pk }});
+          } else {
+            showMessage(data.message || 'Error adding live stream URL', 'danger');
+          }
+        } catch (error) {
+          console.error('Error adding live stream:', error);
+          showMessage('Error adding live stream URL', 'danger');
+        }
+      });
+    }
+  });
+
+  // Delete live stream
+  async function deleteLiveStream(streamId) {
+    if (!confirm('Are you sure you want to delete this live stream URL?')) {
+      return;
+    }
+
+    try {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      const response = await fetch(`/portal/api/session/${currentLiveStreamSessionId}/livestreams/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ stream_id: streamId })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showMessage('Live stream URL deleted successfully', 'success');
+
+        // Close the modal
+        const modalElement = document.getElementById('liveStreamModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+          modal.hide();
+        }
+
+        // Switch to agenda tab
+        const agendaTab = document.querySelector('a[href="#tab-agenda"]');
+        if (agendaTab) {
+          const tab = new bootstrap.Tab(agendaTab);
+          tab.show();
+        }
+
+        // Refresh the agenda partial to update display
+        loadAgendaPartial({{ event.pk }});
+      } else {
+        showMessage(data.message || 'Error deleting live stream URL', 'danger');
+      }
+    } catch (error) {
+      console.error('Error deleting live stream:', error);
+      showMessage('Error deleting live stream URL', 'danger');
+    }
+  }
+
+  // Helper function to get platform color
+  function getPlatformColor(platform) {
+    const colors = {
+      'youtube': 'red',
+      'facebook': 'blue',
+      'instagram': 'purple',
+      'tiktok': 'pink',
+      'twitter': 'azure',
+      'other': 'secondary'
+    };
+    return colors[platform] || 'secondary';
+  }
+
+  // Make functions available globally
+  window.openLiveStreamModal = openLiveStreamModal;
+  window.loadLiveStreams = loadLiveStreams;
+  window.deleteLiveStream = deleteLiveStream;
 
   // ===============================
   // SPONSOR MANAGEMENT FUNCTIONS

@@ -104,6 +104,7 @@ urlpatterns = [
 
     # Session API endpoints
     path('api/session/<int:session_pk>/speakers/', views.session_speakers_api, name='session_speakers_api'),
+    path('api/session/<int:session_pk>/livestreams/', views.session_livestream_api, name='session_livestream_api'),
     path('api/events/<int:event_pk>/sessions/', views.event_sessions_api, name='event_sessions_api'),
     path('api/materials/<int:material_pk>/sessions/', views.material_sessions_api, name='material_sessions_api'),
 

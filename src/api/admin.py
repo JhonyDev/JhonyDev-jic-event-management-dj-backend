@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Count, Sum
 from .models import (
-    Event, EventRegistrationType, Agenda, Registration, Speaker, Session,
+    Event, EventRegistrationType, Agenda, Registration, Speaker, Session, LiveStreamURL,
     Exhibitor, ExhibitionArea,
     SessionBookmark, Notification, Sponsor, SupportingMaterial, Announcement,
     AppContent, FAQ, ContactInfo, QuickAction, AppDownload, RegistrationLog
@@ -365,6 +365,15 @@ class SpeakerAdmin(admin.ModelAdmin):
     session_count.short_description = 'Sessions'
 
 
+class LiveStreamURLInline(admin.TabularInline):
+    model = LiveStreamURL
+    extra = 1
+    fields = ['platform', 'stream_url', 'created_at']
+    readonly_fields = ['created_at']
+    verbose_name = 'Live Stream URL'
+    verbose_name_plural = 'Live Stream URLs'
+
+
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
     list_display = [
@@ -396,6 +405,7 @@ class SessionAdmin(admin.ModelAdmin):
     # date_hierarchy = 'start_time'  # Removed since start_time is now TimeField
     ordering = ['agenda__event', 'agenda__order', 'start_time']
     readonly_fields = ['duration_display']
+    inlines = [LiveStreamURLInline]
 
     fieldsets = (
         ('Basic Information', {

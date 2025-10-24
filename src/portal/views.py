@@ -7,11 +7,11 @@ from django.utils import timezone
 from django.http import JsonResponse
 import json
 from src.api.forms import (
-    EventForm, AgendaForm, AgendaTopicForm, AgendaCoordinatorForm, SpeakerForm, SessionForm,
+    EventForm, AgendaForm, AgendaTopicForm, AgendaCoordinatorForm, SpeakerForm, SessionForm, LiveStreamURLForm,
     ExhibitorForm, ExhibitionAreaForm, SelfRegistrationForm, VenueMapForm, SponsorForm, SupportingMaterialForm
 )
 from src.api.models import (
-    Event, Agenda, AgendaTopic, AgendaCoordinator, Registration, Speaker, Session,
+    Event, Agenda, AgendaTopic, AgendaCoordinator, Registration, Speaker, Session, LiveStreamURL,
     Exhibitor, ExhibitionArea, VenueMap, Sponsor, SupportingMaterial,
     SessionBookmark, AgendaLike, Notification
 )
@@ -1738,6 +1738,85 @@ def session_speakers_api(request, session_pk):
                 'success': False,
                 'message': str(e)
             })
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+@login_required(login_url="/accounts/login/")
+def session_livestream_api(request, session_pk):
+    """API for managing live stream URLs for a session"""
+    from django.views.decorators.http import require_http_methods
+
+    session = get_object_or_404(
+        Session,
+        pk=session_pk,
+        agenda__event__organizer=request.user
+    )
+
+    if request.method == 'GET':
+        # Return all live stream URLs for this session
+        stream_urls = list(session.live_stream_urls.values(
+            'id', 'stream_url', 'platform'
+        ))
+        # Add platform display names
+        for stream in stream_urls:
+            stream['platform_display'] = dict(LiveStreamURL.PLATFORM_CHOICES).get(stream['platform'], stream['platform'])
+
+        return JsonResponse({
+            'success': True,
+            'stream_urls': stream_urls
+        })
+
+    elif request.method == 'POST':
+        # Add new live stream URL
+        try:
+            data = json.loads(request.body)
+            form = LiveStreamURLForm(data)
+            if form.is_valid():
+                live_stream = form.save(commit=False)
+                live_stream.session = session
+                live_stream.save()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Live stream URL added successfully',
+                    'stream_url': {
+                        'id': live_stream.id,
+                        'stream_url': live_stream.stream_url,
+                        'platform': live_stream.platform,
+                        'platform_display': live_stream.get_platform_display()
+                    }
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'errors': form.errors
+                }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            }, status=500)
+
+    elif request.method == 'DELETE':
+        # Delete live stream URL
+        try:
+            data = json.loads(request.body)
+            stream_id = data.get('stream_id')
+            live_stream = get_object_or_404(
+                LiveStreamURL,
+                id=stream_id,
+                session=session
+            )
+            live_stream.delete()
+            return JsonResponse({
+                'success': True,
+                'message': 'Live stream URL deleted successfully'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            }, status=500)
 
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
