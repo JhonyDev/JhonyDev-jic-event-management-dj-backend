@@ -105,6 +105,10 @@ class EventViewSet(viewsets.ModelViewSet):
     def upcoming(self, request):
         """Get upcoming browseable events (published and allow signup without QR)"""
         from django.utils import timezone
+
+        # Clean up expired held registrations
+        Registration.cleanup_expired_holds()
+
         events = Event.objects.filter(
             date__gte=timezone.now(),
             status='published',
@@ -1119,12 +1123,18 @@ class EventRegistrationView(viewsets.ViewSet):
 
             # Validate: For paid events, registration must go through payment first
             if event.is_paid_event and event.registration_fee > 0:
-                # Create registration with pending status - MUST be confirmed via payment
+                # Create registration with HOLD status - will expire in 5 minutes if payment not completed
+                from django.utils import timezone
+                from datetime import timedelta
+
+                hold_expires_at = timezone.now() + timedelta(minutes=5)
+
                 registration = Registration.objects.create(
                     event=event,
                     user=request.user,
-                    status='pending',  # Will ONLY be confirmed after successful payment verification
+                    status='hold',  # On HOLD - will be auto-deleted if payment not completed within 5 minutes
                     payment_status='pending',  # Will ONLY be 'paid' after payment callback
+                    hold_expires_at=hold_expires_at,  # Expires in 5 minutes
                     registration_type=registration_type,
                     designation=request.data.get('designation', ''),
                     affiliations=request.data.get('affiliations', ''),
@@ -1132,7 +1142,7 @@ class EventRegistrationView(viewsets.ViewSet):
                     country=request.data.get('country', ''),
                     phone_number=request.data.get('phone_number', ''),
                 )
-                print(f"✅ Registration created with PENDING status - requires payment verification")
+                print(f"✅ Registration created with HOLD status - expires at {hold_expires_at}")
             else:
                 # Free event - can be confirmed immediately
                 registration = Registration.objects.create(
@@ -1197,12 +1207,14 @@ class EventRegistrationView(viewsets.ViewSet):
             print("="*80)
             print(f"User: {request.user.username} (ID: {request.user.id})")
             print(f"Request Data Keys: {list(request.data.keys())}")
+            print(f"Event ID value: '{request.data.get('event')}'")
+            print(f"Registration Type ID value: '{request.data.get('registration_type')}'")
             print("="*80 + "\n")
 
             from decimal import Decimal, InvalidOperation
             from datetime import datetime
             from django.db import transaction
-            from api.models import BankPaymentReceipt, EventRegistrationType
+            from .models import BankPaymentReceipt, EventRegistrationType
 
             # Extract registration data
             event_id = request.data.get('event')
@@ -1234,7 +1246,7 @@ class EventRegistrationView(viewsets.ViewSet):
                 i += 1
 
             # Validate required registration fields
-            if not event_id:
+            if not event_id or event_id == 'undefined' or event_id == 'null':
                 return Response({
                     'success': False,
                     'error': 'Event ID is required'
@@ -1284,7 +1296,7 @@ class EventRegistrationView(viewsets.ViewSet):
 
             # Get registration type if provided
             registration_type = None
-            if registration_type_id:
+            if registration_type_id and registration_type_id != 'undefined' and registration_type_id != 'null':
                 try:
                     registration_type = EventRegistrationType.objects.get(
                         id=registration_type_id,
@@ -1330,7 +1342,6 @@ class EventRegistrationView(viewsets.ViewSet):
 
                 # Add workshops if any
                 if workshops:
-                    from api.models import Session
                     for workshop_id in workshops:
                         try:
                             workshop = Session.objects.get(
@@ -1344,6 +1355,8 @@ class EventRegistrationView(viewsets.ViewSet):
 
                 # Create bank payment receipt
                 bank_receipt = BankPaymentReceipt.objects.create(
+                    event=event,
+                    user=request.user,
                     registration=registration,
                     registration_type=registration_type,
                     amount=amount_decimal,
@@ -1351,7 +1364,7 @@ class EventRegistrationView(viewsets.ViewSet):
                     receipt_image=receipt,
                     notes=notes,
                     status='pending',  # Admin needs to verify
-                    verified_by=None  # Will be set when admin verifies
+                    reviewed_by=None  # Will be set when admin reviews
                 )
 
                 print(f"✅ Registration created: ID {registration.id}")

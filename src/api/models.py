@@ -141,11 +141,13 @@ class Registration(models.Model):
         choices=[
             ('confirmed', 'Confirmed'),
             ('pending', 'Pending'),
+            ('hold', 'On Hold - Awaiting Payment'),  # New status for incomplete online payments
             ('cancelled', 'Cancelled'),
         ],
         default='pending'
 
     )
+    hold_expires_at = models.DateTimeField(null=True, blank=True, help_text='Time when held registration expires if payment not completed')
 
     # Registration Details - stored at registration time
     registration_type = models.ForeignKey('EventRegistrationType', on_delete=models.SET_NULL, null=True, blank=True, related_name='registrations')
@@ -181,6 +183,20 @@ class Registration(models.Model):
     def registration_id(self):
         """Return formatted registration ID"""
         return f"REG-{self.id:05d}"
+
+    @classmethod
+    def cleanup_expired_holds(cls):
+        """Delete registrations that are on hold and have expired"""
+        from django.utils import timezone
+        expired_holds = cls.objects.filter(
+            status='hold',
+            hold_expires_at__lt=timezone.now()
+        )
+        count = expired_holds.count()
+        if count > 0:
+            print(f"🗑️  Deleting {count} expired held registrations")
+            expired_holds.delete()
+        return count
 
 
 class Speaker(models.Model):
@@ -777,7 +793,7 @@ class AppDownload(models.Model):
         verbose_name_plural = 'App Downloads'
 
     def __str__(self):
-        return f"JIC App v{self.version}"
+        return f"Multiverso Events App v{self.version}"
 
     def save(self, *args, **kwargs):
         # Calculate file size

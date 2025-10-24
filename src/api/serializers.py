@@ -92,6 +92,8 @@ class EventSerializer(serializers.ModelSerializer):
     registrations_count = serializers.SerializerMethodField()
     is_registered = serializers.SerializerMethodField()
     registration_status = serializers.SerializerMethodField()
+    hold_expires_at = serializers.SerializerMethodField()
+    hold_time_remaining = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -100,7 +102,7 @@ class EventSerializer(serializers.ModelSerializer):
             'organizer', 'created_at', 'updated_at', 'max_attendees',
             'image', 'registrations_count', 'is_registered', 'registration_status', 'status',
             'allow_signup_without_qr', 'is_paid_event', 'registration_fee',
-            'payment_methods', 'bank_details'
+            'payment_methods', 'bank_details', 'hold_expires_at', 'hold_time_remaining'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'organizer']
 
@@ -120,6 +122,26 @@ class EventSerializer(serializers.ModelSerializer):
             registration = obj.registrations.filter(user=request.user).first()
             if registration:
                 return registration.status
+        return None
+
+    def get_hold_expires_at(self, obj):
+        """Get hold expiration time for user's registration"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            registration = obj.registrations.filter(user=request.user, status='hold').first()
+            if registration and registration.hold_expires_at:
+                return registration.hold_expires_at.isoformat()
+        return None
+
+    def get_hold_time_remaining(self, obj):
+        """Get seconds remaining until hold expires"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            registration = obj.registrations.filter(user=request.user, status='hold').first()
+            if registration and registration.hold_expires_at:
+                from django.utils import timezone
+                remaining = (registration.hold_expires_at - timezone.now()).total_seconds()
+                return max(0, int(remaining))  # Return 0 if already expired
         return None
 
 
