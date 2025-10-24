@@ -94,6 +94,9 @@ class EventSerializer(serializers.ModelSerializer):
     registration_status = serializers.SerializerMethodField()
     hold_expires_at = serializers.SerializerMethodField()
     hold_time_remaining = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()
+    registration_type_amount = serializers.SerializerMethodField()
+    workshop_fee = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
@@ -102,7 +105,8 @@ class EventSerializer(serializers.ModelSerializer):
             'organizer', 'created_at', 'updated_at', 'max_attendees',
             'image', 'registrations_count', 'is_registered', 'registration_status', 'status',
             'allow_signup_without_qr', 'is_paid_event', 'registration_fee',
-            'payment_methods', 'bank_details', 'hold_expires_at', 'hold_time_remaining'
+            'payment_methods', 'bank_details', 'hold_expires_at', 'hold_time_remaining',
+            'total_amount', 'registration_type_amount', 'workshop_fee'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'organizer']
 
@@ -142,6 +146,45 @@ class EventSerializer(serializers.ModelSerializer):
                 from django.utils import timezone
                 remaining = (registration.hold_expires_at - timezone.now()).total_seconds()
                 return max(0, int(remaining))  # Return 0 if already expired
+        return None
+
+    def get_total_amount(self, obj):
+        """Get total amount for user's registration (base fee + registration type + workshop)"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            registration = obj.registrations.filter(user=request.user).first()
+            if registration:
+                total = float(obj.registration_fee or 0)
+                # Add registration type fee
+                if registration.registration_type and registration.registration_type.is_paid:
+                    total += float(registration.registration_type.amount or 0)
+                # Add workshop fees
+                for workshop in registration.selected_workshops.all():
+                    if workshop.is_paid:
+                        total += float(workshop.fee or 0)
+                return total
+        return None
+
+    def get_registration_type_amount(self, obj):
+        """Get registration type amount for user's registration"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            registration = obj.registrations.filter(user=request.user).first()
+            if registration and registration.registration_type and registration.registration_type.is_paid:
+                return float(registration.registration_type.amount or 0)
+        return None
+
+    def get_workshop_fee(self, obj):
+        """Get total workshop fees for user's registration"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            registration = obj.registrations.filter(user=request.user).first()
+            if registration:
+                total_workshop_fee = 0
+                for workshop in registration.selected_workshops.all():
+                    if workshop.is_paid:
+                        total_workshop_fee += float(workshop.fee or 0)
+                return total_workshop_fee if total_workshop_fee > 0 else None
         return None
 
 
