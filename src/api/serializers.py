@@ -158,10 +158,10 @@ class EventSerializer(serializers.ModelSerializer):
                 # Add registration type fee
                 if registration.registration_type and registration.registration_type.is_paid:
                     total += float(registration.registration_type.amount or 0)
-                # Add workshop fees
+                # Add workshop fees (using correct field names: is_paid_session and session_fee)
                 for workshop in registration.selected_workshops.all():
-                    if workshop.is_paid:
-                        total += float(workshop.fee or 0)
+                    if workshop.is_paid_session:
+                        total += float(workshop.session_fee or 0)
                 return total
         return None
 
@@ -182,8 +182,8 @@ class EventSerializer(serializers.ModelSerializer):
             if registration:
                 total_workshop_fee = 0
                 for workshop in registration.selected_workshops.all():
-                    if workshop.is_paid:
-                        total_workshop_fee += float(workshop.fee or 0)
+                    if workshop.is_paid_session:
+                        total_workshop_fee += float(workshop.session_fee or 0)
                 return total_workshop_fee if total_workshop_fee > 0 else None
         return None
 
@@ -265,6 +265,9 @@ class SessionSerializer(serializers.ModelSerializer):
     duration = serializers.SerializerMethodField()
     is_registered = serializers.SerializerMethodField()
     registrations_count = serializers.SerializerMethodField()
+    # Add aliases for frontend compatibility
+    is_paid = serializers.BooleanField(source='is_paid_session', read_only=True)
+    fee = serializers.DecimalField(source='session_fee', max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Session
@@ -274,7 +277,7 @@ class SessionSerializer(serializers.ModelSerializer):
             'duration', 'location', 'max_attendees', 'materials_url', 'order',
             'allow_registration', 'slots_available', 'is_paid_session',
             'session_fee', 'payment_methods', 'is_registered', 'registrations_count',
-            'live_stream_urls'
+            'live_stream_urls', 'is_paid', 'fee'
         ]
 
     def get_is_registered(self, obj):
