@@ -629,18 +629,45 @@ class EventViewSet(viewsets.ModelViewSet):
         return 'SP'
 
 
-class RegistrationViewSet(viewsets.ReadOnlyModelViewSet):
+class RegistrationViewSet(viewsets.ModelViewSet):
     """
-    API endpoint for viewing registrations.
+    API endpoint for viewing and managing registrations.
 
-    Users can only view their own registrations.
+    Users can only view and delete their own registrations.
     """
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'delete', 'head', 'options']  # Allow only GET and DELETE
 
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete a registration (only if it's pending)
+        """
+        instance = self.get_object()
+
+        # Only allow deletion of pending registrations
+        if instance.status != 'pending':
+            return Response(
+                {'error': 'Can only cancel pending registrations'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if user owns this registration
+        if instance.user != request.user:
+            return Response(
+                {'error': 'You can only cancel your own registrations'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        self.perform_destroy(instance)
+        return Response(
+            {'success': True, 'message': 'Registration cancelled successfully'},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
 
 class FAQViewSet(viewsets.ReadOnlyModelViewSet):
