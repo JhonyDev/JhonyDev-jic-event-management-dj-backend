@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
+from django.db import models
 import json
 from src.api.forms import (
     EventForm, AgendaForm, AgendaTopicForm, AgendaCoordinatorForm, SpeakerForm, SessionForm, LiveStreamURLForm,
@@ -12,7 +13,7 @@ from src.api.forms import (
 )
 from src.api.models import (
     Event, Agenda, AgendaTopic, AgendaCoordinator, Registration, Speaker, Session, LiveStreamURL,
-    Exhibitor, ExhibitionArea, VenueMap, Sponsor, SupportingMaterial,
+    Exhibitor, ExhibitionArea, VenueMap, Sponsor, SupportingMaterial, SupportingMaterialFile,
     SessionBookmark, AgendaLike, Notification
 )
 
@@ -2174,6 +2175,16 @@ def supporting_material_create(request, event_pk):
             if session_ids:
                 material.sessions.set(session_ids)
 
+            # Handle multiple files for galleries
+            if material.material_type == 'gallery':
+                gallery_files = request.FILES.getlist('gallery_files')
+                for index, file in enumerate(gallery_files, start=1):
+                    SupportingMaterialFile.objects.create(
+                        material=material,
+                        file=file,
+                        order=index
+                    )
+
             messages.success(request, f"Supporting material '{material.title}' uploaded successfully!")
             return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-materials')
     else:
@@ -2207,6 +2218,23 @@ def supporting_material_edit(request, event_pk, material_pk):
             elif 'sessions' in request.POST:
                 # Clear sessions if none selected
                 material.sessions.clear()
+
+            # Handle multiple files for galleries
+            if material.material_type == 'gallery':
+                # Check if new files were uploaded
+                gallery_files = request.FILES.getlist('gallery_files')
+                if gallery_files:
+                    # Optional: Delete existing gallery files when new ones are uploaded
+                    # material.gallery_files.all().delete()
+
+                    # Add new files
+                    start_order = material.gallery_files.count() + 1
+                    for index, file in enumerate(gallery_files, start=start_order):
+                        SupportingMaterialFile.objects.create(
+                            material=material,
+                            file=file,
+                            order=index
+                        )
 
             messages.success(request, f"Supporting material '{material.title}' updated successfully!")
             return redirect(reverse('portal:event_detail', kwargs={'pk': event.pk}) + '#tab-materials')
@@ -2251,7 +2279,128 @@ def supporting_material_api(request, event_pk):
     """API endpoint for managing supporting materials via AJAX"""
     event = get_object_or_404(Event, pk=event_pk, organizer=request.user)
 
-    if request.method == 'POST':
+    if request.method == 'GET':
+        # Handle fetching gallery images
+        action = request.GET.get('action')
+        if action == 'get_gallery':
+            material_id = request.GET.get('material_id')
+            if material_id:
+                try:
+                    material = SupportingMaterial.objects.get(pk=material_id, event=event)
+                    if material.material_type == 'gallery':
+                        gallery_files = material.gallery_files.all().order_by('order')
+                        images = []
+                        for file in gallery_files:
+                            images.append({
+                                'id': file.id,
+                                'url': file.file.url,
+                                'caption': file.caption,
+                                'order': file.order,
+                                'media_type': file.get_media_type()
+                            })
+                        return JsonResponse({
+                            'success': True,
+                            'images': images
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'Material is not a gallery'
+                        })
+                except SupportingMaterial.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Material not found'
+                    })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Material ID is required'
+                })
+        elif action == 'delete_file':
+            # Handle deleting a single file from gallery
+            file_id = request.GET.get('file_id')
+            if file_id:
+                try:
+                    gallery_file = SupportingMaterialFile.objects.get(
+                        pk=file_id,
+                        material__event=event
+                    )
+                    # Delete the file from storage
+                    if gallery_file.file:
+                        gallery_file.file.delete(save=False)
+                    gallery_file.delete()
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'File deleted successfully'
+                    })
+                except SupportingMaterialFile.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'File not found'
+                    })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'File ID is required'
+                })
+
+    elif request.method == 'POST':
+        # Handle adding files to existing gallery
+        action = request.POST.get('action')
+        if action == 'add_files':
+            material_id = request.POST.get('material_id')
+            if material_id:
+                try:
+                    material = SupportingMaterial.objects.get(pk=material_id, event=event)
+                    if material.material_type == 'gallery':
+                        new_files = request.FILES.getlist('new_files')
+                        if new_files:
+                            # Get the current highest order number
+                            last_order = material.gallery_files.aggregate(
+                                max_order=models.Max('order')
+                            )['max_order'] or 0
+
+                            added_files = []
+                            for index, file in enumerate(new_files, start=last_order + 1):
+                                gallery_file = SupportingMaterialFile.objects.create(
+                                    material=material,
+                                    file=file,
+                                    order=index
+                                )
+                                added_files.append({
+                                    'id': gallery_file.id,
+                                    'url': gallery_file.file.url,
+                                    'media_type': gallery_file.get_media_type()
+                                })
+
+                            return JsonResponse({
+                                'success': True,
+                                'message': f'{len(new_files)} file(s) added successfully',
+                                'files': added_files
+                            })
+                        else:
+                            return JsonResponse({
+                                'success': False,
+                                'message': 'No files provided'
+                            })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'Material is not a gallery'
+                        })
+                except SupportingMaterial.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Material not found'
+                    })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Material ID is required'
+                })
+
+        # Original create material functionality
         try:
             form = SupportingMaterialForm(request.POST, request.FILES)
             if form.is_valid():

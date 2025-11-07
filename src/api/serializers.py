@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
     Event, Registration, Announcement, AppContent, FAQ, ContactInfo,
-    Agenda, Session, Speaker, SupportingMaterial, QuickAction, LiveStreamURL
+    Agenda, Session, Speaker, SupportingMaterial, SupportingMaterialFile, QuickAction, LiveStreamURL
 )
 
 User = get_user_model()
@@ -373,6 +373,26 @@ class SupportingMaterialSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.file.url)
             return obj.file.url
         return None
+
+
+class SupportingMaterialFileSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+    media_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SupportingMaterialFile
+        fields = ['id', 'file', 'file_url', 'media_type', 'uploaded_at']
+
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
+        return None
+
+    def get_media_type(self, obj):
+        return obj.get_media_type()
 
 
 class QuickActionSerializer(serializers.ModelSerializer):

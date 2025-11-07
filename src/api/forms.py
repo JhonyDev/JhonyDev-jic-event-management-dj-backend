@@ -499,6 +499,19 @@ class SponsorForm(forms.ModelForm):
 
 
 class SupportingMaterialForm(forms.ModelForm):
+    # Add multiple files field for galleries
+    # Note: We'll handle multiple files via JavaScript, as Django's FileInput doesn't support multiple natively
+    gallery_files = forms.FileField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*,video/*',
+            'style': 'display: none;',  # Hidden by default, shown via JavaScript for gallery type
+            'id': 'gallery-files-input'
+        }),
+        help_text='Upload multiple images and videos for the gallery'
+    )
+
     class Meta:
         model = SupportingMaterial
         fields = ['title', 'description', 'material_type', 'file', 'is_public', 'order', 'sessions']
@@ -513,11 +526,13 @@ class SupportingMaterialForm(forms.ModelForm):
                 'placeholder': 'Brief description of this material...'
             }),
             'material_type': forms.Select(attrs={
-                'class': 'form-select'
+                'class': 'form-select',
+                'id': 'material-type-select'  # Add ID for JavaScript targeting
             }),
             'file': forms.FileInput(attrs={
                 'class': 'form-control',
-                'accept': '.pdf,.ppt,.pptx,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.mp4,.avi,.mov,.zip,.rar'
+                'accept': '.pdf,.ppt,.pptx,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.mp4,.avi,.mov,.zip,.rar',
+                'id': 'single-file-input'  # Add ID for JavaScript targeting
             }),
             'is_public': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -538,3 +553,21 @@ class SupportingMaterialForm(forms.ModelForm):
             'order': 'Display order (lower numbers appear first)',
             'sessions': 'Select sessions this material is associated with',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make file field not required since galleries won't use it
+        self.fields['file'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        material_type = cleaned_data.get('material_type')
+        file = cleaned_data.get('file')
+
+        # For galleries, we'll handle file validation in the view
+        # since Django forms don't support multiple file uploads natively
+        if material_type != 'gallery':
+            if not file and not self.instance.pk:  # Only require file for new non-gallery materials
+                raise forms.ValidationError('Please upload a file for this material type.')
+
+        return cleaned_data

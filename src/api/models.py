@@ -595,6 +595,7 @@ class SupportingMaterial(models.Model):
         ('handout', 'Handout/Brochure'),
         ('video', 'Video Content'),
         ('document', 'Document'),
+        ('gallery', 'Image Gallery'),
         ('other', 'Other'),
     ]
 
@@ -602,7 +603,7 @@ class SupportingMaterial(models.Model):
     title = models.CharField(max_length=200, help_text="Material title")
     description = models.TextField(blank=True, help_text="Description of the material")
     material_type = models.CharField(max_length=20, choices=MATERIAL_TYPES, default='document', help_text="Type of supporting material")
-    file = models.FileField(upload_to='supporting_materials/', help_text="Upload the supporting material file")
+    file = models.FileField(upload_to='supporting_materials/', blank=True, null=True, help_text="Upload the supporting material file (not used for galleries)")
     file_size = models.PositiveIntegerField(blank=True, null=True, help_text="File size in bytes")
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='uploaded_materials')
     is_public = models.BooleanField(default=True, help_text="Make this material publicly accessible")
@@ -645,6 +646,97 @@ class SupportingMaterial(models.Model):
         if self.file:
             return self.file.name.split('.')[-1].upper() if '.' in self.file.name else 'FILE'
         return 'FILE'
+
+    def get_gallery_files(self):
+        """Return all gallery files for this material"""
+        if self.material_type == 'gallery':
+            return self.gallery_files.all().order_by('order')
+        return []
+
+    @property
+    def is_gallery(self):
+        """Check if this material is a gallery"""
+        return self.material_type == 'gallery'
+
+
+class SupportingMaterialFile(models.Model):
+    """Individual files for gallery-type supporting materials"""
+    material = models.ForeignKey(
+        SupportingMaterial,
+        on_delete=models.CASCADE,
+        related_name='gallery_files'
+    )
+    file = models.FileField(
+        upload_to='supporting_materials/galleries/',
+        help_text="Upload an image or video file for the gallery"
+    )
+    file_size = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="File size in bytes"
+    )
+    caption = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional caption for this media"
+    )
+    order = models.PositiveIntegerField(
+        default=1,
+        help_text="Display order within the gallery"
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'uploaded_at']
+        verbose_name = 'Gallery File'
+        verbose_name_plural = 'Gallery Files'
+
+    def __str__(self):
+        return f"{self.material.title} - File {self.order}"
+
+    def save(self, *args, **kwargs):
+        # Calculate file size if not set
+        if self.file and not self.file_size:
+            try:
+                self.file_size = self.file.size
+            except (ValueError, AttributeError):
+                pass
+        super().save(*args, **kwargs)
+
+    def get_file_size_display(self):
+        """Return human readable file size"""
+        if not self.file_size:
+            return 'Unknown'
+
+        size = self.file_size
+        for unit in ['bytes', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+
+    def get_media_type(self):
+        """Determine if file is image or video"""
+        if self.file:
+            ext = self.file.name.split('.')[-1].lower() if '.' in self.file.name else ''
+            image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']
+            video_extensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv', 'm4v']
+
+            if ext in image_extensions:
+                return 'image'
+            elif ext in video_extensions:
+                return 'video'
+        return 'unknown'
+
+    @property
+    def is_image(self):
+        """Check if this file is an image"""
+        return self.get_media_type() == 'image'
+
+    @property
+    def is_video(self):
+        """Check if this file is a video"""
+        return self.get_media_type() == 'video'
 
 
 class Announcement(models.Model):

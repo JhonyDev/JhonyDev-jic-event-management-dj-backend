@@ -18,7 +18,7 @@ from .serializers import (
     AgendaSerializer, SessionSerializer, SpeakerSerializer,
     AgendaSessionSerializer, FAQSerializer, ContactInfoSerializer,
     AppContentSerializer, AnnouncementSerializer,
-    QuickActionSerializer, SupportingMaterialSerializer
+    QuickActionSerializer, SupportingMaterialSerializer, SupportingMaterialFileSerializer
 )
 
 # Global dictionary to store SSE connections per event
@@ -1056,6 +1056,38 @@ class SupportingMaterialViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(event_id=event_id)
 
         return queryset.order_by('created_at')
+
+    @action(detail=True, methods=['get'], url_path='gallery')
+    def gallery(self, request, pk=None):
+        """Get gallery files for a supporting material"""
+        try:
+            material = self.get_object()
+
+            if not material.is_gallery:
+                return Response(
+                    {'error': 'This supporting material is not a gallery'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            gallery_files = material.get_gallery_files()
+            serializer = SupportingMaterialFileSerializer(
+                gallery_files,
+                many=True,
+                context={'request': request}
+            )
+
+            return Response({
+                'material_id': material.id,
+                'material_title': material.title,
+                'material_type': material.material_type,
+                'gallery_files': serializer.data
+            })
+
+        except SupportingMaterial.DoesNotExist:
+            return Response(
+                {'error': 'Supporting material not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 @method_decorator(csrf_exempt, name='dispatch')
